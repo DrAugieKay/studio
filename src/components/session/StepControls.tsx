@@ -4,7 +4,7 @@ import { CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import type { SessionData } from '@/lib/types';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 
 type StepProps = {
   sessionData: Partial<SessionData>;
@@ -23,12 +23,10 @@ export default function StepControls({ sessionData, updateSessionData }: StepPro
   });
 
   const handleValueChange = (key: keyof typeof values, newValue: number[]) => {
-    setValues(prev => ({...prev, [key]: newValue[0]}));
+    const newValues = {...values, [key]: newValue[0]};
+    setValues(newValues);
+    updateSessionData({ controls: newValues });
   };
-
-  useEffect(() => {
-    updateSessionData({ controls: values })
-  }, [values, updateSessionData]);
 
   return (
     <>
