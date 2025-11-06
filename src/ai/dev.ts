@@ -1,1 +1,6 @@
-// Flows will be imported for their side effects in this file.
+import { config } from 'dotenv';
+config();
+
+import '@/ai/flows/summarize-open-rationale.ts';
+import '@/ai/flows/generate-advisory-text.ts';
+import '@/ai/flows/suggest-choice-reason.ts';
