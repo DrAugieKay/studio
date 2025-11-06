@@ -32,7 +32,7 @@ export default function StepDossier({ updateSessionData }: StepProps) {
       console.log(`Dossier view time: ${viewTime}ms, Scrolls: ${scrollCount}`);
       updateSessionData({ dossierViewTime: viewTime, advisoryScrollCount: scrollCount });
     };
-  }, [updateSessionData]);
+  }, []);
 
   return (
     <>
