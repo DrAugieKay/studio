@@ -48,7 +48,7 @@ export default function StepSubjectiveDQ({ sessionData, updateSessionData }: Ste
                 <span className="text-sm text-muted-foreground">Not at all</span>
                 <Slider
                     id={key}
-                    defaultValue={[values[key as keyof typeof values]]}
+                    value={[values[key as keyof typeof values]]}
                     onValueChange={(val) => handleValueChange(key as keyof typeof values, val)}
                     max={10}
                     step={1}

@@ -46,7 +46,7 @@ export default function StepControls({ sessionData, updateSessionData }: StepPro
                 <span className="text-sm text-muted-foreground">{key === 'risk_composite' ? 'Very risk-averse' : 'Novice'}</span>
                 <Slider
                     id={key}
-                    defaultValue={[values[key as keyof typeof values]]}
+                    value={[values[key as keyof typeof values]]}
                     onValueChange={(val) => handleValueChange(key as keyof typeof values, val)}
                     max={10}
                     step={1}
