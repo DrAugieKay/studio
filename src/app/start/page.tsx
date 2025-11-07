@@ -15,6 +15,7 @@ import StepAdvisoryScenario from '@/components/session/StepAdvisoryScenario';
 import StepDossier from '@/components/session/StepDossier';
 import StepAdvisory from '@/components/session/StepAdvisory';
 import StepComprehension from '@/components/session/StepComprehension';
+import StepManipulationChecks from '@/components/session/StepManipulationChecks';
 import StepObjectiveChoice from '@/components/session/StepObjectiveChoice';
 import StepSubjectiveDQ from '@/components/session/StepSubjectiveDQ';
 import StepMediators from '@/components/session/StepMediators';
@@ -30,6 +31,7 @@ const stepComponents = [
   StepDossier,
   StepAdvisory,
   StepComprehension,
+  StepManipulationChecks,
   StepObjectiveChoice,
   StepSubjectiveDQ,
   StepMediators,
@@ -46,6 +48,7 @@ const stepNames = [
   'Dossier',
   'Advisory',
   'Comprehension',
+  'Manipulation Checks',
   'Objective Choice',
   'Follow-up Questions',
   'Mediators',
@@ -61,6 +64,7 @@ export default function StartPage() {
   const [currentStep, setCurrentStep] = useState(0);
   const [sessionData, setSessionData] = useState<Partial<SessionData>>({
     consent: false,
+    manipulationChecks: {},
   });
   const [isLastAssessmentSection, setIsLastAssessmentSection] = useState(false);
 

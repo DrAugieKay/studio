@@ -1,4 +1,5 @@
 
+
 export type ExperimentalCondition = {
   advisorySource: 'ai' | 'human';
   linguisticFrame: 'abstract' | 'concrete';
@@ -17,6 +18,7 @@ export type SessionData = {
   advisoryViewTime: number;
   advisoryScrollCount: number;
   comprehension: Record<string, string | null>;
+  manipulationChecks: Record<string, string | null>;
   objectiveChoice: string | null;
   subjectiveDQ: Record<string, number | null>;
   mediators: Record<string, number | null>;
