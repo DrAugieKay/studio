@@ -21,7 +21,12 @@ export type SessionData = {
   manipulationChecks: Record<string, string | null>;
   objectiveChoice: string | null;
   subjectiveDQ: Record<string, number | null>;
-  mediators: Record<string, number | null>;
+  mediators: {
+    advisoryCredibility?: Record<string, string | null>;
+    psychologicalDistance?: Record<string, string | null>;
+    linguisticAbstractness?: Record<string, string | null>;
+    outcomeFraming?: Record<string, string | null>;
+  } | null;
   controls: Record<string, number | null>;
   openRationale: string | null;
 };

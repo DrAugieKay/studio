@@ -62,8 +62,10 @@ export default function StartPage() {
   const [sessionData, setSessionData] = useState<Partial<SessionData>>({
     consent: false,
     manipulationChecks: {},
+    mediators: {},
   });
   const [isLastAssessmentSection, setIsLastAssessmentSection] = useState(false);
+  const [isLastMediatorSection, setIsLastMediatorSection] = useState(false);
 
 
   useEffect(() => {
@@ -125,8 +127,11 @@ export default function StartPage() {
     if (stepNames[currentStep] === 'Initial Assessments' && !isLastAssessmentSection) {
       return false;
     }
+    if (stepNames[currentStep] === 'Mediators' && !isLastMediatorSection) {
+      return false;
+    }
     return true;
-  }, [currentStep, isLastAssessmentSection]);
+  }, [currentStep, isLastAssessmentSection, isLastMediatorSection]);
 
 
   const componentProps: any = {
@@ -135,6 +140,7 @@ export default function StartPage() {
     endSurvey,
     goToNextStep: handleNext,
     setIsLastAssessmentSection,
+    setIsLastMediatorSection,
   };
 
   return (
