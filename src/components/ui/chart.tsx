@@ -26,6 +26,7 @@ import {
   type Sector,
 } from 'recharts';
 
+import { cn } from '@/lib/utils';
 import {
   ChartLegend,
   ChartLegendContent,
