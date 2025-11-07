@@ -102,6 +102,7 @@ export default function StepObjectiveChoice({ sessionData, updateSessionData }: 
             </form>
             </Form>
         ) : (
+          <Form {...form}>
             <div className="space-y-6">
                  <h3 className="font-semibold">b. Please indicate your agreement with the following statement about the decision you just made (or would make) after reviewing the advisory.</h3>
                  {Object.entries(decisionQuestions).map(([key, label]) => (
@@ -124,6 +125,7 @@ export default function StepObjectiveChoice({ sessionData, updateSessionData }: 
                     </div>
                 ))}
             </div>
+          </Form>
         )}
       </div>
     </>
