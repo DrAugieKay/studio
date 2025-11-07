@@ -1,8 +1,10 @@
 export type SessionData = {
   consent: boolean;
-  preScreen: {
-    age: string | null;
-    education: string | null;
+  initialAssessments: {
+    financialLiteracy: Record<string, string | null>;
+    // Placeholder for future questions
+    numeracy: Record<string, string | null> | null;
+    cognitiveReflection: Record<string, string | null> | null;
   };
   dossierViewTime: number;
   advisoryViewTime: number;

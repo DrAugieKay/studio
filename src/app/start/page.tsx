@@ -10,7 +10,7 @@ import { ArrowLeft, ArrowRight } from 'lucide-react';
 import ProgressTracker from '@/components/session/ProgressTracker';
 
 import StepConsent from '@/components/session/StepConsent';
-import StepPreScreen from '@/components/session/StepPreScreen';
+import StepInitialAssessment from '@/components/session/StepInitialAssessment';
 import StepDossier from '@/components/session/StepDossier';
 import StepAdvisory from '@/components/session/StepAdvisory';
 import StepComprehension from '@/components/session/StepComprehension';
@@ -24,7 +24,7 @@ import StepEndSurvey from '@/components/session/StepEndSurvey';
 
 const stepComponents = [
   StepConsent,
-  StepPreScreen,
+  StepInitialAssessment,
   StepDossier,
   StepAdvisory,
   StepComprehension,
@@ -39,7 +39,7 @@ const stepComponents = [
 
 const stepNames = [
   'Consent',
-  'Pre-screen',
+  'Initial Assessments',
   'Dossier',
   'Advisory',
   'Comprehension',
