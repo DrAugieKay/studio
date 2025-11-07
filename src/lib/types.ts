@@ -1,4 +1,5 @@
 
+
 export type ExperimentalCondition = {
   advisorySource: 'ai' | 'human';
   linguisticFrame: 'abstract' | 'concrete';
@@ -7,6 +8,7 @@ export type ExperimentalCondition = {
 
 export type SessionData = {
   // Metadata
+  id: string; // Participant ID, same as Firebase Auth UID
   startTime: string;
   endTime: string | null;
   deviceInfo: {
@@ -48,6 +50,7 @@ export type SessionData = {
     digitalLiteracy?: Record<string, string | null>;
   } | null;
   openRationale: string | null;
+  status: 'Completed' | 'In Progress' | 'Abandoned';
 };
 
 export type ParticipantSession = {

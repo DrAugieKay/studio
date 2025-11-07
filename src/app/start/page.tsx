@@ -3,6 +3,8 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import type { SessionData, ExperimentalCondition } from '@/lib/types';
+import { useAuth, useFirestore, useUser } from '@/firebase';
+import { doc, setDoc } from 'firebase/firestore';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -21,6 +23,9 @@ import StepMediators from '@/components/session/StepMediators';
 import StepControls from '@/components/session/StepControls';
 import StepDebrief from '@/components/session/StepDebrief';
 import StepEndSurvey from '@/components/session/StepEndSurvey';
+import { initiateAnonymousSignIn } from '@/firebase/non-blocking-login';
+import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { Loader2 } from 'lucide-react';
 
 const stepComponents = [
   StepConsent,
@@ -52,30 +57,30 @@ const stepNames = [
   'End of Survey',
 ];
 
+const EXPERIMENT_ID = 'exp_001';
 const END_SURVEY_STEP = stepComponents.length - 1;
 
 export default function StartPage() {
   const [currentStep, setCurrentStep] = useState(0);
-  const [sessionData, setSessionData] = useState<Partial<SessionData>>({
-    consent: false,
-    consent_ageCheck: null,
-    consent_isEmployed: null,
-    consent_hasParticipated: null,
-    consent_consentGiven: null,
-    manipulationChecks: {},
-    mediators: {},
-    startTime: new Date().toISOString(),
-    endTime: null,
-  });
+  const [sessionData, setSessionData] = useState<Partial<SessionData> | null>(null);
   const [isLastAssessmentSection, setIsLastAssessmentSection] = useState(false);
   const [isLastMediatorSection, setIsLastMediatorSection] = useState(false);
   const [isLastControlSection, setIsLastControlSection] = useState(false);
 
+  const auth = useAuth();
+  const firestore = useFirestore();
+  const { user, isUserLoading } = useUser();
 
   useEffect(() => {
-    // This simulates receiving the assigned condition from the server on page load.
-    // In a real application, this would be an API call.
-    if (!sessionData.condition) {
+    // Start anonymous sign-in process when the component mounts
+    if (!user && !isUserLoading) {
+      initiateAnonymousSignIn(auth);
+    }
+  }, [user, isUserLoading, auth]);
+
+  useEffect(() => {
+    if (user && !sessionData) {
+      // User is authenticated, create the initial session data object
       const sources: ExperimentalCondition['advisorySource'][] = ['ai', 'human'];
       const frames: ExperimentalCondition['linguisticFrame'][] = ['abstract', 'concrete'];
       const scenarios: ExperimentalCondition['scenario'][] = ['xyz', 'techtrend'];
@@ -90,14 +95,58 @@ export default function StartPage() {
         userAgent: navigator.userAgent,
         screenWidth: window.screen.width,
         screenHeight: window.screen.height,
-      }
+      };
+
+      const initialData: Partial<SessionData> = {
+        id: user.uid,
+        startTime: new Date().toISOString(),
+        status: 'In Progress',
+        condition: assignedCondition,
+        deviceInfo,
+        consent: false,
+        consent_ageCheck: null,
+        consent_isEmployed: null,
+        consent_hasParticipated: null,
+        consent_consentGiven: null,
+        manipulationChecks: {},
+        mediators: {},
+        endTime: null,
+      };
 
       console.log('Assigned Condition:', assignedCondition);
       console.log('Device Info:', deviceInfo);
-      updateSessionData({ condition: assignedCondition, deviceInfo });
-    }
-  }, []); // Empty dependency array ensures this runs only once on mount.
+      console.log('Creating participant document for UID:', user.uid);
 
+      // Create the document in Firestore
+      const participantDocRef = doc(firestore, `experiment_meta/${EXPERIMENT_ID}/participants`, user.uid);
+      setDocumentNonBlocking(participantDocRef, initialData, { merge: true });
+
+      // Create a meta document if it doesn't exist
+      const experimentMetaRef = doc(firestore, 'experiment_meta', EXPERIMENT_ID);
+      setDocumentNonBlocking(experimentMetaRef, {
+        id: EXPERIMENT_ID,
+        seed: 'initial_seed_placeholder', // Replace with actual seed if needed
+        stimuliVersion: 'v1.0',
+        lexiconVersion: 'v1.0'
+      }, { merge: true });
+
+
+      setSessionData(initialData);
+    }
+  }, [user, sessionData, firestore]);
+
+
+  const updateSessionData = (data: Partial<SessionData>) => {
+    setSessionData((prev) => {
+        const newData = { ...prev, ...data };
+        if (user && firestore) {
+            const participantDocRef = doc(firestore, `experiment_meta/${EXPERIMENT_ID}/participants`, user.uid);
+            // Use non-blocking update to save to Firestore
+            setDocumentNonBlocking(participantDocRef, newData, { merge: true });
+        }
+        return newData;
+    });
+  };
 
   const handleNext = () => {
     if (currentStep < stepComponents.length - 1) {
@@ -114,20 +163,16 @@ export default function StartPage() {
   };
   
   const endSurvey = () => {
-    updateSessionData({ endTime: new Date().toISOString() });
+    updateSessionData({ endTime: new Date().toISOString(), status: 'Abandoned' });
     setCurrentStep(END_SURVEY_STEP);
-  };
-
-  const updateSessionData = (data: Partial<SessionData>) => {
-    setSessionData((prev) => ({ ...prev, ...data }));
   };
 
   const isNextDisabled = useMemo(() => {
     if (stepNames[currentStep] === 'Consent') {
-      return !sessionData.consent;
+      return !sessionData?.consent;
     }
     return false;
-  }, [currentStep, sessionData.consent]);
+  }, [currentStep, sessionData?.consent]);
   
   const CurrentStepComponent = stepComponents[currentStep];
   const isDebrief = stepNames[currentStep] === 'Debrief' || stepNames[currentStep] === 'End of Survey';
@@ -158,6 +203,15 @@ export default function StartPage() {
     setIsLastMediatorSection,
     setIsLastControlSection,
   };
+
+  if (isUserLoading || !sessionData) {
+    return (
+        <div className="flex flex-col items-center justify-center min-h-screen p-4">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <p className="mt-4 text-muted-foreground">Initializing session...</p>
+        </div>
+    )
+  }
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-4 sm:p-6 md:p-8">
