@@ -51,13 +51,13 @@ service cloud.firestore {
     /**
      * @description Rules for the /experiment_meta/{experimentMetaId} collection.
      * @path /experiment_meta/{experimentMetaId}
-     * @allow (create) Authenticated user can create an experiment_meta document.
-     * @deny (get, list, update, delete) No one can read, update or delete experiment meta documents.
-     * @principle Enforces that experiment_meta documents can only be created by an authenticated user.
+     * @allow (write) Authenticated user can create or update an experiment_meta document.
+     * @deny (get, list, delete) No one can read, list or delete experiment meta documents.
+     * @principle Enforces that experiment_meta documents can only be written by an authenticated user.
      */
     match /experiment_meta/{experimentMetaId} {
-      allow get, list, update, delete: if false;
-      allow create: if isSignedIn();
+      allow get, list, delete: if false;
+      allow write: if isSignedIn();
     }
 
     /**
