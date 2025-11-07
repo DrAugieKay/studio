@@ -79,7 +79,8 @@ export default function StepControls({ sessionData, updateSessionData, setIsLast
       ? { rationale: sessionData.openRationale || '' }
       : sessionData.controls?.[currentSection.key as keyof SessionData['controls']] || {}
   });
-
+  
+  const { watch } = form;
   const watchedValues = useWatch({ control: form.control });
 
   const allQuestionsAnswered = useMemo(() => {
