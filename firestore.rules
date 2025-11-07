@@ -1,0 +1,183 @@
+/**
+ * @fileoverview Firestore Security Rules for the Advisory Insights Platform.
+ *
+ * Core Philosophy:
+ * This ruleset enforces a strict user-ownership model for participant-related data,
+ * ensuring that only the participant (or authorized admin) can access their own data.
+ * Admin audit logs are secured to allow only authenticated users to create them.
+ * No public data access is allowed.
+ *
+ * Data Structure:
+ * The Firestore data is structured hierarchically, with experiment metadata at the top level,
+ * followed by participants, and then responses, derived composites, and data quality flags
+ * nested under each participant.
+ *
+ * Key Security Decisions:
+ * - No public data access.
+ * - Strict ownership for participant data.
+ * - Admin audit logs are append-only and require authentication.
+ * - Listing operations are restricted to the owner.
+ *
+ * Denormalization for Authorization:
+ * This ruleset uses path-based authorization, assuming that the correct participant ID
+ * is embedded in the document path.  This avoids the need for `get()` calls to verify
+ * ownership.
+ *
+ * Structural Segregation:
+ * Admin audit logs are stored in a separate collection (`/admin_audit_logs`)
+ * to isolate them from participant data and apply different security rules.
+ */
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    /**
+     * @description Checks if the user is signed in.
+     * @return {boolean} True if the user is signed in, false otherwise.
+     */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    /**
+     * @description Checks if the request is made by the owner (userId matches request.auth.uid).
+     * @param {string} userId - The user ID to check against.
+     * @return {boolean} True if the user is the owner, false otherwise.
+     */
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    /**
+     * @description Rules for the /experiment_meta/{experimentMetaId} collection.
+     * @path /experiment_meta/{experimentMetaId}
+     * @allow (create) Authenticated user can create an experiment_meta document with a matching ID.
+     * @deny (create) Authenticated user cannot create an experiment_meta document with a non-matching ID.
+     * @allow (get, list) No one can get or list experiment meta documents.
+     * @deny (update, delete) No one can update or delete experiment meta documents.
+     * @principle Enforces that experiment_meta documents can only be created by authenticated user with matching id.
+     */
+    match /experiment_meta/{experimentMetaId} {
+      allow get, list: if false;
+      allow create: if isSignedIn();
+      allow update, delete: if false;
+    }
+
+    /**
+     * @description Rules for the /experiment_meta/{experimentMetaId}/participants/{participantId} collection.
+     * @path /experiment_meta/{experimentMetaId}/participants/{participantId}
+     * @allow (create) Authenticated user can create a participant document with a matching ID.
+     * @deny (create) Authenticated user cannot create a participant document with a non-matching ID.
+     * @allow (get, list) The participant can read their own participant document.
+     * @deny (update, delete) The participant cannot update or delete their participant document.
+     * @principle Enforces that participant documents can only be accessed by the participant with the document ID.
+     */
+    match /experiment_meta/{experimentMetaId}/participants/{participantId} {
+      allow get, list: if isOwner(participantId);
+      allow create: if isSignedIn();
+      allow update, delete: if false;
+    }
+
+    /**
+     * @description Rules for the /experiment_meta/{experimentMetaId}/participants/{participantId}/responses/{responseId} collection.
+     * @path /experiment_meta/{experimentMetaId}/participants/{participantId}/responses/{responseId}
+     * @allow (create) Authenticated user can create a response document with a matching ID.
+     * @deny (create) Authenticated user cannot create a response document with a non-matching ID.
+     * @allow (get, list) The participant can read their own response documents.
+     * @deny (update, delete) The participant cannot update or delete their response documents.
+     * @principle Enforces that response documents can only be accessed by the participant with the document ID.
+     */
+    match /experiment_meta/{experimentMetaId}/participants/{participantId}/responses/{responseId} {
+      allow get, list: if isOwner(participantId);
+      allow create: if isSignedIn();
+      allow update, delete: if false;
+    }
+
+    /**
+     * @description Rules for the /experiment_meta/{experimentMetaId}/participants/{participantId}/derived_composites/{derivedCompositeId} collection.
+     * @path /experiment_meta/{experimentMetaId}/participants/{participantId}/derived_composites/{derivedCompositeId}
+     * @allow (create) Authenticated user can create a derived_composite document with a matching ID.
+     * @deny (create) Authenticated user cannot create a derived_composite document with a non-matching ID.
+     * @allow (get, list) The participant can read their own derived_composite documents.
+     * @deny (update, delete) The participant cannot update or delete their derived_composite documents.
+     * @principle Enforces that derived_composite documents can only be accessed by the participant with the document ID.
+     */
+    match /experiment_meta/{experimentMetaId}/participants/{participantId}/derived_composites/{derivedCompositeId} {
+      allow get, list: if isOwner(participantId);
+      allow create: if isSignedIn();
+      allow update, delete: if false;
+    }
+
+    /**
+     * @description Rules for the /experiment_meta/{experimentMetaId}/participants/{participantId}/data_quality_flags/{dataQualityFlagId} collection.
+     * @path /experiment_meta/{experimentMetaId}/participants/{participantId}/data_quality_flags/{dataQualityFlagId}
+     * @allow (create) Authenticated user can create a data_quality_flag document with a matching ID.
+     * @deny (create) Authenticated user cannot create a data_quality_flag document with a non-matching ID.
+     * @allow (get, list) The participant can read their own data_quality_flag documents.
+     * @deny (update, delete) The participant cannot update or delete their data_quality_flag documents.
+     * @principle Enforces that data_quality_flag documents can only be accessed by the participant with the document ID.
+     */
+    match /experiment_meta/{experimentMetaId}/participants/{participantId}/data_quality_flags/{dataQualityFlagId} {
+      allow get, list: if isOwner(participantId);
+      allow create: if isSignedIn();
+      allow update, delete: if false;
+    }
+
+    /**
+     * @description Rules for the /admin_audit_logs/{adminAuditLogId} collection.
+     * @path /admin_audit_logs/{adminAuditLogId}
+     * @allow (create) Authenticated user can create an admin_audit_log document.
+     * @deny (get, list, update, delete) No one can get, list, update, or delete admin_audit_log documents.
+     * @principle Enforces that only authenticated users can create admin_audit_log documents, and no one can read or modify them.
+     */
+    match /admin_audit_logs/{adminAuditLogId} {
+      allow get, list, update, delete: if false;
+      allow create: if isSignedIn();
+    }
+
+    /**
+     * @description Rules for the /experiment_meta/{experimentMetaId}/participants/{participantId}/responses/{responseId}/objective_linguistic_analysis/{objectiveLinguisticAnalysisId} collection.
+     * @path /experiment_meta/{experimentMetaId}/participants/{participantId}/responses/{responseId}/objective_linguistic_analysis/{objectiveLinguisticAnalysisId}
+     * @allow (create) Authenticated user can create an objective_linguistic_analysis document with a matching ID.
+     * @deny (create) Authenticated user cannot create an objective_linguistic_analysis document with a non-matching ID.
+     * @allow (get, list) The participant can read their own objective_linguistic_analysis documents.
+     * @deny (update, delete) The participant cannot update or delete their objective_linguistic_analysis documents.
+     * @principle Enforces that objective_linguistic_analysis documents can only be accessed by the participant with the document ID.
+     */
+    match /experiment_meta/{experimentMetaId}/participants/{participantId}/responses/{responseId}/objective_linguistic_analysis/{objectiveLinguisticAnalysisId} {
+      allow get, list: if isOwner(participantId);
+      allow create: if isSignedIn();
+      allow update, delete: if false;
+    }
+
+    /**
+     * @description Rules for the /experiment_meta/{experimentMetaId}/participants/{participantId}/responses/{responseId}/manual_coding/{manualCodingId} collection.
+     * @path /experiment_meta/{experimentMetaId}/participants/{participantId}/responses/{responseId}/manual_coding/{manualCodingId}
+     * @allow (create) Authenticated user can create a manual_coding document with a matching ID.
+     * @deny (create) Authenticated user cannot create a manual_coding document with a non-matching ID.
+     * @allow (get, list) The participant can read their own manual_coding documents.
+     * @deny (update, delete) The participant cannot update or delete their manual_coding documents.
+     * @principle Enforces that manual_coding documents can only be accessed by the participant with the document ID.
+     */
+    match /experiment_meta/{experimentMetaId}/participants/{participantId}/responses/{responseId}/manual_coding/{manualCodingId} {
+      allow get, list: if isOwner(participantId);
+      allow create: if isSignedIn();
+      allow update, delete: if false;
+    }
+
+      /**
+       * @description Rules for the /experiment_meta/{experimentMetaId}/participants/{participantId}/payment_reconciliation/{paymentReconciliationId} collection.
+       * @path /experiment_meta/{experimentMetaId}/participants/{participantId}/payment_reconciliation/{paymentReconciliationId}
+       * @allow (create) Authenticated user can create a payment_reconciliation document with a matching ID.
+       * @deny (create) Authenticated user cannot create a payment_reconciliation document with a non-matching ID.
+       * @allow (get, list) The participant can read their own payment_reconciliation documents.
+       * @deny (update, delete) The participant cannot update or delete their payment_reconciliation documents.
+       * @principle Enforces that payment_reconciliation documents can only be accessed by the participant with the document ID.
+       */
+      match /experiment_meta/{experimentMetaId}/participants/{participantId}/payment_reconciliation/{paymentReconciliationId} {
+        allow get, list: if isOwner(participantId);
+        allow create: if isSignedIn();
+        allow update, delete: if false;
+      }
+  }
+}

@@ -1,0 +1,536 @@
+{
+  "entities": {
+    "ExperimentMeta": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "ExperimentMeta",
+      "type": "object",
+      "description": "Metadata about the experiment, including the random seed and stimuli versions.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the experiment metadata."
+        },
+        "seed": {
+          "type": "string",
+          "description": "Random seed used for condition assignment."
+        },
+        "stimuliVersion": {
+          "type": "string",
+          "description": "Version of the stimuli used in the experiment."
+        },
+        "lexiconVersion": {
+          "type": "string",
+          "description": "Version of the lexicon used in the experiment."
+        }
+      },
+      "required": [
+        "id",
+        "seed",
+        "stimuliVersion",
+        "lexiconVersion"
+      ]
+    },
+    "Participant": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Participant",
+      "type": "object",
+      "description": "Data for a single participant in the experiment.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the participant."
+        },
+        "experimentMetaId": {
+          "type": "string",
+          "description": "Reference to ExperimentMeta. (Relationship: ExperimentMeta 1:N Participant)"
+        },
+        "conditionAssignment": {
+          "type": "string",
+          "description": "The condition assigned to the participant."
+        },
+        "consentTimestamp": {
+          "type": "string",
+          "description": "Timestamp of when the participant provided consent.",
+          "format": "date-time"
+        },
+        "consentFormVersion": {
+          "type": "string",
+          "description": "Version of the consent form used."
+        },
+        "userAgent": {
+          "type": "string",
+          "description": "The user agent of the user who took the survey."
+        }
+      },
+      "required": [
+        "id",
+        "experimentMetaId",
+        "conditionAssignment",
+        "consentTimestamp",
+        "consentFormVersion"
+      ]
+    },
+    "Response": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Response",
+      "type": "object",
+      "description": "A single response from a participant.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the response."
+        },
+        "participantId": {
+          "type": "string",
+          "description": "Reference to Participant. (Relationship: Participant 1:N Response)"
+        },
+        "questionId": {
+          "type": "string",
+          "description": "Identifier for the question this is a response to."
+        },
+        "value": {
+          "type": "string",
+          "description": "The participant's answer to the question.  This may be encrypted PII."
+        },
+        "timestamp": {
+          "type": "string",
+          "description": "Timestamp of when the response was recorded.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "participantId",
+        "questionId",
+        "value",
+        "timestamp"
+      ]
+    },
+    "DerivedComposite": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "DerivedComposite",
+      "type": "object",
+      "description": "A computed composite score derived from multiple responses.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the derived composite."
+        },
+        "participantId": {
+          "type": "string",
+          "description": "Reference to Participant. (Relationship: Participant 1:N DerivedComposite)"
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the derived composite (e.g., DQ_SUB_MEAN)."
+        },
+        "value": {
+          "type": "number",
+          "description": "The computed value of the derived composite."
+        },
+        "timestamp": {
+          "type": "string",
+          "description": "Timestamp of when the composite was computed.",
+          "format": "date-time"
+        },
+        "itemsUsed": {
+          "type": "array",
+          "description": "References to Response documents used in the composite calculation.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "completenessPercentage": {
+          "type": "number",
+          "description": "Percentage of required items that were available for computation."
+        }
+      },
+      "required": [
+        "id",
+        "participantId",
+        "name",
+        "value",
+        "timestamp",
+        "itemsUsed",
+        "completenessPercentage"
+      ]
+    },
+    "DataQualityFlag": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "DataQualityFlag",
+      "type": "object",
+      "description": "Flags indicating potential data quality issues.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the data quality flag."
+        },
+        "participantId": {
+          "type": "string",
+          "description": "Reference to Participant. (Relationship: Participant 1:N DataQualityFlag)"
+        },
+        "flagComprehension": {
+          "type": "boolean",
+          "description": "Flag indicating potential issues with comprehension."
+        },
+        "flagViewtime": {
+          "type": "boolean",
+          "description": "Flag indicating potential issues with view time."
+        },
+        "flagStraightline": {
+          "type": "boolean",
+          "description": "Flag indicating potential straightlining behavior."
+        }
+      },
+      "required": [
+        "id",
+        "participantId"
+      ]
+    },
+    "AdminAuditLog": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "AdminAuditLog",
+      "type": "object",
+      "description": "Audit log of admin actions.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the audit log entry."
+        },
+        "adminId": {
+          "type": "string",
+          "description": "Identifier of the admin performing the action."
+        },
+        "timestamp": {
+          "type": "string",
+          "description": "Timestamp of when the action was performed.",
+          "format": "date-time"
+        },
+        "action": {
+          "type": "string",
+          "description": "Description of the action performed."
+        },
+        "reason": {
+          "type": "string",
+          "description": "Reason for the action."
+        }
+      },
+      "required": [
+        "id",
+        "adminId",
+        "timestamp",
+        "action",
+        "reason"
+      ]
+    },
+    "ObjectiveLinguisticAnalysis": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "ObjectiveLinguisticAnalysis",
+      "type": "object",
+      "description": "Objective linguistic analysis of text responses.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the linguistic analysis."
+        },
+        "responseId": {
+          "type": "string",
+          "description": "Reference to Response. (Relationship: Response 1:1 ObjectiveLinguisticAnalysis)"
+        },
+        "laObjective": {
+          "type": "number",
+          "description": "The objective linguistic analysis score."
+        },
+        "lexicalCategoryRates": {
+          "type": "string",
+          "description": "Computed lexical category rates (serialized, e.g., JSON)."
+        }
+      },
+      "required": [
+        "id",
+        "responseId",
+        "laObjective",
+        "lexicalCategoryRates"
+      ]
+    },
+    "ManualCoding": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "ManualCoding",
+      "type": "object",
+      "description": "Manual coding of text responses.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the manual coding."
+        },
+        "responseId": {
+          "type": "string",
+          "description": "Reference to Response. (Relationship: Response 1:1 ManualCoding)"
+        },
+        "coderId": {
+          "type": "string",
+          "description": "Identifier of the coder."
+        },
+        "code": {
+          "type": "string",
+          "description": "The code assigned by the coder."
+        },
+        "agreementScore": {
+          "type": "number",
+          "description": "Kappa score with other coder"
+        }
+      },
+      "required": [
+        "id",
+        "responseId",
+        "coderId",
+        "code"
+      ]
+    },
+    "PaymentReconciliation": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "PaymentReconciliation",
+      "type": "object",
+      "description": "Payment reconciliation table",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the reconciliation"
+        },
+        "participantId": {
+          "type": "string",
+          "description": "Reference to Participant. (Relationship: Participant 1:1 PaymentReconciliation)"
+        },
+        "paymentAmount": {
+          "type": "number",
+          "description": "Amount paid to the participant"
+        },
+        "paymentDate": {
+          "type": "string",
+          "description": "Date of the payment"
+        }
+      },
+      "required": [
+        "id",
+        "participantId",
+        "paymentAmount",
+        "paymentDate"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/experiment_meta/{experimentMetaId}",
+        "definition": {
+          "entityName": "ExperimentMeta",
+          "schema": {
+            "$ref": "#/backend/entities/ExperimentMeta"
+          },
+          "description": "Stores metadata about each experiment. Includes the experiment's random seed, stimuli versions, and lexicon versions.",
+          "params": [
+            {
+              "name": "experimentMetaId",
+              "description": "Unique identifier for the experiment metadata."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/experiment_meta/{experimentMetaId}/participants/{participantId}",
+        "definition": {
+          "entityName": "Participant",
+          "schema": {
+            "$ref": "#/backend/entities/Participant"
+          },
+          "description": "Stores data for each participant in an experiment. Includes their condition assignment, consent timestamp, and consent form version.",
+          "params": [
+            {
+              "name": "experimentMetaId",
+              "description": "Unique identifier for the experiment metadata."
+            },
+            {
+              "name": "participantId",
+              "description": "Unique identifier for the participant."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/experiment_meta/{experimentMetaId}/participants/{participantId}/responses/{responseId}",
+        "definition": {
+          "entityName": "Response",
+          "schema": {
+            "$ref": "#/backend/entities/Response"
+          },
+          "description": "Stores individual responses from participants. Includes the question ID, the participant's answer, and a timestamp.",
+          "params": [
+            {
+              "name": "experimentMetaId",
+              "description": "Unique identifier for the experiment metadata."
+            },
+            {
+              "name": "participantId",
+              "description": "Unique identifier for the participant."
+            },
+            {
+              "name": "responseId",
+              "description": "Unique identifier for the response."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/experiment_meta/{experimentMetaId}/participants/{participantId}/derived_composites/{derivedCompositeId}",
+        "definition": {
+          "entityName": "DerivedComposite",
+          "schema": {
+            "$ref": "#/backend/entities/DerivedComposite"
+          },
+          "description": "Stores computed composite scores derived from multiple responses. Includes the composite name, value, timestamp, and references to the responses used in the calculation.",
+          "params": [
+            {
+              "name": "experimentMetaId",
+              "description": "Unique identifier for the experiment metadata."
+            },
+            {
+              "name": "participantId",
+              "description": "Unique identifier for the participant."
+            },
+            {
+              "name": "derivedCompositeId",
+              "description": "Unique identifier for the derived composite."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/experiment_meta/{experimentMetaId}/participants/{participantId}/data_quality_flags/{dataQualityFlagId}",
+        "definition": {
+          "entityName": "DataQualityFlag",
+          "schema": {
+            "$ref": "#/backend/entities/DataQualityFlag"
+          },
+          "description": "Stores flags indicating potential data quality issues for a participant. Includes flags for comprehension, view time, and straightlining behavior.",
+          "params": [
+            {
+              "name": "experimentMetaId",
+              "description": "Unique identifier for the experiment metadata."
+            },
+            {
+              "name": "participantId",
+              "description": "Unique identifier for the participant."
+            },
+            {
+              "name": "dataQualityFlagId",
+              "description": "Unique identifier for the data quality flag."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/admin_audit_logs/{adminAuditLogId}",
+        "definition": {
+          "entityName": "AdminAuditLog",
+          "schema": {
+            "$ref": "#/backend/entities/AdminAuditLog"
+          },
+          "description": "Stores audit logs of admin actions. Includes the admin ID, timestamp, action description, and reason.",
+          "params": [
+            {
+              "name": "adminAuditLogId",
+              "description": "Unique identifier for the audit log entry."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/experiment_meta/{experimentMetaId}/participants/{participantId}/responses/{responseId}/objective_linguistic_analysis/{objectiveLinguisticAnalysisId}",
+        "definition": {
+          "entityName": "ObjectiveLinguisticAnalysis",
+          "schema": {
+            "$ref": "#/backend/entities/ObjectiveLinguisticAnalysis"
+          },
+          "description": "Stores objective linguistic analysis of text responses. Includes the objective score and lexical category rates.",
+          "params": [
+            {
+              "name": "experimentMetaId",
+              "description": "Unique identifier for the experiment metadata."
+            },
+            {
+              "name": "participantId",
+              "description": "Unique identifier for the participant."
+            },
+            {
+              "name": "responseId",
+              "description": "Unique identifier for the response."
+            },
+            {
+              "name": "objectiveLinguisticAnalysisId",
+              "description": "Unique identifier for the linguistic analysis."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/experiment_meta/{experimentMetaId}/participants/{participantId}/responses/{responseId}/manual_coding/{manualCodingId}",
+        "definition": {
+          "entityName": "ManualCoding",
+          "schema": {
+            "$ref": "#/backend/entities/ManualCoding"
+          },
+          "description": "Stores manual coding of text responses. Includes the coder ID, code assigned, and agreement score.",
+          "params": [
+            {
+              "name": "experimentMetaId",
+              "description": "Unique identifier for the experiment metadata."
+            },
+            {
+              "name": "participantId",
+              "description": "Unique identifier for the participant."
+            },
+            {
+              "name": "responseId",
+              "description": "Unique identifier for the response."
+            },
+            {
+              "name": "manualCodingId",
+              "description": "Unique identifier for the manual coding."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/experiment_meta/{experimentMetaId}/participants/{participantId}/payment_reconciliation/{paymentReconciliationId}",
+        "definition": {
+          "entityName": "PaymentReconciliation",
+          "schema": {
+            "$ref": "#/backend/entities/PaymentReconciliation"
+          },
+          "description": "Stores payment reconciliation information for each participant. Includes the payment amount and payment date.",
+          "params": [
+            {
+              "name": "experimentMetaId",
+              "description": "Unique identifier for the experiment metadata."
+            },
+            {
+              "name": "participantId",
+              "description": "Unique identifier for the participant."
+            },
+            {
+              "name": "paymentReconciliationId",
+              "description": "Unique identifier for the reconciliation."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "This Firestore structure is designed to support the Advisory Insights Platform's data model and security requirements, prioritizing Authorization Independence, Clarity, and QAPs. The design uses path-based ownership and denormalization to minimize `get()` calls in security rules and ensure data integrity.\n\n**Authorization Independence:**  Authorization independence is achieved through denormalization.  There is no use of `get()` in the security model.\n\n**Structural Segregation:** The structure segregates data with different access requirements into separate collections, each with a homogeneous security posture.  All collections are clearly named and follow consistent naming conventions.\n\n**Access Modeling:** Path-based ownership is employed for user-related data. For collaborative data or cases where group access is needed, a Membership Map (`members` field) would typically be used, but this application does not require collaborative data.\n\n**Data Clarity:** Data clarity is enhanced through explicit state modeling (e.g., using a `status` field where applicable), predictable schemas, and radical consistency in naming conventions.\n\n**QAPs (Rules are not Filters):** The structure enables secure `list` operations by avoiding hierarchical authorization dependencies and using appropriate data segregation. Private data resides in user-owned paths (e.g., `/users/{userId}/responses/{responseId}`), ensuring that listing responses is secure and efficient.\n\n**Admin Access Control:** Admin audit logs are stored in a dedicated collection (`/admin_audit_logs`) to provide an auditable record of admin actions.  Admin roles (if needed) can be stored in a `/roles_admin/{uid}` collection, leveraging existence checks for authorization rules."
+  }
+}
