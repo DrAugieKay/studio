@@ -131,18 +131,21 @@ const sections = [
     title: 'a. Financial Literacy (Please select the best answer).',
     questions: financialLiteracyQuestions,
     schema: financialLiteracySchema,
+    defaultValues: { q1: '', q2: '', q3: '', q4: '' },
   },
   {
     key: 'roleAndExperience',
     title: 'b. Your Role and Experience (Please select the best answer):',
     questions: roleAndExperienceQuestions,
     schema: roleAndExperienceSchema,
+    defaultValues: { q1: '', q2: '', q2_other: '', q3: '', q4: '', q5: '' },
   },
   {
     key: 'organizationalProfile',
     title: 'c. Organizational Profile',
     questions: organizationalProfileQuestions,
     schema: organizationalProfileSchema,
+    defaultValues: { q1: '', q1_other: '', q2: '', q3: '', q4: '', q5: '', q6: '', q7: '' },
   }
 ];
 
@@ -153,7 +156,10 @@ export default function StepInitialAssessment({ sessionData, updateSessionData, 
 
   const form = useForm({
     resolver: zodResolver(currentSection.schema),
-    defaultValues: sessionData.initialAssessments?.[currentSection.key as keyof SessionData['initialAssessments']] || {},
+    defaultValues: {
+      ...currentSection.defaultValues,
+      ...(sessionData.initialAssessments?.[currentSection.key as keyof SessionData['initialAssessments']] || {}),
+    }
   });
 
   const watchedValues = useWatch({ control: form.control });
@@ -161,23 +167,23 @@ export default function StepInitialAssessment({ sessionData, updateSessionData, 
   const allQuestionsAnswered = useMemo(() => {
     const questionKeys = Object.keys(currentSection.questions);
     if (questionKeys.length === 0) return true;
-    
-    // For text input questions
-    if (currentSection.key === 'organizationalProfile' && 'q7' in watchedValues) {
-        if (typeof watchedValues.q7 === 'undefined') watchedValues.q7 = ''; // It's optional
+
+    // For text input questions (optional ones)
+    if (currentSection.key === 'organizationalProfile') {
+        if (typeof (watchedValues as any).q7 === 'undefined') (watchedValues as any).q7 = ''; // It's optional
     }
 
-    const radioQuestions = questionKeys.filter(key => currentSection.questions[key as keyof typeof currentSection.questions].options.length > 0);
-    const allRadioAnswered = radioQuestions.every(key => !!watchedValues[key]);
+    const radioQuestions = questionKeys.filter(key => (currentSection.questions as any)[key].options.length > 0);
+    const allRadioAnswered = radioQuestions.every(key => !!(watchedValues as any)[key]);
     
     if (!allRadioAnswered) return false;
 
     // Check conditional text inputs
-    if (currentSection.key === 'roleAndExperience' && watchedValues.q2 === 'Other') {
-        return !!watchedValues.q2_other;
+    if (currentSection.key === 'roleAndExperience' && (watchedValues as any).q2 === 'Other') {
+        return !!(watchedValues as any).q2_other;
     }
-    if (currentSection.key === 'organizationalProfile' && watchedValues.q1 === 'Other') {
-        return !!watchedValues.q1_other;
+    if (currentSection.key === 'organizationalProfile' && (watchedValues as any).q1 === 'Other') {
+        return !!(watchedValues as any).q1_other;
     }
 
     return true;
@@ -204,9 +210,14 @@ export default function StepInitialAssessment({ sessionData, updateSessionData, 
     });
 
     if (!isLastSection) {
-      setCurrentSectionIndex(currentSectionIndex + 1);
-      const nextSectionKey = sections[currentSectionIndex + 1].key as keyof SessionData['initialAssessments'];
-      form.reset(sessionData.initialAssessments?.[nextSectionKey] || {});
+        const nextSectionIndex = currentSectionIndex + 1;
+        const nextSection = sections[nextSectionIndex];
+        const nextSectionKey = nextSection.key as keyof SessionData['initialAssessments'];
+        setCurrentSectionIndex(nextSectionIndex);
+        form.reset({
+            ...nextSection.defaultValues,
+            ...(sessionData.initialAssessments?.[nextSectionKey] || {}),
+        });
     }
   };
 
@@ -233,7 +244,11 @@ export default function StepInitialAssessment({ sessionData, updateSessionData, 
                       <FormLabel>{q.question}</FormLabel>
                       <FormControl>
                         {q.options.length > 0 ? (
-                            <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="space-y-2">
+                            <RadioGroup 
+                                onValueChange={field.onChange} 
+                                value={field.value || ""}
+                                className="space-y-2"
+                            >
                             {q.options.map((option: string) => (
                                 <FormItem key={option} className="flex items-center space-x-3">
                                 <FormControl><RadioGroupItem value={option} /></FormControl>
@@ -242,30 +257,30 @@ export default function StepInitialAssessment({ sessionData, updateSessionData, 
                             ))}
                             </RadioGroup>
                         ) : (
-                            <Input {...field} placeholder="Your answer" />
+                            <Input {...field} placeholder="Your answer" value={field.value || ""} />
                         )}
                       </FormControl>
-                      {currentSection.key === 'roleAndExperience' && key === 'q2' && watchedValues.q2 === 'Other' && (
+                      {currentSection.key === 'roleAndExperience' && key === 'q2' && (watchedValues as any).q2 === 'Other' && (
                         <FormField
                             control={form.control}
                             name="q2_other"
                             render={({ field }) => (
                                 <FormItem className="pt-2">
                                     <FormControl>
-                                        <Input {...field} placeholder="Please specify" />
+                                        <Input {...field} placeholder="Please specify" value={field.value || ""} />
                                     </FormControl>
                                 </FormItem>
                             )}
                         />
                       )}
-                      {currentSection.key === 'organizationalProfile' && key === 'q1' && watchedValues.q1 === 'Other' && (
+                      {currentSection.key === 'organizationalProfile' && key === 'q1' && (watchedValues as any).q1 === 'Other' && (
                         <FormField
                             control={form.control}
                             name="q1_other"
                             render={({ field }) => (
                                 <FormItem className="pt-2">
                                     <FormControl>
-                                        <Input {...field} placeholder="Please specify" />
+                                        <Input {...field} placeholder="Please specify" value={field.value || ""} />
                                     </FormControl>
                                 </FormItem>
                             )}
@@ -294,3 +309,5 @@ export default function StepInitialAssessment({ sessionData, updateSessionData, 
     </>
   );
 }
+
+    
