@@ -11,6 +11,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import type { SessionData } from '@/lib/types';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
+import { ClipboardList } from 'lucide-react';
 
 type StepProps = {
   sessionData: Partial<SessionData>;
@@ -224,7 +225,10 @@ export default function StepInitialAssessment({ sessionData, updateSessionData, 
   return (
     <>
       <CardHeader>
-        <CardTitle className="font-headline text-2xl">Section A: Initial Assessments</CardTitle>
+        <div className="flex items-center gap-3">
+          <ClipboardList className="h-6 w-6 text-primary" />
+          <CardTitle className="font-headline text-2xl">Section A: Initial Assessments</CardTitle>
+        </div>
         <CardDescription>
           Please answer the following short questions about basic financial and numerical concepts. Choose the single best answer for each item.
         </CardDescription>
