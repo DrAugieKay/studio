@@ -22,7 +22,7 @@ export default function Home() {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button asChild size="lg" className="bg-accent hover:bg-accent/90 text-accent-foreground">
-              <Link href="/start">
+              <Link href="/profile">
                 Start New Session
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Link>
