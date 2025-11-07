@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
-import type { SessionData } from '@/lib/types';
+import type { SessionData, ExperimentalCondition } from '@/lib/types';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -63,6 +63,26 @@ export default function StartPage() {
     consent: false,
   });
   const [isLastAssessmentSection, setIsLastAssessmentSection] = useState(false);
+
+
+  useEffect(() => {
+    // This simulates receiving the assigned condition from the server on page load.
+    // In a real application, this would be an API call.
+    if (!sessionData.condition) {
+      const sources: ExperimentalCondition['advisorySource'][] = ['ai', 'human'];
+      const frames: ExperimentalCondition['linguisticFrame'][] = ['abstract', 'concrete'];
+      const scenarios: ExperimentalCondition['scenario'][] = ['xyz', 'techtrend'];
+
+      const assignedCondition: ExperimentalCondition = {
+        advisorySource: sources[Math.floor(Math.random() * sources.length)],
+        linguisticFrame: frames[Math.floor(Math.random() * frames.length)],
+        scenario: scenarios[Math.floor(Math.random() * scenarios.length)],
+      };
+
+      console.log('Assigned Condition:', assignedCondition);
+      updateSessionData({ condition: assignedCondition });
+    }
+  }, []); // Empty dependency array ensures this runs only once on mount.
 
 
   const handleNext = () => {
@@ -128,7 +148,11 @@ export default function StartPage() {
         )}
         <Card className="mt-6 shadow-xl overflow-hidden">
           <CardContent className="p-0">
-            <CurrentStepComponent {...componentProps} />
+            {sessionData.condition ? (
+              <CurrentStepComponent {...componentProps} />
+            ) : (
+               <div className="p-12 text-center">Loading session...</div>
+            )}
           </CardContent>
         </Card>
         

@@ -1,5 +1,13 @@
+
+export type ExperimentalCondition = {
+  advisorySource: 'ai' | 'human';
+  linguisticFrame: 'abstract' | 'concrete';
+  scenario: 'xyz' | 'techtrend';
+};
+
 export type SessionData = {
   consent: boolean;
+  condition?: ExperimentalCondition;
   initialAssessments: {
     financialLiteracy: Record<string, string | null> | null;
     roleAndExperience: Record<string, string | null> | null;
