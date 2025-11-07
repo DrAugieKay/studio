@@ -19,19 +19,19 @@ type StepProps = {
 const questions = [
   {
     id: 'ageCheck',
-    label: 'Are you 18 years or older?',
+    label: 'a. Are you 18 years or older?',
   },
   {
     id: 'isEmployed',
-    label: 'Are you currently employed and involved in organizational financial decision-making or advisory support?',
+    label: 'b. Are you currently employed and involved in organizational financial decision-making or advisory support?',
   },
   {
     id: 'hasParticipated',
-    label: 'Have you participated in corporate financial decisions in the last 3 years?',
+    label: 'c. Have you participated in corporate financial decisions in the last 3 years?',
   },
   {
     id: 'consentGiven',
-    label: 'I consent to participate in this study.',
+    label: 'd. I consent to participate in this study.',
   },
 ];
 
@@ -54,13 +54,8 @@ export default function StepConsent({ updateSessionData, endSurvey, goToNextStep
     
     if (questionId === 'consentGiven' && value === 'Yes') {
        setTimeout(() => {
-        // Find the "Next" button and click it
-        const nextButton = document.querySelector('button:not([disabled]):has(svg.lucide-arrow-right)') as HTMLButtonElement | null;
-        if (nextButton) {
-            nextButton.click();
-        } else {
-            goToNextStep();
-        }
+        // This relies on the main 'start' page's button logic.
+        goToNextStep();
        }, 300);
     }
   };
@@ -94,18 +89,18 @@ export default function StepConsent({ updateSessionData, endSurvey, goToNextStep
         <div className="space-y-6">
           {questions.map((q) => (
             showQuestion(q.id as keyof typeof answers) && (
-              <div key={q.id}>
+              <div key={q.id} className="p-4 border rounded-lg bg-secondary/30">
                 <Label className="font-semibold text-base">{q.label}</Label>
                 <RadioGroup
                   value={answers[q.id as keyof typeof answers]}
                   onValueChange={(value) => handleValueChange(q.id as keyof typeof answers, value as 'Yes' | 'No')}
                   className="mt-3 grid grid-cols-2 gap-4"
                 >
-                  <Label htmlFor={`${q.id}-yes`} className="flex items-center space-x-3 p-4 border rounded-md cursor-pointer has-[:checked]:bg-secondary has-[:checked]:border-accent transition-colors">
+                  <Label htmlFor={`${q.id}-yes`} className="flex items-center space-x-3 p-4 border rounded-md cursor-pointer bg-background has-[:checked]:bg-secondary has-[:checked]:border-accent transition-colors">
                     <RadioGroupItem value="Yes" id={`${q.id}-yes`} />
                     <span className="font-normal text-base">Yes</span>
                   </Label>
-                  <Label htmlFor={`${q.id}-no`} className="flex items-center space-x-3 p-4 border rounded-md cursor-pointer has-[:checked]:bg-secondary has-[:checked]:border-accent transition-colors">
+                  <Label htmlFor={`${q.id}-no`} className="flex items-center space-x-3 p-4 border rounded-md cursor-pointer bg-background has-[:checked]:bg-secondary has-[:checked]:border-accent transition-colors">
                     <RadioGroupItem value="No" id={`${q.id}-no`} />
                     <span className="font-normal text-base">No</span>
                   </Label>
@@ -115,7 +110,7 @@ export default function StepConsent({ updateSessionData, endSurvey, goToNextStep
           ))}
         </div>
 
-        {(answers.ageCheck === 'No' || answers.isEmployed === 'No' || answers.consentGiven === 'No') && (
+        {(answers.ageCheck === 'No' || answers.isEmployed === 'No' || answers.consentGiven === 'No') && answers.consentGiven !== '' && (
             <Alert variant="destructive">
                 <TriangleAlert className="h-4 w-4" />
                 <AlertTitle>Survey Ended</AlertTitle>

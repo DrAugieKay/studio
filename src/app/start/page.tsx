@@ -92,12 +92,6 @@ export default function StartPage() {
   const CurrentStepComponent = stepComponents[currentStep];
   const isDebrief = stepNames[currentStep] === 'Debrief' || stepNames[currentStep] === 'End of Survey';
   
-  // Logic to hide the 'Next' button specifically on the Consent step
-  const showNext = useMemo(() => {
-    return stepNames[currentStep] !== 'Consent';
-  }, [currentStep]);
-
-
   const componentProps: any = {
     sessionData,
     updateSessionData,
@@ -131,7 +125,7 @@ export default function StartPage() {
               <ArrowLeft className="mr-2 h-4 w-4" />
               Previous
             </Button>
-            {showNext && <Button
+            {stepNames[currentStep] !== 'Consent' && <Button
               onClick={handleNext}
               disabled={isNextDisabled}
               className="bg-accent hover:bg-accent/90 text-accent-foreground"
