@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import type { SessionData } from '@/lib/types';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { TriangleAlert } from 'lucide-react';
+import { TriangleAlert, FileText } from 'lucide-react';
 
 type StepProps = {
   sessionData: Partial<SessionData>;
@@ -78,7 +78,10 @@ export default function StepConsent({ updateSessionData, endSurvey, goToNextStep
   return (
     <>
       <CardHeader>
-        <CardTitle className="font-headline text-2xl">Informed Consent</CardTitle>
+        <div className="flex items-center gap-3">
+          <FileText className="h-6 w-6 text-primary" />
+          <CardTitle className="font-headline text-2xl">Informed Consent</CardTitle>
+        </div>
         <CardDescription>Please read the following information carefully.</CardDescription>
       </CardHeader>
       <div className="p-6 pt-0 space-y-8">
