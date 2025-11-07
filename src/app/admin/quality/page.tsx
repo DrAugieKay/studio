@@ -1,54 +1,17 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { AlertCircle, Clock, BarChartHorizontal } from 'lucide-react';
-import type { ParticipantSession } from '@/lib/types';
+import { mockDetailedSessions } from '@/lib/data';
+import { getQualityFlags } from '@/lib/quality-flags';
+import type { SessionData } from '@/lib/types';
 
-// Mock data representing flagged sessions
-const initialMockFlaggedSessions: (Omit<ParticipantSession, 'startTime' | 'endTime'> & { flags: string[] })[] = [
-  {
-    id: 'SESS_G8H9I0',
-    status: 'Abandoned',
-    condition: { advisorySource: 'ai', linguisticFrame: 'concrete', scenario: 'techtrend' },
-    flags: ['flag_viewtime'],
-  },
-  {
-    id: 'SESS_A1B2C3',
-    status: 'Completed',
-    condition: { advisorySource: 'human', linguisticFrame: 'abstract', scenario: 'xyz' },
-    flags: ['flag_comprehension', 'flag_straightline'],
-  },
-  {
-    id: 'SESS_X4Y5Z6',
-    status: 'Completed',
-    condition: { advisorySource: 'ai', linguisticFrame: 'abstract', scenario: 'xyz' },
-    flags: ['flag_straightline'],
-  },
-];
 
-type FlaggedSession = ParticipantSession & { flags: string[] };
-
-const getClientSideFlaggedSessions = (): FlaggedSession[] => [
-    {
-        ...initialMockFlaggedSessions[0],
-        startTime: new Date('2024-07-28T09:45:00Z'),
-        endTime: new Date('2024-07-28T09:51:23Z'),
-    },
-    {
-        ...initialMockFlaggedSessions[1],
-        startTime: new Date('2024-07-29T11:00:00Z'),
-        endTime: new Date('2024-07-29T11:22:15Z'),
-    },
-    {
-        ...initialMockFlaggedSessions[2],
-        startTime: new Date('2024-07-29T14:10:00Z'),
-        endTime: new Date('2024-07-29T14:30:05Z'),
-    },
-];
+type FlaggedSession = SessionData & { id: string; status: 'Completed' | 'In Progress' | 'Abandoned'; flags: string[] };
 
 const flagDetails: Record<string, { label: string; Icon: React.ElementType, className: string }> = {
     'flag_comprehension': { label: 'Comprehension Failure', Icon: AlertCircle, className: 'bg-yellow-500/20 text-yellow-700 border-yellow-500/30' },
@@ -60,16 +23,27 @@ export default function DataQualityPage() {
     const [flaggedSessions, setFlaggedSessions] = useState<FlaggedSession[]>([]);
 
     useEffect(() => {
-        // Set sessions on the client side to avoid hydration mismatch
-        setFlaggedSessions(getClientSideFlaggedSessions());
+        // Process the mock data to generate flags dynamically.
+        const sessionsWithFlags = mockDetailedSessions.map(session => ({
+            ...session,
+            flags: getQualityFlags(session),
+        }));
+
+        // Filter to only include sessions that have at least one flag.
+        const filteredSessions = sessionsWithFlags.filter(session => session.flags.length > 0);
+
+        setFlaggedSessions(filteredSessions);
     }, []);
 
-    const flagCounts = flaggedSessions.reduce((acc, session) => {
-        session.flags.forEach(flag => {
-            acc[flag] = (acc[flag] || 0) + 1;
-        });
-        return acc;
-    }, {} as Record<string, number>);
+    const flagCounts = useMemo(() => {
+        return flaggedSessions.reduce((acc, session) => {
+            session.flags.forEach(flag => {
+                acc[flag] = (acc[flag] || 0) + 1;
+            });
+            return acc;
+        }, {} as Record<string, number>);
+    }, [flaggedSessions]);
+    
 
     return (
         <div className="w-full">
@@ -116,7 +90,7 @@ export default function DataQualityPage() {
                                 {flaggedSessions.map((session) => (
                                     <TableRow key={session.id}>
                                         <TableCell className="font-medium">{session.id}</TableCell>
-                                        <TableCell>{session.startTime.toLocaleString()}</TableCell>
+                                        <TableCell>{new Date(session.startTime).toLocaleString()}</TableCell>
                                         <TableCell>
                                             <Badge
                                                 variant={
@@ -137,6 +111,7 @@ export default function DataQualityPage() {
                                             <div className="flex flex-wrap gap-2">
                                                 {session.flags.map(flag => {
                                                     const detail = flagDetails[flag];
+                                                    if (!detail) return null;
                                                     return (
                                                         <Badge key={flag} variant="outline" className={detail.className}>
                                                             <detail.Icon className="h-3 w-3 mr-1.5" />
