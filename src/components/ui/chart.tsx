@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -24,7 +25,6 @@ import {
   Tooltip as RechartsTooltip,
   type Sector,
 } from 'recharts';
-import { Balancer } from 'react-wrap-balancer';
 
 import {
   ChartLegend,
@@ -56,6 +56,10 @@ export {
   Scatter,
   ScatterChart,
   Treemap,
+  ChartLegend,
+  ChartLegendContent,
+  ChartTooltip,
+  ChartTooltipContent,
 };
 
 // Primitive Exports
