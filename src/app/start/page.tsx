@@ -19,7 +19,6 @@ import StepManipulationChecks from '@/components/session/StepManipulationChecks'
 import StepObjectiveChoice from '@/components/session/StepObjectiveChoice';
 import StepMediators from '@/components/session/StepMediators';
 import StepControls from '@/components/session/StepControls';
-import StepOpenRationale from '@/components/session/StepOpenRationale';
 import StepDebrief from '@/components/session/StepDebrief';
 import StepEndSurvey from '@/components/session/StepEndSurvey';
 
@@ -34,7 +33,6 @@ const stepComponents = [
   StepObjectiveChoice,
   StepMediators,
   StepControls,
-  StepOpenRationale,
   StepDebrief,
   StepEndSurvey,
 ];
@@ -50,7 +48,6 @@ const stepNames = [
   'Decision Task',
   'Mediators',
   'Controls',
-  'Rationale',
   'Debrief',
   'End of Survey',
 ];
@@ -66,6 +63,7 @@ export default function StartPage() {
   });
   const [isLastAssessmentSection, setIsLastAssessmentSection] = useState(false);
   const [isLastMediatorSection, setIsLastMediatorSection] = useState(false);
+  const [isLastControlSection, setIsLastControlSection] = useState(false);
 
 
   useEffect(() => {
@@ -130,8 +128,11 @@ export default function StartPage() {
     if (stepNames[currentStep] === 'Mediators' && !isLastMediatorSection) {
       return false;
     }
+    if (stepNames[currentStep] === 'Controls' && !isLastControlSection) {
+        return false;
+    }
     return true;
-  }, [currentStep, isLastAssessmentSection, isLastMediatorSection]);
+  }, [currentStep, isLastAssessmentSection, isLastMediatorSection, isLastControlSection]);
 
 
   const componentProps: any = {
@@ -141,6 +142,7 @@ export default function StartPage() {
     goToNextStep: handleNext,
     setIsLastAssessmentSection,
     setIsLastMediatorSection,
+    setIsLastControlSection,
   };
 
   return (

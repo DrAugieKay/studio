@@ -27,6 +27,9 @@ export type SessionData = {
     linguisticAbstractness?: Record<string, string | null>;
     outcomeFraming?: Record<string, string | null>;
   } | null;
-  controls: Record<string, number | null>;
+  controls: {
+    riskTolerance?: Record<string, string | null>;
+    digitalLiteracy?: Record<string, string | null>;
+  } | null;
   openRationale: string | null;
 };
