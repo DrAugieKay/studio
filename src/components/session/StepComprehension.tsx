@@ -108,7 +108,7 @@ export default function StepComprehension({ sessionData, updateSessionData }: St
                 <FormItem className="space-y-3 p-4 border rounded-lg bg-secondary/30">
                   <FormLabel className="font-semibold text-base">a. According to the scenario, what is the name of the Organization whose financial advisory concerns you just reviewed?</FormLabel>
                   <FormControl>
-                    <RadioGroup onValueChange={field.onChange} value={field.value} className="space-y-2">
+                    <RadioGroup onValueChange={field.onChange} value={field.value} className="space-y-1">
                       {q1Options.map(option => (
                          <Label key={option} htmlFor={`q1-${option}`} className="flex items-center space-x-3 p-2 cursor-pointer has-[:checked]:text-accent transition-colors">
                             <FormControl><RadioGroupItem value={option} id={`q1-${option}`} /></FormControl>
@@ -127,7 +127,7 @@ export default function StepComprehension({ sessionData, updateSessionData }: St
                 <FormItem className="space-y-3 p-4 border rounded-lg bg-secondary/30">
                   <FormLabel className="font-semibold text-base">b. What was the approximate time horizon mentioned for maintaining liquidity in the advisory?</FormLabel>
                   <FormControl>
-                    <RadioGroup onValueChange={field.onChange} value={field.value} className="space-y-2">
+                    <RadioGroup onValueChange={field.onChange} value={field.value} className="space-y-1">
                        {q2Options.map(option => (
                          <Label key={option} htmlFor={`q2-${option}`} className="flex items-center space-x-3 p-2 cursor-pointer has-[:checked]:text-accent transition-colors">
                             <FormControl><RadioGroupItem value={option} id={`q2-${option}`} /></FormControl>

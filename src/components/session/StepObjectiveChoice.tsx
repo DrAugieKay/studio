@@ -8,7 +8,6 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import type { SessionData } from '@/lib/types';
 import { useEffect, useState } from 'react';
 import { Label } from '@/components/ui/label';
-import { Slider } from '@/components/ui/slider';
 
 type StepProps = {
   sessionData: Partial<SessionData>;
@@ -43,28 +42,27 @@ export default function StepObjectiveChoice({ sessionData, updateSessionData }: 
   });
 
   const [subjectiveValues, setSubjectiveValues] = useState({
-    confidence: sessionData.subjectiveDQ?.confidence ?? 4,
-    informed: sessionData.subjectiveDQ?.informed ?? 4,
-    clearBasis: sessionData.subjectiveDQ?.clearBasis ?? 4,
-    satisfied: sessionData.subjectiveDQ?.satisfied ?? 4,
+    confidence: sessionData.subjectiveDQ?.confidence ?? 3, // Default to 'Neither agree nor disagree'
+    informed: sessionData.subjectiveDQ?.informed ?? 3,
+    clearBasis: sessionData.subjectiveDQ?.clearBasis ?? 3,
+    satisfied: sessionData.subjectiveDQ?.satisfied ?? 3,
   });
 
-  const { watch, getValues } = form;
+  const { watch } = form;
 
   useEffect(() => {
     const subscription = watch((value) => {
       const currentChoice = value.choice;
       if (currentChoice && !choiceMade) {
         updateSessionData({ objectiveChoice: currentChoice });
-        // Use a timeout to allow the state update to propagate before showing the next part
         setTimeout(() => setChoiceMade(true), 100);
       }
     });
     return () => subscription.unsubscribe();
   }, [watch, updateSessionData, choiceMade]);
 
-  const handleSliderChange = (key: keyof typeof subjectiveValues, newValue: number) => {
-    const newValues = { ...subjectiveValues, [key]: newValue };
+  const handleSliderChange = (key: keyof typeof subjectiveValues, newValue: string) => {
+    const newValues = { ...subjectiveValues, [key]: likertOptions.indexOf(newValue) };
     setSubjectiveValues(newValues);
     updateSessionData({ subjectiveDQ: newValues });
   };
@@ -89,7 +87,7 @@ export default function StepObjectiveChoice({ sessionData, updateSessionData }: 
                     <FormItem className="space-y-3">
                     <FormLabel className="font-semibold">a. Based on the advisory and your role, which investment option do you recommend?</FormLabel>
                     <FormControl>
-                        <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="space-y-2">
+                        <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="space-y-1">
                         {['Option A: Growth Equity Fund', 'Option B: Balanced Mutual Fund', 'Option C: Government Treasury Bond Portfolio', 'Option D: I do not know / Prefer not to decide'].map(option => (
                             <Label key={option} htmlFor={`choice-${option}`} className="flex items-center space-x-3 p-2 cursor-pointer has-[:checked]:text-accent transition-colors">
                                 <FormControl><RadioGroupItem value={option} id={`choice-${option}`} /></FormControl>
@@ -111,9 +109,9 @@ export default function StepObjectiveChoice({ sessionData, updateSessionData }: 
                         <Label htmlFor={key} className="text-base">{label}</Label>
                         <div className="flex items-center gap-4 pt-2">
                            <RadioGroup 
-                             onValueChange={(val) => handleSliderChange(key as keyof typeof subjectiveValues, likertOptions.indexOf(val))} 
+                             onValueChange={(val) => handleSliderChange(key as keyof typeof subjectiveValues, val)} 
                              defaultValue={likertOptions[subjectiveValues[key as keyof typeof subjectiveValues]]}
-                             className="w-full space-y-2"
+                             className="w-full space-y-1"
                             >
                                {likertOptions.map((option) => (
                                 <Label key={option} htmlFor={`${key}-${option}`} className="flex items-center space-x-3 p-2 cursor-pointer has-[:checked]:text-accent transition-colors">
