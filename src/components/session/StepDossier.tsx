@@ -71,10 +71,14 @@ export default function StepDossier({ sessionData, updateSessionData }: StepProp
       scrollCount++;
     };
 
-    scrollableContent?.addEventListener('scroll', handleScroll);
-
+    if (scrollableContent) {
+        scrollableContent.addEventListener('scroll', handleScroll);
+    }
+    
     return () => {
-      scrollableContent?.removeEventListener('scroll', handleScroll);
+      if (scrollableContent) {
+        scrollableContent.removeEventListener('scroll', handleScroll);
+      }
       const viewTime = Date.now() - startTime;
       console.log(`Dossier view time: ${viewTime}ms, Scrolls: ${scrollCount}`);
       updateSessionData({ dossierViewTime: viewTime, advisoryScrollCount: scrollCount });
@@ -84,7 +88,10 @@ export default function StepDossier({ sessionData, updateSessionData }: StepProp
   return (
     <>
       <CardHeader>
-        <CardTitle className="font-headline text-2xl">Scenario Briefing</CardTitle>
+        <div className="flex items-center gap-3">
+            <Briefcase className="h-6 w-6 text-primary" />
+            <CardTitle className="font-headline text-2xl">Scenario Briefing</CardTitle>
+        </div>
       </CardHeader>
       <div className="p-6 pt-0 space-y-6">
         <Alert>
@@ -93,27 +100,29 @@ export default function StepDossier({ sessionData, updateSessionData }: StepProp
           </AlertDescription>
         </Alert>
 
-        <h3 className="font-semibold text-lg text-center text-primary">Firm Dossier</h3>
+        <div className="flex items-center gap-3">
+            <Briefcase className="h-6 w-6 text-primary" />
+            <h3 className="font-semibold text-lg text-primary">Firm Dossier</h3>
+        </div>
         
-        <ScrollArea className="h-[40vh] w-full" ref={scrollRef}>
-          <div className="space-y-4 pr-4">
+        <div className="space-y-4 pr-4">
             {content.dossier.map((item, index) => (
               <Card key={index} className="bg-secondary/40">
-                <CardHeader className="flex flex-row items-center gap-4 space-y-0">
+                <CardHeader className="flex flex-row items-center gap-4 !pb-4">
                   <div className="p-3 bg-primary/10 rounded-lg">
                     <item.icon className="h-6 w-6 text-primary" />
                   </div>
                   <div>
-                    <CardTitle className="text-lg">{item.label}</CardTitle>
+                    <p className="text-muted-foreground">
+                        <span className="font-semibold text-card-foreground">{item.label}:</span>
+                        {' '}
+                        {item.value}
+                    </p>
                   </div>
                 </CardHeader>
-                <CardContent>
-                  <p className="text-muted-foreground">{item.value}</p>
-                </CardContent>
               </Card>
             ))}
-          </div>
-        </ScrollArea>
+        </div>
       </div>
     </>
   );
