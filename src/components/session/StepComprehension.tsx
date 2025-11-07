@@ -1,9 +1,11 @@
+
 'use client';
 
 import { useForm } from 'react-hook-form';
 import { CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Label } from '@/components/ui/label';
 import type { SessionData } from '@/lib/types';
 import { useEffect, useMemo } from 'react';
 import { ClipboardCheck } from 'lucide-react';
@@ -54,12 +56,24 @@ export default function StepComprehension({ sessionData, updateSessionData }: St
   }, [sessionData.condition?.scenario]);
 
   const q1Options = useMemo(() => {
+    if (!scenarioName) return [];
     const distractors = ['Zhongmen Holdings', 'Dailies Construction', 'ManTech Innovation', "I don't remember"];
-    const allOptions = [scenarioName, ...distractors];
+    const allOptions = [scenarioName, ...distractors.filter(d => d !== scenarioName)]; // Ensure no duplicates
+    
     // Shuffle the options to avoid order bias, but keep "I don't remember" at the end.
     const optionsToShuffle = allOptions.filter(o => o !== "I don't remember");
     const shuffled = shuffleArray(optionsToShuffle);
-    return [...shuffled, "I don't remember"];
+    
+    // Add the correct company if it's not already in the shuffled list, to be safe.
+    if (!shuffled.includes(scenarioName)) {
+        shuffled.push(scenarioName);
+    }
+
+    // Filter out any other correct answer that might have slipped in.
+    const finalShuffled = shuffled.filter(opt => opt === scenarioName || !['TechTrend Innovations', 'XYZ Manufacturing'].includes(opt));
+
+
+    return [...finalShuffled, "I don't remember"];
   }, [scenarioName]);
 
 
