@@ -4,7 +4,7 @@
 
 @layer base {
   :root {
-    --background: 0 0% 94.1%; /* #f0f0f0 */
+    --background: 220 20% 96.1%; /* A light grayish-blue */
     --foreground: 222.2 47.4% 11.2%;
 
     --card: 0 0% 100%;
@@ -13,7 +13,7 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 47.4% 11.2%;
 
-    --primary: 210.8 32.5% 27.8%; /* #30475e */
+    --primary: 215 39% 30%; /* Dark Blue from image */
     --primary-foreground: 0 0% 98%;
 
     --secondary: 0 0% 96.1%;
@@ -22,18 +22,18 @@
     --muted: 0 0% 96.1%;
     --muted-foreground: 215.4 16.3% 46.9%;
 
-    --accent: 0 84.2% 63.3%; /* #f05454 */
+    --accent: 215 39% 40%; /* A slightly lighter blue for accents */
     --accent-foreground: 0 0% 98%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 0 0% 89.8%;
-    --input: 0 0% 89.8%;
-    --ring: 0 84.2% 63.3%; /* Using accent for ring */
+    --border: 220 15% 90%;
+    --input: 220 15% 90%;
+    --ring: 215 39% 30%;
     --radius: 0.5rem;
 
-    --chart-1: 210 40% 96.1%;
+    --chart-1: 215 39% 30%;
     --chart-2: 0 84.2% 60.2%;
     --chart-3: 30 90% 60%;
     --chart-4: 60 90% 60%;
@@ -42,10 +42,10 @@
     --sidebar-background: 0 0% 100%;
     --sidebar-foreground: 222.2 47.4% 11.2%;
     --sidebar-border: 0 0% 89.8%;
-    --sidebar-ring: 0 84.2% 63.3%;
+    --sidebar-ring: 215 39% 30%;
     --sidebar-accent: 0 0% 96.1%;
     --sidebar-accent-foreground: 222.2 47.4% 11.2%;
-    --sidebar-primary: 210.8 32.5% 27.8%;
+    --sidebar-primary: 215 39% 30%;
     --sidebar-primary-foreground: 0 0% 98%;
 
   }
@@ -69,7 +69,7 @@
     --muted: 217.2 32.6% 17.5%;
     --muted-foreground: 215 20.2% 65.1%;
 
-    --accent: 0 84.2% 63.3%;
+    --accent: 217.2 32.6% 17.5%;
     --accent-foreground: 0 0% 98%;
 
     --destructive: 0 62.8% 30.6%;
@@ -77,7 +77,7 @@
 
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
-    --ring: 0 84.2% 63.3%;
+    --ring: 217.2 32.6% 17.5%;
 
     --chart-1: 220 40% 15%;
     --chart-2: 0 70% 50%;
