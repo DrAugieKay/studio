@@ -18,9 +18,20 @@ export default function StepDebrief() {
         </CardDescription>
       </CardHeader>
       <div className="p-6 pb-0">
-        <p className="text-muted-foreground max-w-2xl mx-auto">
-          Thank you for your participation. Your responses have been recorded. The purpose of this study is to understand how different types of advice influence investment decisions. Your contribution is valuable to our research. If you have any questions, please contact the research team.
-        </p>
+        <div className="text-muted-foreground max-w-3xl mx-auto space-y-4 text-left">
+            <p>
+                The purpose of this research is to understand how the source of advice (AI vs. Human) and its credibility influence financial decision-making. The advisor profiles were constructed for this experiment.
+            </p>
+            <p>
+                There is no objectively "correct" choice in the real world, regardless of the fact that the board's priority in the scenario presented in this study had a corresponding objective. Your participation helps us understand the psychology of decision-making in business.
+            </p>
+            <p>
+                If you have questions about the study, please contact the research team on the email below: <a href="mailto:5103231208@stmail.ujs.edu.cn" className="text-primary underline">5103231208@stmail.ujs.edu.cn</a>
+            </p>
+             <p className="font-semibold text-center pt-4">
+                This concludes the study. Thank you for your valuable contribution.
+            </p>
+        </div>
         <Button asChild size="lg" className="mt-8">
             <Link href="/">
                 Complete and Return to Home
