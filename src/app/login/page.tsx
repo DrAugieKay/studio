@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useAuth, initiateEmailSignUp, initiateEmailSignIn } from '@/firebase';
+import { useAuth, initiateEmailSignIn } from '@/firebase';
 import { useRouter } from 'next/navigation';
 
 import { Button } from '@/components/ui/button';
@@ -24,7 +24,6 @@ type LoginFormValues = z.infer<typeof formSchema>;
 
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
-  const [isSignUp, setIsSignUp] = useState(false);
   const auth = useAuth();
   const router = useRouter();
   const { toast } = useToast();
@@ -40,21 +39,11 @@ export default function LoginPage() {
   const onSubmit = async (values: LoginFormValues) => {
     setIsLoading(true);
     
-    // Non-blocking approach: initiate the auth action and let the
-    // onAuthStateChanged listener in the provider handle the redirect.
-    if (isSignUp) {
-      initiateEmailSignUp(auth, values.email, values.password);
-      toast({
-        title: 'Creating Account...',
-        description: 'You will be redirected shortly.',
-      });
-    } else {
-      initiateEmailSignIn(auth, values.email, values.password);
-      toast({
+    initiateEmailSignIn(auth, values.email, values.password);
+    toast({
         title: 'Signing In...',
         description: 'You will be redirected shortly.',
-      });
-    }
+    });
     
     // We don't await here. The auth listener will redirect.
     // However, we can add a fallback redirect after a short delay.
@@ -68,7 +57,7 @@ export default function LoginPage() {
             toast({
                 variant: 'destructive',
                 title: 'Authentication Failed',
-                description: 'Please check your credentials and try again.',
+                description: 'Please check your credentials and try again. New admin users must be created via the Firebase Console.',
             });
         }
     }, 2500);
@@ -83,9 +72,9 @@ export default function LoginPage() {
               <FlaskConical className="w-8 h-8" />
             </div>
           </div>
-          <CardTitle className="font-headline text-2xl">{isSignUp ? 'Create Admin Account' : 'Admin Login'}</CardTitle>
+          <CardTitle className="font-headline text-2xl">Admin Login</CardTitle>
           <CardDescription>
-            {isSignUp ? 'Enter your details to create a new account.' : 'Enter your credentials to access the dashboard.'}
+            Enter your credentials to access the dashboard.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -119,15 +108,10 @@ export default function LoginPage() {
               />
               <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                {isLoading ? (isSignUp ? 'Creating Account...' : 'Signing In...') : (isSignUp ? 'Sign Up' : 'Sign In')}
+                {isLoading ? 'Signing In...' : 'Sign In'}
               </Button>
             </form>
           </Form>
-          <div className="mt-6 text-center text-sm">
-            <Button variant="link" onClick={() => setIsSignUp(!isSignUp)}>
-              {isSignUp ? 'Already have an account? Sign In' : "Don't have an account? Sign Up"}
-            </Button>
-          </div>
         </CardContent>
       </Card>
     </div>
