@@ -1,5 +1,6 @@
 
 
+
 export type ExperimentalCondition = {
   advisorySource: 'ai' | 'human';
   linguisticFrame: 'abstract' | 'concrete';
@@ -40,7 +41,7 @@ export type SessionData = {
   } | null;
   controls: {
     riskTolerance?: Record<string, string | null>;
-    digitalLiteracy?: Record<string, string | null>;
+    digitalLiteracy?: Record<string, string | null;
   } | null;
   openRationale: string | null;
 };
@@ -52,4 +53,11 @@ export type ParticipantSession = {
     endTime: Date | null;
     condition: ExperimentalCondition | null;
     // data?: Partial<SessionData>; // We can add the full session data later
+};
+
+export type CodingTask = {
+  id: string;
+  rationale: string;
+  coderA_codes: string[];
+  coderB_codes: string[];
 };

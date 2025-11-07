@@ -2,89 +2,111 @@
 'use client';
 
 import { useState } from 'react';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { PlusCircle, X } from 'lucide-react';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import ManualCodingTask from '@/components/admin/ManualCodingTask';
+import { CheckCircle2, TriangleAlert } from 'lucide-react';
+import type { CodingTask } from '@/lib/types';
 
-const mockResponses = [
-  { id: 'SESS_8A2B4C', rationale: 'The decision was based primarily on the need for capital preservation. Option C offered the highest degree of safety, which aligns with the board’s conservative mandate. The lower return was an acceptable trade-off for risk mitigation.' },
-  { id: 'SESS_D5E6F7', rationale: 'I chose Option B because it provided a balance between growth and risk. While Option C was safer, the potential returns were too low to justify completely ignoring market opportunities. Option B felt like a reasonable compromise.' },
-  { id: 'SESS_J1K2L3', rationale: 'Risk mitigation was the key factor. Given the firm’s strategic goals, losing principal was not an option. Government bonds were the only choice that guaranteed the capital would be available for the IoT launch.' },
-  { id: 'SESS_M4N5P6', rationale: 'Felt the advisory for C was the most compelling and detailed.' },
-  { id: 'SESS_Q7R8S9', rationale: '' }, // Empty rationale
+
+const mockCodingTasks: CodingTask[] = [
+  {
+    id: 'SESS_8A2B4C',
+    rationale: 'The decision was based primarily on the need for capital preservation. Option C offered the highest degree of safety, which aligns with the board’s conservative mandate. The lower return was an acceptable trade-off for risk mitigation.',
+    coderA_codes: ['Capital Preservation', 'Risk Aversion'],
+    coderB_codes: ['Capital Preservation', 'Risk Aversion'],
+  },
+  {
+    id: 'SESS_D5E6F7',
+    rationale: 'I chose Option B because it provided a balance between growth and risk. While Option C was safer, the potential returns were too low to justify completely ignoring market opportunities. Option B felt like a reasonable compromise.',
+    coderA_codes: ['Balanced Approach', 'Growth Focus'],
+    coderB_codes: ['Balanced Approach'],
+  },
+  {
+    id: 'SESS_J1K2L3',
+    rationale: 'Risk mitigation was the key factor. Given the firm’s strategic goals, losing principal was not an option. Government bonds were the only choice that guaranteed the capital would be available for the IoT launch.',
+    coderA_codes: ['Risk Aversion', 'Strategic Alignment'],
+    coderB_codes: ['Risk Aversion'],
+  },
+  {
+    id: 'SESS_M4N5P6',
+    rationale: 'Felt the advisory for C was the most compelling and detailed.',
+    coderA_codes: ['Trust in Advisory'],
+    coderB_codes: ['Trust in Advisory'],
+  },
 ];
 
-const predefinedCodes = ['Capital Preservation', 'Risk Aversion', 'Balanced Approach', 'Growth Focus', 'Trust in Advisory'];
+
+const predefinedCodes = ['Capital Preservation', 'Risk Aversion', 'Balanced Approach', 'Growth Focus', 'Trust in Advisory', 'Strategic Alignment'];
 
 export default function ManualCodingPage() {
-  const [selectedResponse, setSelectedResponse] = useState(mockResponses[0]);
-  const [appliedCodes, setAppliedCodes] = useState<string[]>(['Capital Preservation', 'Risk Aversion']);
-  const [availableCodes, setAvailableCodes] = useState<string[]>(predefinedCodes);
-  const [newCode, setNewCode] = useState('');
+  const [selectedTask, setSelectedTask] = useState<CodingTask>(mockCodingTasks[0]);
+  const [kappaScore, setKappaScore] = useState(0.68); // Mock kappa score < 0.70 to show warning
 
-  const handleSelectResponse = (response: typeof mockResponses[0]) => {
-    setSelectedResponse(response);
-    // In a real app, you'd fetch and set the codes for this response
-    if(response.id === 'SESS_D5E6F7') {
-      setAppliedCodes(['Balanced Approach']);
-    } else {
-      setAppliedCodes(['Capital Preservation', 'Risk Aversion']);
-    }
-  };
-
-  const handleAddCode = () => {
-    if (newCode && !availableCodes.includes(newCode)) {
-      setAvailableCodes([...availableCodes, newCode]);
-    }
-    if (newCode && !appliedCodes.includes(newCode)) {
-      setAppliedCodes([...appliedCodes, newCode]);
-      setNewCode('');
-    }
+  const handleSelectTask = (task: CodingTask) => {
+    setSelectedTask(task);
   };
   
-  const handleToggleCode = (code: string) => {
-    if (appliedCodes.includes(code)) {
-      setAppliedCodes(appliedCodes.filter(c => c !== code));
-    } else {
-      setAppliedCodes([...appliedCodes, code]);
-    }
-  }
-
-  const responsesWithRationale = mockResponses.filter(r => r.rationale);
+  const tasksWithRationale = mockCodingTasks.filter(r => r.rationale);
 
   return (
     <div className="w-full">
         <div className="flex justify-between items-center mb-6">
             <div>
-                <h1 className="text-3xl font-bold font-headline">Manual Coding</h1>
-                <p className="text-muted-foreground mt-1">Review and code open-ended participant rationale.</p>
+                <h1 className="text-3xl font-bold font-headline">Manual Coding & Validation</h1>
+                <p className="text-muted-foreground mt-1">Review, code, and validate open-ended participant rationale.</p>
             </div>
         </div>
+
+         <Card className="mb-8">
+          <CardHeader>
+            <CardTitle>Inter-Rater Reliability (Cohen's Kappa)</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center gap-4">
+              <p className={`text-5xl font-bold ${kappaScore >= 0.7 ? 'text-green-600' : 'text-amber-600'}`}>{kappaScore.toFixed(2)}</p>
+              <div>
+                {kappaScore >= 0.7 ? (
+                   <Alert className="border-green-500/50 text-green-700 [&>svg]:text-green-700">
+                     <CheckCircle2 className="h-4 w-4" />
+                     <AlertTitle>Agreement: Good</AlertTitle>
+                     <AlertDescription>The current agreement level is sufficient for reliable automated analysis.</AlertDescription>
+                   </Alert>
+                ) : (
+                  <Alert variant="destructive" className="bg-amber-50 border-amber-500/50 text-amber-700 [&>svg]:text-amber-700">
+                    <TriangleAlert className="h-4 w-4" />
+                    <AlertTitle>Agreement: Needs Review (κ &lt; 0.70)</AlertTitle>
+                    <AlertDescription>Consider refining coding guidelines or pausing the LA pipeline until agreement improves.</AlertDescription>
+                  </Alert>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Response List */}
           <div className="lg:col-span-1">
             <Card>
               <CardHeader>
-                <CardTitle>Participant Responses</CardTitle>
-                <CardDescription>Select a response to code.</CardDescription>
+                <CardTitle>Double-Coding Queue</CardTitle>
+                <CardDescription>Select a response to validate.</CardDescription>
               </CardHeader>
               <CardContent>
                 <ScrollArea className="h-96">
                   <div className="space-y-2">
-                    {responsesWithRationale.map(res => (
+                    {tasksWithRationale.map(task => (
                       <Button
-                        key={res.id}
-                        variant={selectedResponse?.id === res.id ? 'secondary' : 'ghost'}
+                        key={task.id}
+                        variant={selectedTask?.id === task.id ? 'secondary' : 'ghost'}
                         className="w-full justify-start text-left h-auto"
-                        onClick={() => handleSelectResponse(res)}
+                        onClick={() => handleSelectTask(task)}
                       >
                         <div>
-                          <p className="font-semibold">{res.id}</p>
-                          <p className="text-xs text-muted-foreground truncate">{res.rationale}</p>
+                          <p className="font-semibold">{task.id}</p>
+                          <p className="text-xs text-muted-foreground truncate">{task.rationale}</p>
                         </div>
                       </Button>
                     ))}
@@ -96,69 +118,14 @@ export default function ManualCodingPage() {
 
           {/* Coding Interface */}
           <div className="lg:col-span-2">
-             {selectedResponse ? (
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Coding: {selectedResponse.id}</CardTitle>
-                        <CardDescription>Review the rationale and apply relevant codes.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-6">
-                        <div className="p-4 border rounded-lg bg-secondary/30">
-                            <p className="font-semibold mb-2">Rationale:</p>
-                            <p className="text-muted-foreground">{selectedResponse.rationale}</p>
-                        </div>
-
-                        {/* Applied Codes */}
-                        <div>
-                            <h4 className="font-semibold mb-3">Applied Codes</h4>
-                            <div className="flex flex-wrap gap-2">
-                                {appliedCodes.length > 0 ? appliedCodes.map(code => (
-                                    <Badge key={code} variant="default" className="text-sm bg-primary hover:bg-primary/90">
-                                        {code}
-                                        <Button variant="ghost" size="icon" className="h-4 w-4 ml-1 hover:bg-transparent hover:text-primary-foreground/70" onClick={() => handleToggleCode(code)}>
-                                          <X className="h-3 w-3" />
-                                        </Button>
-                                    </Badge>
-                                )) : <p className="text-sm text-muted-foreground">No codes applied yet.</p>}
-                            </div>
-                        </div>
-                        
-                        <div className="space-y-4">
-                            {/* Available Codes */}
-                            <div>
-                                <h4 className="font-semibold mb-3">Available Codes</h4>
-                                <div className="flex flex-wrap gap-2">
-                                    {availableCodes.filter(c => !appliedCodes.includes(c)).map(code => (
-                                        <Badge key={code} variant="outline" className="text-sm cursor-pointer" onClick={() => handleToggleCode(code)}>
-                                            <PlusCircle className="h-3 w-3 mr-1" />
-                                            {code}
-                                        </Badge>
-                                    ))}
-                                </div>
-                            </div>
-                            
-                             {/* Add New Code */}
-                            <div>
-                                <h4 className="font-semibold mb-3">Add New Code</h4>
-                                <div className="flex gap-2">
-                                    <Input 
-                                      value={newCode} 
-                                      onChange={(e) => setNewCode(e.target.value)} 
-                                      placeholder="Type new code..."
-                                      onKeyDown={(e) => e.key === 'Enter' && handleAddCode()}
-                                    />
-                                    <Button onClick={handleAddCode}>Add</Button>
-                                </div>
-                            </div>
-                        </div>
-                    </CardContent>
-                    <CardFooter className="flex justify-end">
-                      <Button>Save & Next</Button>
-                    </CardFooter>
-                </Card>
+             {selectedTask ? (
+                <ManualCodingTask 
+                  task={selectedTask}
+                  predefinedCodes={predefinedCodes}
+                />
              ) : (
                 <div className="flex items-center justify-center h-full text-muted-foreground">
-                    <p>Select a participant response to begin coding.</p>
+                    <p>Select a participant response to begin validation.</p>
                 </div>
              )}
           </div>
