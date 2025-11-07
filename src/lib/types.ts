@@ -33,3 +33,12 @@ export type SessionData = {
   } | null;
   openRationale: string | null;
 };
+
+export type ParticipantSession = {
+    id: string;
+    status: 'Completed' | 'In Progress' | 'Abandoned';
+    startTime: Date;
+    endTime: Date | null;
+    condition: ExperimentalCondition | null;
+    // data?: Partial<SessionData>; // We can add the full session data later
+};
