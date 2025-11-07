@@ -119,7 +119,7 @@ const organizationalProfileSchema = z.object({
     q4: z.string().min(1, { message: 'Required' }),
     q5: z.string().min(1, { message: 'Required' }),
     q6: z.string().min(1, { message: 'Required' }),
-    q7: z.string().min(1, { message: 'Required' }),
+    q7: z.string().optional(),
 }).refine(data => !(data.q1 === 'Other' && !data.q1_other), {
     message: "Please specify 'Other'",
     path: ['q1_other'],
@@ -164,7 +164,7 @@ export default function StepInitialAssessment({ sessionData, updateSessionData, 
     
     // For text input questions
     if (currentSection.key === 'organizationalProfile' && 'q7' in watchedValues) {
-        if (!watchedValues.q7) return false;
+        if (typeof watchedValues.q7 === 'undefined') watchedValues.q7 = ''; // It's optional
     }
 
     const radioQuestions = questionKeys.filter(key => currentSection.questions[key as keyof typeof currentSection.questions].options.length > 0);
