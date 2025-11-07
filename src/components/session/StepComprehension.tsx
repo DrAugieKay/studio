@@ -5,7 +5,8 @@ import { CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import type { SessionData } from '@/lib/types';
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
+import { ClipboardCheck } from 'lucide-react';
 
 type StepProps = {
   sessionData: Partial<SessionData>;
@@ -17,6 +18,25 @@ type ComprehensionFormValues = {
   q2: string;
 };
 
+const shuffleArray = (array: string[]) => {
+    let currentIndex = array.length,  randomIndex;
+  
+    // While there remain elements to shuffle.
+    while (currentIndex > 0) {
+  
+      // Pick a remaining element.
+      randomIndex = Math.floor(Math.random() * currentIndex);
+      currentIndex--;
+  
+      // And swap it with the current element.
+      [array[currentIndex], array[randomIndex]] = [
+        array[randomIndex], array[currentIndex]];
+    }
+  
+    return array;
+}
+
+
 export default function StepComprehension({ sessionData, updateSessionData }: StepProps) {
   const form = useForm<ComprehensionFormValues>({
     defaultValues: {
@@ -26,6 +46,25 @@ export default function StepComprehension({ sessionData, updateSessionData }: St
   });
 
   const { watch } = form;
+
+  const scenarioName = useMemo(() => {
+    if (sessionData.condition?.scenario === 'techtrend') return 'TechTrend Innovations';
+    if (sessionData.condition?.scenario === 'xyz') return 'XYZ Manufacturing';
+    return '';
+  }, [sessionData.condition?.scenario]);
+
+  const q1Options = useMemo(() => {
+    const distractors = ['Zhongmen Holdings', 'Dailies Construction', 'ManTech Innovation', "I don't remember"];
+    const allOptions = [scenarioName, ...distractors];
+    // Shuffle the options to avoid order bias, but keep "I don't remember" at the end.
+    const optionsToShuffle = allOptions.filter(o => o !== "I don't remember");
+    const shuffled = shuffleArray(optionsToShuffle);
+    return [...shuffled, "I don't remember"];
+  }, [scenarioName]);
+
+
+  const q2Options = useMemo(() => shuffleArray(['6 months', '12 months', '24 months', "I don't remember"]), []);
+
 
   useEffect(() => {
     const subscription = watch((value) => {
@@ -37,34 +76,31 @@ export default function StepComprehension({ sessionData, updateSessionData }: St
   return (
     <>
       <CardHeader>
-        <CardTitle className="font-headline text-2xl">Comprehension Check</CardTitle>
+        <div className="flex items-center gap-3">
+            <ClipboardCheck className="h-6 w-6 text-primary" />
+            <CardTitle className="font-headline text-2xl">Section C: Comprehension Checks</CardTitle>
+        </div>
         <CardDescription>
           Let's check your understanding of the information presented.
         </CardDescription>
       </CardHeader>
       <div className="p-6 pt-0">
         <Form {...form}>
-          <form className="space-y-8">
+          <form className="space-y-6">
             <FormField
               control={form.control}
               name="q1"
               render={({ field }) => (
-                <FormItem className="space-y-3">
-                  <FormLabel>What is the primary business of Innovate Inc.?</FormLabel>
+                <FormItem className="space-y-3 p-4 border rounded-lg bg-secondary/30">
+                  <FormLabel className="font-semibold text-base">a. According to the scenario, what is the name of the Organization whose financial advisory concerns you just reviewed?</FormLabel>
                   <FormControl>
-                    <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="space-y-1">
-                      <FormItem className="flex items-center space-x-3">
-                        <FormControl><RadioGroupItem value="a" /></FormControl>
-                        <FormLabel className="font-normal">E-commerce platform</FormLabel>
-                      </FormItem>
-                      <FormItem className="flex items-center space-x-3">
-                        <FormControl><RadioGroupItem value="b" /></FormControl>
-                        <FormLabel className="font-normal">AI-powered data analysis</FormLabel>
-                      </FormItem>
-                      <FormItem className="flex items-center space-x-3">
-                        <FormControl><RadioGroupItem value="c" /></FormControl>
-                        <FormLabel className="font-normal">Social media application</FormLabel>
-                      </FormItem>
+                    <RadioGroup onValueChange={field.onChange} value={field.value} className="space-y-2">
+                      {q1Options.map(option => (
+                         <Label key={option} htmlFor={`q1-${option}`} className="flex items-center space-x-3 p-3 border rounded-md cursor-pointer bg-background has-[:checked]:bg-secondary has-[:checked]:border-accent transition-colors">
+                            <FormControl><RadioGroupItem value={option} id={`q1-${option}`} /></FormControl>
+                            <span className="font-normal text-base">{option}</span>
+                        </Label>
+                      ))}
                     </RadioGroup>
                   </FormControl>
                 </FormItem>
@@ -74,22 +110,16 @@ export default function StepComprehension({ sessionData, updateSessionData }: St
               control={form.control}
               name="q2"
               render={({ field }) => (
-                <FormItem className="space-y-3">
-                  <FormLabel>What is the company currently seeking?</FormLabel>
+                <FormItem className="space-y-3 p-4 border rounded-lg bg-secondary/30">
+                  <FormLabel className="font-semibold text-base">b. What was the approximate time horizon mentioned for maintaining liquidity in the advisory?</FormLabel>
                   <FormControl>
-                    <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="space-y-1">
-                      <FormItem className="flex items-center space-x-3">
-                        <FormControl><RadioGroupItem value="a" /></FormControl>
-                        <FormLabel className="font-normal">A new CEO</FormLabel>
-                      </FormItem>
-                      <FormItem className="flex items-center space-x-3">
-                        <FormControl><RadioGroupItem value="b" /></FormControl>
-                        <FormLabel className="font-normal">Initial seed funding</FormLabel>
-                      </FormItem>
-                      <FormItem className="flex items-center space-x-3">
-                        <FormControl><RadioGroupItem value="c" /></FormControl>
-                        <FormLabel className="font-normal">Series A funding</FormLabel>
-                      </FormItem>
+                    <RadioGroup onValueChange={field.onChange} value={field.value} className="space-y-2">
+                       {q2Options.map(option => (
+                         <Label key={option} htmlFor={`q2-${option}`} className="flex items-center space-x-3 p-3 border rounded-md cursor-pointer bg-background has-[:checked]:bg-secondary has-[:checked]:border-accent transition-colors">
+                            <FormControl><RadioGroupItem value={option} id={`q2-${option}`} /></FormControl>
+                            <span className="font-normal text-base">{option}</span>
+                        </Label>
+                      ))}
                     </RadioGroup>
                   </FormControl>
                 </FormItem>
