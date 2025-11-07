@@ -5,15 +5,17 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useAuth, initiateEmailSignIn } from '@/firebase';
+import { useAuth } from '@/firebase';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { FlaskConical, Loader2 } from 'lucide-react';
+import { FlaskConical, Loader2, ArrowLeft } from 'lucide-react';
+import { initiateEmailSignIn } from '@/firebase/non-blocking-login';
 
 const formSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email address.' }),
@@ -113,6 +115,14 @@ export default function LoginPage() {
             </form>
           </Form>
         </CardContent>
+        <CardFooter className="flex justify-center">
+            <Button variant="link" asChild>
+                <Link href="/">
+                    <ArrowLeft className="mr-2 h-4 w-4" />
+                    Back to Home
+                </Link>
+            </Button>
+        </CardFooter>
       </Card>
     </div>
   );
