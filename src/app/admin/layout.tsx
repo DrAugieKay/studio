@@ -4,7 +4,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { SidebarProvider, Sidebar, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarContent, SidebarHeader, SidebarTrigger, SidebarRail, SidebarInset } from '@/components/ui/sidebar';
-import { Users, BarChart } from 'lucide-react';
+import { Users, BarChart, NotebookPen } from 'lucide-react';
 import Header from '@/components/common/Header';
 
 export default function AdminLayout({
@@ -46,6 +46,18 @@ export default function AdminLayout({
                     <Link href="/admin/analysis">
                       <BarChart />
                       Data Analysis
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                 <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={pathname === '/admin/manual-coding'}
+                    tooltip="Manual Coding"
+                  >
+                    <Link href="/admin/manual-coding">
+                      <NotebookPen />
+                      Manual Coding
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
