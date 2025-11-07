@@ -11,6 +11,7 @@ import ProgressTracker from '@/components/session/ProgressTracker';
 
 import StepConsent from '@/components/session/StepConsent';
 import StepInitialAssessment from '@/components/session/StepInitialAssessment';
+import StepAdvisoryScenario from '@/components/session/StepAdvisoryScenario';
 import StepDossier from '@/components/session/StepDossier';
 import StepAdvisory from '@/components/session/StepAdvisory';
 import StepComprehension from '@/components/session/StepComprehension';
@@ -25,6 +26,7 @@ import StepEndSurvey from '@/components/session/StepEndSurvey';
 const stepComponents = [
   StepConsent,
   StepInitialAssessment,
+  StepAdvisoryScenario,
   StepDossier,
   StepAdvisory,
   StepComprehension,
@@ -40,6 +42,7 @@ const stepComponents = [
 const stepNames = [
   'Consent',
   'Initial Assessments',
+  'Advisory Scenario',
   'Dossier',
   'Advisory',
   'Comprehension',
