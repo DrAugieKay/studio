@@ -141,56 +141,56 @@ export default function AdvisoryMemo({ sessionData, updateSessionData }: StepPro
             </section>
 
             <main className="space-y-6 text-sm leading-relaxed">
-                <section>
+                <div className="p-4 border rounded-lg">
                     <h2 className="text-base font-bold text-gray-900 mb-2">1.0 Executive Summary</h2>
                     <p>{scenarioData.executiveSummary}</p>
-                </section>
+                </div>
                 
-                <section>
+                <div className="p-4 border rounded-lg">
                     <h2 className="text-base font-bold text-gray-900 mb-2">2.0 Analytical Framework</h2>
                     <p>{scenarioData.analyticalFramework}</p>
-                </section>
+                </div>
 
-                <section>
+                <div className="p-4 border rounded-lg">
                     <h2 className="text-base font-bold text-gray-900 mb-2">3.0 Comparative Option Analysis</h2>
-                    <ul className="list-none space-y-3">
+                    <div className="space-y-3">
                         {scenarioData.options.map((option, index) => (
-                           <li key={index}><span className="font-bold italic">{option.title}:</span> {option.text}</li>
+                           <div key={index} className="p-3 border rounded-md bg-gray-50/50"><span className="font-bold italic">{option.title}:</span> {option.text}</div>
                         ))}
-                    </ul>
-                </section>
+                    </div>
+                </div>
 
-                <section>
+                <div className="p-4 border rounded-lg">
                     <h2 className="text-base font-bold text-gray-900 mb-2">4.0 Recommendation & Strategic Justification</h2>
-                     <ul className="list-disc list-inside space-y-2">
+                     <div className="space-y-2">
                         {scenarioData.justification.map((item, index) => (
-                            <li key={index}>{item}</li>
+                            <div key={index} className="p-3 border rounded-md bg-gray-50/50">{item}</div>
                         ))}
-                    </ul>
-                </section>
+                    </div>
+                </div>
 
-                <section>
+                <div className="p-4 border rounded-lg">
                     <h2 className="text-base font-bold text-gray-900 mb-2">5.0 Strategic Implications</h2>
-                    <ul className="list-disc list-inside space-y-2">
+                    <div className="space-y-2">
                         {scenarioData.implications.map((item, index) => (
-                            <li key={index}>{item}</li>
+                            <div key={index} className="p-3 border rounded-md bg-gray-50/50">{item}</div>
                         ))}
-                    </ul>
-                </section>
+                    </div>
+                </div>
 
-                <section>
+                <div className="p-4 border rounded-lg">
                     <h2 className="text-base font-bold text-gray-900 mb-2">6.0 Recommendation</h2>
                     <p className="font-bold">{scenarioData.recommendation}</p>
-                </section>
+                </div>
 
-                <section>
+                <div className="p-4 border rounded-lg">
                     <h2 className="text-base font-bold text-gray-900 mb-2">7.0 Implementation Notes</h2>
-                    <ul className="list-disc list-inside space-y-2">
+                    <div className="space-y-2">
                         {scenarioData.implementationNotes.map((item, index) => (
-                            <li key={index}>{item}</li>
+                            <div key={index} className="p-3 border rounded-md bg-gray-50/50">{item}</div>
                         ))}
-                    </ul>
-                </section>
+                    </div>
+                </div>
             </main>
 
             <footer className="mt-8 pt-4 border-t border-gray-300 text-xs text-gray-600">
