@@ -3,8 +3,8 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { SidebarProvider, Sidebar, SidebarMenu, SidebarMenuItem, SidebarMenuButton } from '@/components/ui/sidebar';
-import { Users, BarChart, FlaskConical } from 'lucide-react';
+import { SidebarProvider, Sidebar, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarContent, SidebarHeader, SidebarTrigger, SidebarRail, SidebarInset } from '@/components/ui/sidebar';
+import { Users, BarChart } from 'lucide-react';
 import Header from '@/components/common/Header';
 
 export default function AdminLayout({
@@ -20,34 +20,44 @@ export default function AdminLayout({
         <Header />
         <div className="flex flex-1">
           <Sidebar>
-            <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  asChild
-                  isActive={pathname === '/admin'}
-                >
-                  <Link href="/admin">
-                    <Users />
-                    Session Management
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  asChild
-                  isActive={pathname === '/admin/analysis'}
-                >
-                  <Link href="/admin/analysis">
-                    <BarChart />
-                    Data Analysis
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </SidebarMenu>
+            <SidebarContent>
+              <SidebarHeader>
+                <SidebarTrigger />
+              </SidebarHeader>
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={pathname === '/admin'}
+                    tooltip="Session Management"
+                  >
+                    <Link href="/admin">
+                      <Users />
+                      Session Management
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={pathname === '/admin/analysis'}
+                    tooltip="Data Analysis"
+                  >
+                    <Link href="/admin/analysis">
+                      <BarChart />
+                      Data Analysis
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </SidebarMenu>
+            </SidebarContent>
+            <SidebarRail />
           </Sidebar>
-          <main className="flex-1 p-4 md:p-8">
-            {children}
-          </main>
+          <SidebarInset>
+            <main className="flex-1 p-4 md:p-8">
+              {children}
+            </main>
+          </SidebarInset>
         </div>
       </div>
     </SidebarProvider>
