@@ -3,7 +3,7 @@ export type SessionData = {
   initialAssessments: {
     financialLiteracy: Record<string, string | null> | null;
     roleAndExperience: Record<string, string | null> | null;
-    cognitiveReflection: Record<string, string | null> | null;
+    organizationalProfile: Record<string, string | null> | null;
   };
   dossierViewTime: number;
   advisoryViewTime: number;

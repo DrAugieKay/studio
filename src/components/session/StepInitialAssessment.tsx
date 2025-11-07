@@ -10,6 +10,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import type { SessionData } from '@/lib/types';
 import { Button } from '../ui/button';
+import { Input } from '../ui/input';
 
 type StepProps = {
   sessionData: Partial<SessionData>;
@@ -59,6 +60,37 @@ const roleAndExperienceQuestions = {
   },
 };
 
+const organizationalProfileQuestions = {
+    q1: {
+        question: 'i. What is the primary industry of your organization?',
+        options: ['Technology / Software', 'Manufacturing / Industrial', 'Financial Services', 'Healthcare / Pharmaceuticals', 'Retail / Consumer Goods', 'Services / Consulting', 'Energy / Utilities', 'Other', 'Not applicable / Student'],
+    },
+    q2: {
+        question: 'ii. What is your organization\'s approximate annual revenue?',
+        options: ['Less than $50 million', '$50 million - $250 million', '$250 million - $1 billion', 'More than $1 billion', 'I do not know', 'Not applicable / Student'],
+    },
+    q3: {
+        question: 'iii. How many employees does your organization have?',
+        options: ['Fewer than 100', '100 - 499', '500 - 999', '1,000 - 4,999', '5,000 or more', 'Not applicable / Student'],
+    },
+    q4: {
+        question: 'iv. Which best describes your organization\'s ownership structure?',
+        options: ['Privately-held (e.g., family-owned, Private Equity-backed)', 'Publicly-traded', 'State-owned / Government entity', 'Non-profit', 'I do not know', 'Not applicable / Student'],
+    },
+    q5: {
+        question: 'v. How would you describe your organization\'s typical appetite for financial risk?',
+        options: ['Conservative ( prioritize avoiding losses)', 'Moderate ( seek balance between risk and return)', 'Aggressive ( pursue high returns, accept potential losses)', 'Not applicable / Student'],
+    },
+    q6: {
+        question: 'vi. Does your firm have a formal investment policy/treasury mandate?',
+        options: ['Yes', 'No'],
+    },
+    q7: {
+        question: 'vii. Headquarters country:',
+        options: [],
+    },
+};
+
 
 const financialLiteracySchema = z.object({
   q1: z.string().min(1, { message: 'Required' }),
@@ -66,14 +98,32 @@ const financialLiteracySchema = z.object({
   q3: z.string().min(1, { message: 'Required' }),
   q4: z.string().min(1, { message: 'Required' }),
 });
+
 const roleAndExperienceSchema = z.object({
   q1: z.string().min(1, { message: 'Required' }),
   q2: z.string().min(1, { message: 'Required' }),
+  q2_other: z.string().optional(),
   q3: z.string().min(1, { message: 'Required' }),
   q4: z.string().min(1, { message: 'Required' }),
   q5: z.string().min(1, { message: 'Required' }),
+}).refine(data => !(data.q2 === 'Other' && !data.q2_other), {
+    message: "Please specify 'Other'",
+    path: ['q2_other'],
 });
-const cognitiveReflectionSchema = z.object({}); // Placeholder
+
+const organizationalProfileSchema = z.object({
+    q1: z.string().min(1, { message: 'Required' }),
+    q1_other: z.string().optional(),
+    q2: z.string().min(1, { message: 'Required' }),
+    q3: z.string().min(1, { message: 'Required' }),
+    q4: z.string().min(1, { message: 'Required' }),
+    q5: z.string().min(1, { message: 'Required' }),
+    q6: z.string().min(1, { message: 'Required' }),
+    q7: z.string().min(1, { message: 'Required' }),
+}).refine(data => !(data.q1 === 'Other' && !data.q1_other), {
+    message: "Please specify 'Other'",
+    path: ['q1_other'],
+});
 
 const sections = [
   {
@@ -89,10 +139,10 @@ const sections = [
     schema: roleAndExperienceSchema,
   },
   {
-    key: 'cognitiveReflection',
-    title: 'c. Cognitive Reflection Questions (Placeholder)',
-    questions: {},
-    schema: cognitiveReflectionSchema,
+    key: 'organizationalProfile',
+    title: 'c. Organizational Profile',
+    questions: organizationalProfileQuestions,
+    schema: organizationalProfileSchema,
   }
 ];
 
@@ -107,18 +157,42 @@ export default function StepInitialAssessment({ sessionData, updateSessionData, 
   });
 
   const watchedValues = useWatch({ control: form.control });
+  
   const allQuestionsAnswered = useMemo(() => {
     const questionKeys = Object.keys(currentSection.questions);
-    if (questionKeys.length === 0) return true; // For placeholder sections
-    return questionKeys.every(key => !!watchedValues[key]);
-  }, [watchedValues, currentSection.questions]);
+    if (questionKeys.length === 0) return true;
+    
+    // For text input questions
+    if (currentSection.key === 'organizationalProfile' && 'q7' in watchedValues) {
+        if (!watchedValues.q7) return false;
+    }
+
+    const radioQuestions = questionKeys.filter(key => currentSection.questions[key as keyof typeof currentSection.questions].options.length > 0);
+    const allRadioAnswered = radioQuestions.every(key => !!watchedValues[key]);
+    
+    if (!allRadioAnswered) return false;
+
+    // Check conditional text inputs
+    if (currentSection.key === 'roleAndExperience' && watchedValues.q2 === 'Other') {
+        return !!watchedValues.q2_other;
+    }
+    if (currentSection.key === 'organizationalProfile' && watchedValues.q1 === 'Other') {
+        return !!watchedValues.q1_other;
+    }
+
+    return true;
+}, [watchedValues, currentSection.questions, currentSection.key]);
+
 
   useEffect(() => {
     setIsLastAssessmentSection(isLastSection);
   }, [isLastSection, setIsLastAssessmentSection]);
 
 
-  const handleNextSection = () => {
+  const handleNextSection = async () => {
+    const isValid = await form.trigger();
+    if (!isValid) return;
+
     const formData = form.getValues();
     const currentSectionKey = sections[currentSectionIndex].key;
     
@@ -146,27 +220,57 @@ export default function StepInitialAssessment({ sessionData, updateSessionData, 
       </CardHeader>
       <div className="p-6 pt-0">
         <Form {...form}>
-          <form className="space-y-8">
+          <form className="space-y-8" onSubmit={(e) => e.preventDefault()}>
             <h3 className="font-semibold">{currentSection.title}</h3>
             {Object.keys(currentSection.questions).length > 0 ? (
               Object.entries(currentSection.questions).map(([key, q]: [string, any]) => (
                 <FormField
                   key={key}
                   control={form.control}
-                  name={key}
+                  name={key as any}
                   render={({ field }) => (
                     <FormItem className="space-y-3 p-4 border rounded-lg bg-secondary/30">
                       <FormLabel>{q.question}</FormLabel>
                       <FormControl>
-                        <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="space-y-2">
-                          {q.options.map((option: string) => (
-                            <FormItem key={option} className="flex items-center space-x-3">
-                              <FormControl><RadioGroupItem value={option} /></FormControl>
-                              <FormLabel className="font-normal">{option}</FormLabel>
-                            </FormItem>
-                          ))}
-                        </RadioGroup>
+                        {q.options.length > 0 ? (
+                            <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="space-y-2">
+                            {q.options.map((option: string) => (
+                                <FormItem key={option} className="flex items-center space-x-3">
+                                <FormControl><RadioGroupItem value={option} /></FormControl>
+                                <FormLabel className="font-normal">{option}</FormLabel>
+                                </FormItem>
+                            ))}
+                            </RadioGroup>
+                        ) : (
+                            <Input {...field} placeholder="Your answer" />
+                        )}
                       </FormControl>
+                      {currentSection.key === 'roleAndExperience' && key === 'q2' && watchedValues.q2 === 'Other' && (
+                        <FormField
+                            control={form.control}
+                            name="q2_other"
+                            render={({ field }) => (
+                                <FormItem className="pt-2">
+                                    <FormControl>
+                                        <Input {...field} placeholder="Please specify" />
+                                    </FormControl>
+                                </FormItem>
+                            )}
+                        />
+                      )}
+                      {currentSection.key === 'organizationalProfile' && key === 'q1' && watchedValues.q1 === 'Other' && (
+                        <FormField
+                            control={form.control}
+                            name="q1_other"
+                            render={({ field }) => (
+                                <FormItem className="pt-2">
+                                    <FormControl>
+                                        <Input {...field} placeholder="Please specify" />
+                                    </FormControl>
+                                </FormItem>
+                            )}
+                        />
+                      )}
                     </FormItem>
                   )}
                 />
