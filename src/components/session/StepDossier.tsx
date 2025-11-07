@@ -34,7 +34,7 @@ export default function StepDossier({ sessionData, updateSessionData }: StepProp
 
   useEffect(() => {
     const startTime = Date.now();
-    const scrollableContent = scrollRef.current;
+    const scrollableContent = scrollRef.current?.querySelector('div');
     let scrollCount = 0;
 
     const handleScroll = () => {
@@ -54,19 +54,14 @@ export default function StepDossier({ sessionData, updateSessionData }: StepProp
   return (
     <>
       <CardHeader>
-        <CardTitle className="font-headline text-2xl">Investment Dossier</CardTitle>
+        <CardTitle className="font-headline text-2xl">Scenario Briefing</CardTitle>
         <CardDescription>
-          Please review the following information about a potential investment opportunity.
+          {content.briefing}
         </CardDescription>
       </CardHeader>
       <div className="p-6 pt-0">
-        <ScrollArea className="h-[60vh] w-full" ref={scrollRef}>
+        <ScrollArea className="h-[40vh] w-full" ref={scrollRef}>
           <div className="p-1 pr-4 space-y-6">
-            <h3 className="font-semibold text-lg">Scenario Briefing</h3>
-            <p className="text-muted-foreground">
-              {content.briefing}
-            </p>
-            
             <div className="border rounded-lg p-4 bg-secondary/30">
               <h3 className="font-semibold text-lg mb-4">Firm Dossier</h3>
               <ul className="space-y-3 text-muted-foreground list-disc pl-5">
