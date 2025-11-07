@@ -1,10 +1,11 @@
 
+
 'use client';
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { SidebarProvider, Sidebar, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarContent, SidebarHeader, SidebarTrigger, SidebarRail, SidebarInset } from '@/components/ui/sidebar';
-import { Users, BarChart, NotebookPen } from 'lucide-react';
+import { Users, BarChart, NotebookPen, ShieldCheck } from 'lucide-react';
 import Header from '@/components/common/Header';
 
 export default function AdminLayout({
@@ -58,6 +59,18 @@ export default function AdminLayout({
                     <Link href="/admin/manual-coding">
                       <NotebookPen />
                       Manual Coding
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={pathname === '/admin/quality'}
+                    tooltip="Data Quality"
+                  >
+                    <Link href="/admin/quality">
+                      <ShieldCheck />
+                      Data Quality
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
