@@ -1,3 +1,4 @@
+
 // A central source for mock session data for the admin dashboard.
 import type { SessionData, ExperimentalCondition } from './types';
 
@@ -13,7 +14,7 @@ export const mockDetailedSessions: (SessionData & { id: string, status: 'Complet
     deviceInfo: { userAgent: 'Chrome', screenHeight: 1080, screenWidth: 1920 },
     consent: true,
     condition: { advisorySource: 'human', linguisticFrame: 'abstract', scenario: 'xyz' },
-    initialAssessments: { financialLiteracy: {}, roleAndExperience: {}, organizationalProfile: {} },
+    initialAssessments: { financialLiteracy: { q1: 'More than $102' }, roleAndExperience: {}, organizationalProfile: {} },
     dossierViewTime: 35000,
     dossierScrollCount: 5,
     advisoryViewTime: 45000,
@@ -23,13 +24,14 @@ export const mockDetailedSessions: (SessionData & { id: string, status: 'Complet
       q2: '12 months',  // Incorrect
     },
     manipulationChecks: {},
-    objectiveChoice: 'Option A',
-    subjectiveDQ: { confidence: 5, informed: 4, clearBasis: 5, satisfied: 4 },
+    objectiveChoice: 'Option A: Growth Equity Fund',
+    subjectiveDQ: { confidence: 'Agree', informed: 'Somewhat agree', clearBasis: 'Agree', satisfied: 'Somewhat agree' },
     mediators: {
       advisoryCredibility: { q1: 'Agree', q2: 'Agree', q3: 'Agree', q4: 'Agree', q5: 'Agree', q6: 'Agree', q7: 'Agree', q8: 'Agree', q9: 'Agree' }
     },
     controls: {
-      riskTolerance: {},
+      riskTolerance: { q1: 'Somewhat likely', q2: 'Neither likely nor unlikely', q3: 'Somewhat unlikely', q4: 'Moderately likely', q5: 'Extremely unlikely'},
+      digitalLiteracy: {},
     },
     openRationale: 'I went with A because it seemed like the best path.'
   },
@@ -77,8 +79,8 @@ export const mockDetailedSessions: (SessionData & { id: string, status: 'Complet
         q2: '24 months', // Correct
     },
     manipulationChecks: {},
-    objectiveChoice: 'Option C',
-    subjectiveDQ: { confidence: 6, informed: 6, clearBasis: 6, satisfied: 6 },
+    objectiveChoice: 'Option C: Government Treasury Bond Portfolio',
+    subjectiveDQ: { confidence: 'Strongly agree', informed: 'Strongly agree', clearBasis: 'Strongly agree', satisfied: 'Strongly agree' },
     mediators: {
       // All 'Neither agree nor disagree' -> 9/9 = 100% straight-lining
       advisoryCredibility: { 
@@ -109,12 +111,33 @@ export const mockDetailedSessions: (SessionData & { id: string, status: 'Complet
         q2: '24 months', // Correct
     },
     manipulationChecks: {},
-    objectiveChoice: 'Option C',
-    subjectiveDQ: { confidence: 6, informed: 7, clearBasis: 6, satisfied: 7 },
+    objectiveChoice: 'Option C: Government Treasury Bond Portfolio',
+    subjectiveDQ: { confidence: 'Agree', informed: 'Strongly agree', clearBasis: 'Agree', satisfied: 'Strongly agree' },
     mediators: {
         advisoryCredibility: { q1: 'Agree', q2: 'Strongly agree', q3: 'Agree', q4: 'Somewhat agree', q5: 'Agree', q6: 'Agree', q7: 'Neither agree nor disagree', q8: 'Somewhat agree', q9: 'Agree' }
     },
     controls: {},
     openRationale: 'The advisory made a strong case for capital preservation, and Option C aligns with that goal perfectly.'
   },
+  {
+    id: 'SESS_D5E6F7',
+    status: 'In Progress',
+    startTime: new Date('2024-07-28T11:30:15Z').toISOString(),
+    endTime: null,
+    deviceInfo: { userAgent: 'Edge', screenHeight: 1440, screenWidth: 2560 },
+    consent: true,
+    condition: { advisorySource: 'human', linguisticFrame: 'concrete', scenario: 'techtrend' },
+    initialAssessments: { financialLiteracy: {}, roleAndExperience: {}, organizationalProfile: {} },
+    dossierViewTime: 25000,
+    dossierScrollCount: 3,
+    advisoryViewTime: 0,
+    advisoryScrollCount: 0,
+    comprehension: { q1: null, q2: null},
+    manipulationChecks: {},
+    objectiveChoice: null,
+    subjectiveDQ: {},
+    mediators: {},
+    controls: {},
+    openRationale: null
+  }
 ];

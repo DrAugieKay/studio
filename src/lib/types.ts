@@ -31,7 +31,7 @@ export type SessionData = {
   comprehension: Record<string, string | null>;
   manipulationChecks: Record<string, string | null>;
   objectiveChoice: string | null;
-  subjectiveDQ: Record<string, number | null>;
+  subjectiveDQ: Record<string, string | null>;
   mediators: {
     advisoryCredibility?: Record<string, string | null>;
     psychologicalDistance?: Record<string, string | null>;
