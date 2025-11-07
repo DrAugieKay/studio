@@ -42,10 +42,10 @@ export default function StepObjectiveChoice({ sessionData, updateSessionData }: 
   });
 
   const [subjectiveValues, setSubjectiveValues] = useState({
-    confidence: sessionData.subjectiveDQ?.confidence ?? 3, // Default to 'Neither agree nor disagree'
-    informed: sessionData.subjectiveDQ?.informed ?? 3,
-    clearBasis: sessionData.subjectiveDQ?.clearBasis ?? 3,
-    satisfied: sessionData.subjectiveDQ?.satisfied ?? 3,
+    confidence: sessionData.subjectiveDQ?.confidence ?? null,
+    informed: sessionData.subjectiveDQ?.informed ?? null,
+    clearBasis: sessionData.subjectiveDQ?.clearBasis ?? null,
+    satisfied: sessionData.subjectiveDQ?.satisfied ?? null,
   });
 
   const { watch } = form;
@@ -64,7 +64,7 @@ export default function StepObjectiveChoice({ sessionData, updateSessionData }: 
   const handleSliderChange = (key: keyof typeof subjectiveValues, newValue: string) => {
     const newValues = { ...subjectiveValues, [key]: likertOptions.indexOf(newValue) };
     setSubjectiveValues(newValues);
-    updateSessionData({ subjectiveDQ: newValues });
+    updateSessionData({ subjectiveDQ: newValues as Record<string, number> });
   };
 
 
@@ -111,7 +111,7 @@ export default function StepObjectiveChoice({ sessionData, updateSessionData }: 
                         <div className="flex items-center gap-4 pt-2">
                            <RadioGroup 
                              onValueChange={(val) => handleSliderChange(key as keyof typeof subjectiveValues, val)} 
-                             defaultValue={likertOptions[subjectiveValues[key as keyof typeof subjectiveValues]]}
+                             value={subjectiveValues[key as keyof typeof subjectiveValues] !== null ? likertOptions[subjectiveValues[key as keyof typeof subjectiveValues]!] : ''}
                              className="w-full space-y-1"
                             >
                                {likertOptions.map((option) => (
