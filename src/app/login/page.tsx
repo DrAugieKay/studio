@@ -5,8 +5,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
-import { useAuth } from '@/firebase';
+import { useAuth, initiateEmailSignUp, initiateEmailSignIn } from '@/firebase';
 import { useRouter } from 'next/navigation';
 
 import { Button } from '@/components/ui/button';
@@ -25,7 +24,7 @@ type LoginFormValues = z.infer<typeof formSchema>;
 
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
-  const [isSignUp, setIsSignUp] = useState(false); // New state to toggle between sign-in and sign-up
+  const [isSignUp, setIsSignUp] = useState(false);
   const auth = useAuth();
   const router = useRouter();
   const { toast } = useToast();
@@ -40,32 +39,39 @@ export default function LoginPage() {
 
   const onSubmit = async (values: LoginFormValues) => {
     setIsLoading(true);
-    try {
-      if (isSignUp) {
-        // Handle Sign Up
-        await createUserWithEmailAndPassword(auth, values.email, values.password);
-        toast({
-          title: 'Account Created',
-          description: 'Redirecting to the admin dashboard...',
-        });
-      } else {
-        // Handle Sign In
-        await signInWithEmailAndPassword(auth, values.email, values.password);
-        toast({
-          title: 'Login Successful',
-          description: 'Redirecting to the admin dashboard...',
-        });
-      }
-      router.push('/admin');
-    } catch (error: any) {
-      console.error(`${isSignUp ? 'Sign up' : 'Login'} failed:`, error);
+    
+    // Non-blocking approach: initiate the auth action and let the
+    // onAuthStateChanged listener in the provider handle the redirect.
+    if (isSignUp) {
+      initiateEmailSignUp(auth, values.email, values.password);
       toast({
-        variant: 'destructive',
-        title: `${isSignUp ? 'Sign Up' : 'Login'} Failed`,
-        description: error.message || 'An unknown error occurred. Please check your credentials.',
+        title: 'Creating Account...',
+        description: 'You will be redirected shortly.',
       });
-      setIsLoading(false);
+    } else {
+      initiateEmailSignIn(auth, values.email, values.password);
+      toast({
+        title: 'Signing In...',
+        description: 'You will be redirected shortly.',
+      });
     }
+    
+    // We don't await here. The auth listener will redirect.
+    // However, we can add a fallback redirect after a short delay.
+    setTimeout(() => {
+        // This is a fallback in case the listener is slow to react.
+        if (auth.currentUser) {
+            router.push('/admin');
+        } else {
+            // If still not logged in, the listener will eventually show an error or the user needs to try again.
+            setIsLoading(false);
+            toast({
+                variant: 'destructive',
+                title: 'Authentication Failed',
+                description: 'Please check your credentials and try again.',
+            });
+        }
+    }, 2500);
   };
 
   return (
