@@ -49,17 +49,19 @@ export default function StepConsent({ updateSessionData, endSurvey, goToNextStep
     updateSessionData({ consent: newAnswers.consentGiven === 'Yes' });
 
     if ((questionId === 'ageCheck' || questionId === 'isEmployed' || questionId === 'consentGiven') && value === 'No') {
-      endSurvey();
+      setTimeout(endSurvey, 500); // Give a brief moment for the UI to update
     }
     
     if (questionId === 'consentGiven' && value === 'Yes') {
-      // Find the "Next" button and click it
-      const nextButton = document.querySelector('button:not([disabled]):has(svg.lucide-arrow-right)') as HTMLButtonElement | null;
-      if (nextButton) {
-        nextButton.click();
-      } else {
-        goToNextStep();
-      }
+       setTimeout(() => {
+        // Find the "Next" button and click it
+        const nextButton = document.querySelector('button:not([disabled]):has(svg.lucide-arrow-right)') as HTMLButtonElement | null;
+        if (nextButton) {
+            nextButton.click();
+        } else {
+            goToNextStep();
+        }
+       }, 300);
     }
   };
 
@@ -78,15 +80,14 @@ export default function StepConsent({ updateSessionData, endSurvey, goToNextStep
     }
   };
 
-  const showNextButton = answers.consentGiven !== 'Yes';
-
   return (
     <>
       <CardHeader>
         <CardTitle className="font-headline text-2xl">Informed Consent</CardTitle>
+        <CardDescription>Please read the following information carefully.</CardDescription>
       </CardHeader>
-      <div className="p-6 pt-0 space-y-6">
-        <div className="p-4 border rounded-md text-sm text-muted-foreground">
+      <div className="p-6 pt-0 space-y-8">
+        <div className="p-4 border rounded-lg text-sm text-muted-foreground bg-secondary/30">
           You are invited to participate in a research study on corporate financial decision-making. This study examines how different sources of financial advice influence organizational decision-making quality. It involves reviewing financial advice and making a business investment recommendation. It will take approximately 15-20 minutes to complete. Your participation is voluntary and anonymous. You may withdraw at any time without penalty. The study involves viewing a simulated financial advisory scenario. There are no known risks. By proceeding, you confirm you are at least 18 years old, speak the survey language fluently, and agree to participate under these terms.
         </div>
 
@@ -94,20 +95,20 @@ export default function StepConsent({ updateSessionData, endSurvey, goToNextStep
           {questions.map((q) => (
             showQuestion(q.id as keyof typeof answers) && (
               <div key={q.id}>
-                <Label className="font-semibold">{q.label}</Label>
+                <Label className="font-semibold text-base">{q.label}</Label>
                 <RadioGroup
                   value={answers[q.id as keyof typeof answers]}
                   onValueChange={(value) => handleValueChange(q.id as keyof typeof answers, value as 'Yes' | 'No')}
-                  className="mt-2"
+                  className="mt-3 grid grid-cols-2 gap-4"
                 >
-                  <div className="flex items-center space-x-2">
+                  <Label htmlFor={`${q.id}-yes`} className="flex items-center space-x-3 p-4 border rounded-md cursor-pointer has-[:checked]:bg-secondary has-[:checked]:border-accent transition-colors">
                     <RadioGroupItem value="Yes" id={`${q.id}-yes`} />
-                    <Label htmlFor={`${q.id}-yes`} className="font-normal">Yes</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
+                    <span className="font-normal text-base">Yes</span>
+                  </Label>
+                  <Label htmlFor={`${q.id}-no`} className="flex items-center space-x-3 p-4 border rounded-md cursor-pointer has-[:checked]:bg-secondary has-[:checked]:border-accent transition-colors">
                     <RadioGroupItem value="No" id={`${q.id}-no`} />
-                    <Label htmlFor={`${q.id}-no`} className="font-normal">No</Label>
-                  </div>
+                    <span className="font-normal text-base">No</span>
+                  </Label>
                 </RadioGroup>
               </div>
             )

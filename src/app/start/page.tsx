@@ -59,15 +59,6 @@ export default function StartPage() {
   const [sessionData, setSessionData] = useState<Partial<SessionData>>({
     consent: false,
   });
-  const [showNext, setShowNext] = useState(true);
-
-  useEffect(() => {
-    if (stepNames[currentStep] === 'Consent' && sessionData.consent) {
-        setShowNext(false);
-    } else if (stepNames[currentStep] !== 'Consent') {
-        setShowNext(true);
-    }
-  }, [currentStep, sessionData.consent]);
 
   const handleNext = () => {
     if (currentStep < stepComponents.length - 1) {
@@ -100,6 +91,12 @@ export default function StartPage() {
   
   const CurrentStepComponent = stepComponents[currentStep];
   const isDebrief = stepNames[currentStep] === 'Debrief' || stepNames[currentStep] === 'End of Survey';
+  
+  // Logic to hide the 'Next' button specifically on the Consent step
+  const showNext = useMemo(() => {
+    return stepNames[currentStep] !== 'Consent';
+  }, [currentStep]);
+
 
   const componentProps: any = {
     sessionData,
