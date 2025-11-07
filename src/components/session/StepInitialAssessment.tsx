@@ -1,7 +1,10 @@
+
 'use client';
 
-import { useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useState, useMemo, useEffect } from 'react';
+import { useForm, useWatch } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -11,52 +14,81 @@ import { Button } from '../ui/button';
 type StepProps = {
   sessionData: Partial<SessionData>;
   updateSessionData: (data: Partial<SessionData>) => void;
+  setIsLastAssessmentSection: (isLast: boolean) => void;
 };
 
 const financialLiteracyQuestions = {
   q1: {
     question: 'i. Suppose you had $100 at an interest rate of 2% left for 5 years. Which is closest to the amount you would have at the end of 5 years?',
-    options: ['More than $102', 'Exactly $102', 'Less than $102', 'I don\'t know'],
+    options: ['More than $102', 'Exactly $102', 'Less than $102', "I don't know"],
   },
   q2: {
     question: 'ii. If the interest rate on your savings account is 1% per year and inflation is 2% per year, after one year you will be able to buy?',
-    options: ['More than today', 'The same as today', 'Less than today', 'I don\'t know'],
+    options: ['More than today', 'The same as today', 'Less than today', "I don't know"],
   },
   q3: {
     question: 'iii. True or False: "Buying a single company\'s stock usually provides a safer return than a stock mutual fund."',
-    options: ['True', 'False', 'I don\'t know'],
+    options: ['True', 'False', "I don't know"],
   },
   q4: {
     question: 'iv. If the chance of a particular event is 1 out of 100, what is the chance of that event expressed as a percentage?',
-    options: ['0.1%', '1%', '10%', 'I don\'t know'],
+    options: ['0.1%', '1%', '10%', "I don't know"],
   },
 };
+
+const financialLiteracySchema = z.object({
+  q1: z.string().min(1, { message: 'Required' }),
+  q2: z.string().min(1, { message: 'Required' }),
+  q3: z.string().min(1, { message: 'Required' }),
+  q4: z.string().min(1, { message: 'Required' }),
+});
+const numeracySchema = z.object({}); // Placeholder
+const cognitiveReflectionSchema = z.object({}); // Placeholder
 
 const sections = [
   {
     key: 'financialLiteracy',
     title: 'a. Financial Literacy (Please select the best answer).',
     questions: financialLiteracyQuestions,
+    schema: financialLiteracySchema,
   },
   {
     key: 'numeracy',
     title: 'b. Numeracy Questions (Placeholder)',
     questions: {},
+    schema: numeracySchema,
   },
   {
     key: 'cognitiveReflection',
     title: 'c. Cognitive Reflection Questions (Placeholder)',
     questions: {},
+    schema: cognitiveReflectionSchema,
   }
 ];
 
-export default function StepInitialAssessment({ sessionData, updateSessionData }: StepProps) {
+export default function StepInitialAssessment({ sessionData, updateSessionData, setIsLastAssessmentSection }: StepProps) {
   const [currentSectionIndex, setCurrentSectionIndex] = useState(0);
+  const currentSection = sections[currentSectionIndex];
+  const isLastSection = currentSectionIndex === sections.length - 1;
 
-  const form = useForm();
+  const form = useForm({
+    resolver: zodResolver(currentSection.schema),
+    defaultValues: sessionData.initialAssessments?.[currentSection.key as keyof SessionData['initialAssessments']] || {},
+  });
+
+  const watchedValues = useWatch({ control: form.control });
+  const allQuestionsAnswered = useMemo(() => {
+    const questionKeys = Object.keys(currentSection.questions);
+    if (questionKeys.length === 0) return true; // For placeholder sections
+    return questionKeys.every(key => !!watchedValues[key]);
+  }, [watchedValues, currentSection.questions]);
+
+  useEffect(() => {
+    setIsLastAssessmentSection(isLastSection);
+  }, [isLastSection, setIsLastAssessmentSection]);
+
 
   const handleNextSection = () => {
-    // Logic to save data for the current section
     const formData = form.getValues();
     const currentSectionKey = sections[currentSectionIndex].key;
     
@@ -67,17 +99,12 @@ export default function StepInitialAssessment({ sessionData, updateSessionData }
       },
     });
 
-    if (currentSectionIndex < sections.length - 1) {
+    if (!isLastSection) {
       setCurrentSectionIndex(currentSectionIndex + 1);
-      form.reset();
-    } else {
-      // This part will be connected to the main 'Next' button functionality
-      console.log('Finished all initial assessments');
+      const nextSectionKey = sections[currentSectionIndex + 1].key as keyof SessionData['initialAssessments'];
+      form.reset(sessionData.initialAssessments?.[nextSectionKey] || {});
     }
   };
-  
-  const currentSection = sections[currentSectionIndex];
-  const isLastSection = currentSectionIndex === sections.length - 1;
 
   return (
     <>
@@ -91,33 +118,38 @@ export default function StepInitialAssessment({ sessionData, updateSessionData }
         <Form {...form}>
           <form className="space-y-8">
             <h3 className="font-semibold">{currentSection.title}</h3>
-            {Object.entries(currentSection.questions).map(([key, q]) => (
-              <FormField
-                key={key}
-                control={form.control}
-                name={key}
-                defaultValue={sessionData.initialAssessments?.[currentSection.key as keyof SessionData['initialAssessments']]?.[key] || ''}
-                render={({ field }) => (
-                  <FormItem className="space-y-3 p-4 border rounded-lg bg-secondary/30">
-                    <FormLabel>{q.question}</FormLabel>
-                    <FormControl>
-                      <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="space-y-2">
-                        {q.options.map((option) => (
-                          <FormItem key={option} className="flex items-center space-x-3">
-                            <FormControl><RadioGroupItem value={option} /></FormControl>
-                            <FormLabel className="font-normal">{option}</FormLabel>
-                          </FormItem>
-                        ))}
-                      </RadioGroup>
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-            ))}
+            {Object.keys(currentSection.questions).length > 0 ? (
+              Object.entries(currentSection.questions).map(([key, q]: [string, any]) => (
+                <FormField
+                  key={key}
+                  control={form.control}
+                  name={key}
+                  render={({ field }) => (
+                    <FormItem className="space-y-3 p-4 border rounded-lg bg-secondary/30">
+                      <FormLabel>{q.question}</FormLabel>
+                      <FormControl>
+                        <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="space-y-2">
+                          {q.options.map((option: string) => (
+                            <FormItem key={option} className="flex items-center space-x-3">
+                              <FormControl><RadioGroupItem value={option} /></FormControl>
+                              <FormLabel className="font-normal">{option}</FormLabel>
+                            </FormItem>
+                          ))}
+                        </RadioGroup>
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+              ))
+            ) : (
+              <div className="text-muted-foreground p-4 border rounded-lg bg-secondary/30">
+                Questions for this section will be added soon.
+              </div>
+            )}
 
             {!isLastSection && (
                 <div className="flex justify-end">
-                    <Button type="button" onClick={handleNextSection}>
+                    <Button type="button" onClick={handleNextSection} disabled={!allQuestionsAnswered}>
                         Continue
                     </Button>
                 </div>

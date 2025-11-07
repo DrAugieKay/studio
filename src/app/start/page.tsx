@@ -59,6 +59,8 @@ export default function StartPage() {
   const [sessionData, setSessionData] = useState<Partial<SessionData>>({
     consent: false,
   });
+  const [isLastAssessmentSection, setIsLastAssessmentSection] = useState(false);
+
 
   const handleNext = () => {
     if (currentStep < stepComponents.length - 1) {
@@ -92,11 +94,23 @@ export default function StartPage() {
   const CurrentStepComponent = stepComponents[currentStep];
   const isDebrief = stepNames[currentStep] === 'Debrief' || stepNames[currentStep] === 'End of Survey';
   
+  const showNextButton = useMemo(() => {
+    if (stepNames[currentStep] === 'Consent') {
+      return false;
+    }
+    if (stepNames[currentStep] === 'Initial Assessments' && !isLastAssessmentSection) {
+      return false;
+    }
+    return true;
+  }, [currentStep, isLastAssessmentSection]);
+
+
   const componentProps: any = {
     sessionData,
     updateSessionData,
     endSurvey,
     goToNextStep: handleNext,
+    setIsLastAssessmentSection,
   };
 
   return (
@@ -125,7 +139,7 @@ export default function StartPage() {
               <ArrowLeft className="mr-2 h-4 w-4" />
               Previous
             </Button>
-            {stepNames[currentStep] !== 'Consent' && <Button
+            {showNextButton && <Button
               onClick={handleNext}
               disabled={isNextDisabled}
               className="bg-accent hover:bg-accent/90 text-accent-foreground"
