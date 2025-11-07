@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import type { SessionData } from '@/lib/types';
 
 import { Button } from '@/components/ui/button';
@@ -19,6 +20,7 @@ import StepMediators from '@/components/session/StepMediators';
 import StepControls from '@/components/session/StepControls';
 import StepOpenRationale from '@/components/session/StepOpenRationale';
 import StepDebrief from '@/components/session/StepDebrief';
+import StepEndSurvey from '@/components/session/StepEndSurvey';
 
 const stepComponents = [
   StepConsent,
@@ -32,6 +34,7 @@ const stepComponents = [
   StepControls,
   StepOpenRationale,
   StepDebrief,
+  StepEndSurvey,
 ];
 
 const stepNames = [
@@ -46,21 +49,31 @@ const stepNames = [
   'Controls',
   'Rationale',
   'Debrief',
+  'End of Survey',
 ];
+
+const END_SURVEY_STEP = stepComponents.length - 1;
 
 export default function StartPage() {
   const [currentStep, setCurrentStep] = useState(0);
   const [sessionData, setSessionData] = useState<Partial<SessionData>>({
     consent: false,
   });
+  const [showNext, setShowNext] = useState(true);
+
+  useEffect(() => {
+    if (stepNames[currentStep] === 'Consent' && sessionData.consent) {
+        setShowNext(false);
+    } else if (stepNames[currentStep] !== 'Consent') {
+        setShowNext(true);
+    }
+  }, [currentStep, sessionData.consent]);
 
   const handleNext = () => {
     if (currentStep < stepComponents.length - 1) {
       setCurrentStep(currentStep + 1);
     } else {
-      // Handle experiment completion
       console.log('Final session data:', sessionData);
-      // Here you would typically submit the data to Firestore
     }
   };
 
@@ -68,6 +81,10 @@ export default function StartPage() {
     if (currentStep > 0) {
       setCurrentStep(currentStep - 1);
     }
+  };
+  
+  const endSurvey = () => {
+    setCurrentStep(END_SURVEY_STEP);
   };
 
   const updateSessionData = (data: Partial<SessionData>) => {
@@ -80,9 +97,16 @@ export default function StartPage() {
     }
     return false;
   }, [currentStep, sessionData.consent]);
-
+  
   const CurrentStepComponent = stepComponents[currentStep];
-  const isDebrief = stepNames[currentStep] === 'Debrief';
+  const isDebrief = stepNames[currentStep] === 'Debrief' || stepNames[currentStep] === 'End of Survey';
+
+  const componentProps: any = {
+    sessionData,
+    updateSessionData,
+    endSurvey,
+    goToNextStep: handleNext,
+  };
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-4 sm:p-6 md:p-8">
@@ -90,13 +114,13 @@ export default function StartPage() {
         {!isDebrief && (
             <ProgressTracker
                 current={currentStep}
-                total={stepNames.length -1}
+                total={stepNames.length - 2} // Exclude Debrief and End
                 stepNames={stepNames}
             />
         )}
         <Card className="mt-6 shadow-xl overflow-hidden">
           <CardContent className="p-0">
-            <CurrentStepComponent sessionData={sessionData} updateSessionData={updateSessionData} />
+            <CurrentStepComponent {...componentProps} />
           </CardContent>
         </Card>
         
@@ -110,14 +134,14 @@ export default function StartPage() {
               <ArrowLeft className="mr-2 h-4 w-4" />
               Previous
             </Button>
-            <Button
+            {showNext && <Button
               onClick={handleNext}
               disabled={isNextDisabled}
               className="bg-accent hover:bg-accent/90 text-accent-foreground"
             >
-              {currentStep === stepComponents.length - 2 ? 'Finish' : 'Next'}
+              {currentStep === stepComponents.length - 3 ? 'Finish' : 'Next'}
               <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
+            </Button>}
           </div>
         )}
       </div>
