@@ -3,10 +3,12 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { SidebarProvider, Sidebar, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarContent, SidebarHeader, SidebarTrigger, SidebarRail, SidebarInset } from '@/components/ui/sidebar';
-import { Users, BarChart, NotebookPen, ShieldCheck, SlidersHorizontal } from 'lucide-react';
+import { Users, BarChart, NotebookPen, ShieldCheck, SlidersHorizontal, Loader2 } from 'lucide-react';
 import Header from '@/components/common/Header';
+import { useUser } from '@/firebase';
+import { useEffect } from 'react';
 
 export default function AdminLayout({
   children,
@@ -14,6 +16,22 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const { user, isUserLoading } = useUser();
+
+  useEffect(() => {
+    if (!isUserLoading && !user) {
+      router.push('/login');
+    }
+  }, [user, isUserLoading, router]);
+
+  if (isUserLoading || !user) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <SidebarProvider>
