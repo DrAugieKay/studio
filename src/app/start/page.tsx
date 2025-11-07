@@ -60,6 +60,8 @@ export default function StartPage() {
     consent: false,
     manipulationChecks: {},
     mediators: {},
+    startTime: new Date().toISOString(),
+    endTime: null,
   });
   const [isLastAssessmentSection, setIsLastAssessmentSection] = useState(false);
   const [isLastMediatorSection, setIsLastMediatorSection] = useState(false);
@@ -79,9 +81,16 @@ export default function StartPage() {
         linguisticFrame: frames[Math.floor(Math.random() * frames.length)],
         scenario: scenarios[Math.floor(Math.random() * scenarios.length)],
       };
+      
+      const deviceInfo = {
+        userAgent: navigator.userAgent,
+        screenWidth: window.screen.width,
+        screenHeight: window.screen.height,
+      }
 
       console.log('Assigned Condition:', assignedCondition);
-      updateSessionData({ condition: assignedCondition });
+      console.log('Device Info:', deviceInfo);
+      updateSessionData({ condition: assignedCondition, deviceInfo });
     }
   }, []); // Empty dependency array ensures this runs only once on mount.
 
@@ -101,6 +110,7 @@ export default function StartPage() {
   };
   
   const endSurvey = () => {
+    updateSessionData({ endTime: new Date().toISOString() });
     setCurrentStep(END_SURVEY_STEP);
   };
 

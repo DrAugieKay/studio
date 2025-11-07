@@ -7,6 +7,16 @@ export type ExperimentalCondition = {
 };
 
 export type SessionData = {
+  // Metadata
+  startTime: string;
+  endTime: string | null;
+  deviceInfo: {
+    userAgent: string;
+    screenHeight: number;
+    screenWidth: number;
+  };
+
+  // Session Data
   consent: boolean;
   condition?: ExperimentalCondition;
   initialAssessments: {
@@ -15,6 +25,7 @@ export type SessionData = {
     organizationalProfile: Record<string, string | null> | null;
   };
   dossierViewTime: number;
+  dossierScrollCount: number;
   advisoryViewTime: number;
   advisoryScrollCount: number;
   comprehension: Record<string, string | null>;

@@ -80,7 +80,7 @@ export default function StepDossier({ sessionData, updateSessionData }: StepProp
       }
       const viewTime = Date.now() - startTime;
       console.log(`Dossier view time: ${viewTime}ms, Scrolls: ${scrollCount}`);
-      updateSessionData({ dossierViewTime: viewTime, advisoryScrollCount: scrollCount });
+      updateSessionData({ dossierViewTime: viewTime, dossierScrollCount: scrollCount });
     };
   }, []);
 
