@@ -36,13 +36,43 @@ const financialLiteracyQuestions = {
   },
 };
 
+const roleAndExperienceQuestions = {
+  q1: {
+    question: 'i. Which best describes your role level?',
+    options: ['Entry level', 'Professional/Analyst', 'Manager', 'Senior Manager', 'Director', 'Executive', 'Other'],
+  },
+  q2: {
+    question: 'ii. What is your primary functional area?',
+    options: ['Compliance/Legal', 'Finance / Accounting / Treasury', 'General Management', 'Human Resources', 'Information Technology', 'Marketing / Sales', 'Operations / Logistics', 'Corporate Strategy / Business Development', 'Other'],
+  },
+  q3: {
+    question: 'iii. How involved are you in financial decision-making?',
+    options: ['Not involved', 'Advisory Support', 'Implementation Only', 'Co-decision Maker', 'Primary Decision Maker'],
+  },
+  q4: {
+    question: 'iv. How many years of experience do you have with corporate financial decisions?',
+    options: ['None', '1-3 years', '4-6 years', '7+ years'],
+  },
+  q5: {
+    question: 'v. Approximately how many years have you relied on advisory services in your work?',
+    options: ['0 [Not at all]', '1–2 Years', '3–5 Years', '6–10 Years', '10+ Years'],
+  },
+};
+
+
 const financialLiteracySchema = z.object({
   q1: z.string().min(1, { message: 'Required' }),
   q2: z.string().min(1, { message: 'Required' }),
   q3: z.string().min(1, { message: 'Required' }),
   q4: z.string().min(1, { message: 'Required' }),
 });
-const numeracySchema = z.object({}); // Placeholder
+const roleAndExperienceSchema = z.object({
+  q1: z.string().min(1, { message: 'Required' }),
+  q2: z.string().min(1, { message: 'Required' }),
+  q3: z.string().min(1, { message: 'Required' }),
+  q4: z.string().min(1, { message: 'Required' }),
+  q5: z.string().min(1, { message: 'Required' }),
+});
 const cognitiveReflectionSchema = z.object({}); // Placeholder
 
 const sections = [
@@ -53,10 +83,10 @@ const sections = [
     schema: financialLiteracySchema,
   },
   {
-    key: 'numeracy',
-    title: 'b. Numeracy Questions (Placeholder)',
-    questions: {},
-    schema: numeracySchema,
+    key: 'roleAndExperience',
+    title: 'b. Your Role and Experience (Please select the best answer):',
+    questions: roleAndExperienceQuestions,
+    schema: roleAndExperienceSchema,
   },
   {
     key: 'cognitiveReflection',

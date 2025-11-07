@@ -1,9 +1,8 @@
 export type SessionData = {
   consent: boolean;
   initialAssessments: {
-    financialLiteracy: Record<string, string | null>;
-    // Placeholder for future questions
-    numeracy: Record<string, string | null> | null;
+    financialLiteracy: Record<string, string | null> | null;
+    roleAndExperience: Record<string, string | null> | null;
     cognitiveReflection: Record<string, string | null> | null;
   };
   dossierViewTime: number;
