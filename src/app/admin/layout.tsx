@@ -5,7 +5,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { SidebarProvider, Sidebar, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarContent, SidebarHeader, SidebarTrigger, SidebarRail, SidebarInset } from '@/components/ui/sidebar';
-import { Users, BarChart, NotebookPen, ShieldCheck } from 'lucide-react';
+import { Users, BarChart, NotebookPen, ShieldCheck, SlidersHorizontal } from 'lucide-react';
 import Header from '@/components/common/Header';
 
 export default function AdminLayout({
@@ -71,6 +71,18 @@ export default function AdminLayout({
                     <Link href="/admin/quality">
                       <ShieldCheck />
                       Data Quality
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                 <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={pathname === '/admin/la-pipeline'}
+                    tooltip="LA Pipeline"
+                  >
+                    <Link href="/admin/la-pipeline">
+                      <SlidersHorizontal />
+                      LA Pipeline
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
