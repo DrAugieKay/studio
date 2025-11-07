@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -24,31 +25,61 @@ export default function DataAnalysisPage() {
                 const qualityFlags = getQualityFlags(session);
                 const composites = getComposites(session);
 
-                // Flatten the data structure for CSV
+                // Flatten the data structure for CSV, including all raw, coded, and computed variables.
                 const flattened = {
                     participant_id: session.id,
                     status: session.status,
                     start_time: session.startTime,
                     end_time: session.endTime,
+                    
                     // Condition
                     condition_source: session.condition?.advisorySource,
                     condition_frame: session.condition?.linguisticFrame,
                     condition_scenario: session.condition?.scenario,
+
                     // Timings and Engagement
                     dossier_view_time: session.dossierViewTime,
                     advisory_view_time: session.advisoryViewTime,
                     dossier_scroll_count: session.dossierScrollCount,
                     advisory_scroll_count: session.advisoryScrollCount,
+
                     // Raw choices and checks
                     ...session.initialAssessments?.financialLiteracy,
+                    ...session.initialAssessments?.roleAndExperience,
+                    ...session.initialAssessments?.organizationalProfile,
+                    ...session.comprehension,
                     ...session.manipulationChecks,
-                    objective_choice: session.objectiveChoice,
-                    // Composites
-                    ...composites,
+                    choice_raw: session.objectiveChoice,
+                    
+                    // Subjective DQ Raw
+                    ...session.subjectiveDQ,
+
+                    // Mediators Raw
+                    ...session.mediators?.advisoryCredibility,
+                    ...session.mediators?.psychologicalDistance,
+                    ...session.mediators?.linguisticAbstractness,
+                    ...session.mediators?.outcomeFraming,
+
+                    // Controls Raw
+                    ...session.controls?.riskTolerance,
+                    ...session.controls?.digitalLiteracy,
+
+                    // Composites & Coded Variables
+                    obj_dq_binary: composites.obj_dq_binary,
+                    dq_sub_mean: composites.dq_sub_mean,
+                    cr_trust: composites.cr_trust,
+                    cr_comp: composites.cr_comp,
+                    cr_good: composites.cr_good,
+                    cr_global_mean: composites.cr_global_mean,
+                    pd_composite: composites.pd_composite,
+                    finlit_sum: composites.finlit_sum,
+                    risk_f_composite: composites.risk_f_composite,
+
                     // Flags
                     flag_comprehension: qualityFlags.includes('flag_comprehension'),
                     flag_viewtime: qualityFlags.includes('flag_viewtime'),
                     flag_straightline: qualityFlags.includes('flag_straightline'),
+                    
                     // REDACTED rationale
                     open_rationale: "REDACTED", 
                 };
