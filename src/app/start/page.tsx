@@ -17,7 +17,6 @@ import StepAdvisory from '@/components/session/StepAdvisory';
 import StepComprehension from '@/components/session/StepComprehension';
 import StepManipulationChecks from '@/components/session/StepManipulationChecks';
 import StepObjectiveChoice from '@/components/session/StepObjectiveChoice';
-import StepSubjectiveDQ from '@/components/session/StepSubjectiveDQ';
 import StepMediators from '@/components/session/StepMediators';
 import StepControls from '@/components/session/StepControls';
 import StepOpenRationale from '@/components/session/StepOpenRationale';
@@ -33,7 +32,6 @@ const stepComponents = [
   StepComprehension,
   StepManipulationChecks,
   StepObjectiveChoice,
-  StepSubjectiveDQ,
   StepMediators,
   StepControls,
   StepOpenRationale,
@@ -49,8 +47,7 @@ const stepNames = [
   'Advisory',
   'Comprehension',
   'Manipulation Checks',
-  'Objective Choice',
-  'Follow-up Questions',
+  'Decision Task',
   'Mediators',
   'Controls',
   'Rationale',
