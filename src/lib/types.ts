@@ -1,6 +1,4 @@
 
-
-
 export type ExperimentalCondition = {
   advisorySource: 'ai' | 'human';
   linguisticFrame: 'abstract' | 'concrete';
@@ -19,6 +17,12 @@ export type SessionData = {
 
   // Session Data
   consent: boolean;
+  // Raw consent answers
+  consent_ageCheck: 'Yes' | 'No' | null;
+  consent_isEmployed: 'Yes' | 'No' | null;
+  consent_hasParticipated: 'Yes' | 'No' | null;
+  consent_consentGiven: 'Yes' | 'No' | null;
+
   condition?: ExperimentalCondition;
   initialAssessments: {
     financialLiteracy: Record<string, string | null> | null;
@@ -41,7 +45,7 @@ export type SessionData = {
   } | null;
   controls: {
     riskTolerance?: Record<string, string | null>;
-    digitalLiteracy?: Record<string, string | null;
+    digitalLiteracy?: Record<string, string | null>;
   } | null;
   openRationale: string | null;
 };

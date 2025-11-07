@@ -16,6 +16,13 @@ type StepProps = {
   goToNextStep: () => void;
 };
 
+type Answers = {
+    ageCheck: 'Yes' | 'No' | '',
+    isEmployed: 'Yes' | 'No' | '',
+    hasParticipated: 'Yes' | 'No' | '',
+    consentGiven: 'Yes' | 'No' | '',
+}
+
 const questions = [
   {
     id: 'ageCheck',
@@ -36,17 +43,25 @@ const questions = [
 ];
 
 export default function StepConsent({ updateSessionData, endSurvey, goToNextStep }: StepProps) {
-  const [answers, setAnswers] = useState({
+  const [answers, setAnswers] = useState<Answers>({
     ageCheck: '',
     isEmployed: '',
     hasParticipated: '',
     consentGiven: '',
   });
 
-  const handleValueChange = (questionId: keyof typeof answers, value: 'Yes' | 'No') => {
+  const handleValueChange = (questionId: keyof Answers, value: 'Yes' | 'No') => {
     const newAnswers = { ...answers, [questionId]: value };
     setAnswers(newAnswers);
-    updateSessionData({ consent: newAnswers.consentGiven === 'Yes' });
+    
+    // Update main session data with granular responses
+    updateSessionData({ 
+        consent: newAnswers.consentGiven === 'Yes',
+        consent_ageCheck: newAnswers.ageCheck || null,
+        consent_isEmployed: newAnswers.isEmployed || null,
+        consent_hasParticipated: newAnswers.hasParticipated || null,
+        consent_consentGiven: newAnswers.consentGiven || null,
+    });
 
     if ((questionId === 'ageCheck' || questionId === 'isEmployed' || questionId === 'consentGiven') && value === 'No') {
       setTimeout(endSurvey, 500); // Give a brief moment for the UI to update

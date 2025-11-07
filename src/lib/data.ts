@@ -1,6 +1,6 @@
 
 // A central source for mock session data for the admin dashboard.
-import type { SessionData, ExperimentalCondition } from './types';
+import type { SessionData } from './types';
 
 // We need more detailed session data to test the flagging logic.
 // This data includes granular responses.
@@ -13,8 +13,16 @@ export const mockDetailedSessions: (SessionData & { id: string, status: 'Complet
     endTime: new Date('2024-07-29T11:22:15Z').toISOString(),
     deviceInfo: { userAgent: 'Chrome', screenHeight: 1080, screenWidth: 1920 },
     consent: true,
+    consent_ageCheck: 'Yes',
+    consent_isEmployed: 'Yes',
+    consent_hasParticipated: 'Yes',
+    consent_consentGiven: 'Yes',
     condition: { advisorySource: 'human', linguisticFrame: 'abstract', scenario: 'xyz' },
-    initialAssessments: { financialLiteracy: { q1: 'More than $102' }, roleAndExperience: {}, organizationalProfile: {} },
+    initialAssessments: { 
+        financialLiteracy: { q1: 'More than $102', q2: 'Less than today', q3: 'False', q4: '1%' }, 
+        roleAndExperience: { q1: 'Manager' }, 
+        organizationalProfile: { q1: 'Manufacturing / Industrial' } 
+    },
     dossierViewTime: 35000,
     dossierScrollCount: 5,
     advisoryViewTime: 45000,
@@ -23,7 +31,7 @@ export const mockDetailedSessions: (SessionData & { id: string, status: 'Complet
       q1: 'WrongCorp', // Incorrect
       q2: '12 months',  // Incorrect
     },
-    manipulationChecks: {},
+    manipulationChecks: { feltHuman: 'Agree', feltAlgorithm: 'Disagree', sourceAttribution: 'Human advisor' },
     objectiveChoice: 'Option A: Growth Equity Fund',
     subjectiveDQ: { confidence: 'Agree', informed: 'Somewhat agree', clearBasis: 'Agree', satisfied: 'Somewhat agree' },
     mediators: {
@@ -43,6 +51,10 @@ export const mockDetailedSessions: (SessionData & { id: string, status: 'Complet
     endTime: new Date('2024-07-28T09:51:23Z').toISOString(),
     deviceInfo: { userAgent: 'Firefox', screenHeight: 900, screenWidth: 1440 },
     consent: true,
+    consent_ageCheck: 'Yes',
+    consent_isEmployed: 'Yes',
+    consent_hasParticipated: 'Yes',
+    consent_consentGiven: 'Yes',
     condition: { advisorySource: 'ai', linguisticFrame: 'concrete', scenario: 'techtrend' },
     initialAssessments: { financialLiteracy: {}, roleAndExperience: {}, organizationalProfile: {} },
     dossierViewTime: 4000, // 4s
@@ -68,6 +80,10 @@ export const mockDetailedSessions: (SessionData & { id: string, status: 'Complet
     endTime: new Date('2024-07-29T14:30:05Z').toISOString(),
     deviceInfo: { userAgent: 'Safari', screenHeight: 900, screenWidth: 1600 },
     consent: true,
+    consent_ageCheck: 'Yes',
+    consent_isEmployed: 'Yes',
+    consent_hasParticipated: 'Yes',
+    consent_consentGiven: 'Yes',
     condition: { advisorySource: 'ai', linguisticFrame: 'abstract', scenario: 'xyz' },
     initialAssessments: { financialLiteracy: {}, roleAndExperience: {}, organizationalProfile: {} },
     dossierViewTime: 40000,
@@ -100,6 +116,10 @@ export const mockDetailedSessions: (SessionData & { id: string, status: 'Complet
     endTime: new Date('2024-07-28T10:18:32Z').toISOString(),
     deviceInfo: { userAgent: 'Chrome', screenHeight: 1080, screenWidth: 1920 },
     consent: true,
+    consent_ageCheck: 'Yes',
+    consent_isEmployed: 'Yes',
+    consent_hasParticipated: 'Yes',
+    consent_consentGiven: 'Yes',
     condition: { advisorySource: 'ai', linguisticFrame: 'abstract', scenario: 'xyz' },
     initialAssessments: { financialLiteracy: {}, roleAndExperience: {}, organizationalProfile: {} },
     dossierViewTime: 50000,
@@ -126,6 +146,10 @@ export const mockDetailedSessions: (SessionData & { id: string, status: 'Complet
     endTime: null,
     deviceInfo: { userAgent: 'Edge', screenHeight: 1440, screenWidth: 2560 },
     consent: true,
+    consent_ageCheck: 'Yes',
+    consent_isEmployed: 'Yes',
+    consent_hasParticipated: 'Yes',
+    consent_consentGiven: 'Yes',
     condition: { advisorySource: 'human', linguisticFrame: 'concrete', scenario: 'techtrend' },
     initialAssessments: { financialLiteracy: {}, roleAndExperience: {}, organizationalProfile: {} },
     dossierViewTime: 25000,

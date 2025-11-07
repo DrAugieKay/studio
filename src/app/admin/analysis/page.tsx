@@ -12,6 +12,8 @@ import { mockDetailedSessions } from '@/lib/data';
 import { getQualityFlags } from '@/lib/quality-flags';
 import { getComposites } from '@/lib/composites';
 import Papa from 'papaparse';
+import type { SessionData } from '@/lib/types';
+
 
 export default function DataAnalysisPage() {
     const [isExporting, setIsExporting] = useState(false);
@@ -25,47 +27,60 @@ export default function DataAnalysisPage() {
                 const qualityFlags = getQualityFlags(session);
                 const composites = getComposites(session);
 
-                // Flatten the data structure for CSV, including all raw, coded, and computed variables.
-                const flattened = {
+                // Flatten the data structure for CSV to match the codebook exactly
+                const flattened: Record<string, any> = {
                     participant_id: session.id,
-                    status: session.status,
+                    condition_code: `${session.condition?.advisorySource}-${session.condition?.linguisticFrame}-${session.condition?.scenario}`,
+                    random_seed: 'NOT_IMPLEMENTED', // Placeholder
                     start_time: session.startTime,
                     end_time: session.endTime,
+                    device_type: session.deviceInfo?.userAgent.includes('Mobile') ? 'Mobile' : 'Desktop',
+                    browser_info: session.deviceInfo?.userAgent,
                     
-                    // Condition
-                    condition_source: session.condition?.advisorySource,
-                    condition_frame: session.condition?.linguisticFrame,
-                    condition_scenario: session.condition?.scenario,
+                    // Exposure and engagement
+                    dossier_view_time: session.dossierViewTime / 1000, // to seconds
+                    advisory_view_time: session.advisoryViewTime / 1000, // to seconds
+                    scroll_events: session.advisoryScrollCount,
 
-                    // Timings and Engagement
-                    dossier_view_time: session.dossierViewTime,
-                    advisory_view_time: session.advisoryViewTime,
-                    dossier_scroll_count: session.dossierScrollCount,
-                    advisory_scroll_count: session.advisoryScrollCount,
-
-                    // Raw choices and checks
+                    // Consent
+                    consent_ageCheck: session.consent_ageCheck,
+                    consent_isEmployed: session.consent_isEmployed,
+                    consent_hasParticipated: session.consent_hasParticipated,
+                    consent_consentGiven: session.consent_consentGiven,
+                    
+                    // Initial Assessments (Raw)
                     ...session.initialAssessments?.financialLiteracy,
                     ...session.initialAssessments?.roleAndExperience,
                     ...session.initialAssessments?.organizationalProfile,
-                    ...session.comprehension,
+
+                    // Comprehension Checks (Raw)
+                    comp_q1: session.comprehension?.q1,
+                    comp_q2: session.comprehension?.q2,
+
+                    // Manipulation Checks (Raw)
                     ...session.manipulationChecks,
+
+                    // Behavioral Outcome (Raw)
                     choice_raw: session.objectiveChoice,
                     
-                    // Subjective DQ Raw
+                    // Subjective DQ (Raw)
                     ...session.subjectiveDQ,
 
-                    // Mediators Raw
+                    // Mediators (Raw)
                     ...session.mediators?.advisoryCredibility,
                     ...session.mediators?.psychologicalDistance,
                     ...session.mediators?.linguisticAbstractness,
                     ...session.mediators?.outcomeFraming,
 
-                    // Controls Raw
+                    // Controls (Raw)
                     ...session.controls?.riskTolerance,
                     ...session.controls?.digitalLiteracy,
 
-                    // Composites & Coded Variables
-                    obj_dq_binary: composites.obj_dq_binary,
+                    // Open Rationale
+                    choice_reason_text: "REDACTED",
+
+                    // Computed Composites & Coded Variables
+                    obj_dq_binary: Number(composites.obj_dq_binary),
                     dq_sub_mean: composites.dq_sub_mean,
                     cr_trust: composites.cr_trust,
                     cr_comp: composites.cr_comp,
@@ -74,14 +89,13 @@ export default function DataAnalysisPage() {
                     pd_composite: composites.pd_composite,
                     finlit_sum: composites.finlit_sum,
                     risk_f_composite: composites.risk_f_composite,
-
-                    // Flags
-                    flag_comprehension: qualityFlags.includes('flag_comprehension'),
-                    flag_viewtime: qualityFlags.includes('flag_viewtime'),
-                    flag_straightline: qualityFlags.includes('flag_straightline'),
+                    la_objective: null, // Placeholder for LA pipeline output
                     
-                    // REDACTED rationale
-                    open_rationale: "REDACTED", 
+                    // Flags
+                    flag_comprehension: Number(qualityFlags.includes('flag_comprehension')),
+                    flag_viewtime: Number(qualityFlags.includes('flag_viewtime')),
+                    flag_straightline: Number(qualityFlags.includes('flag_straightline')),
+                    flagged_any: Number(qualityFlags.length > 0),
                 };
 
                 return flattened;

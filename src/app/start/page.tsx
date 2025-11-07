@@ -58,6 +58,10 @@ export default function StartPage() {
   const [currentStep, setCurrentStep] = useState(0);
   const [sessionData, setSessionData] = useState<Partial<SessionData>>({
     consent: false,
+    consent_ageCheck: null,
+    consent_isEmployed: null,
+    consent_hasParticipated: null,
+    consent_consentGiven: null,
     manipulationChecks: {},
     mediators: {},
     startTime: new Date().toISOString(),
