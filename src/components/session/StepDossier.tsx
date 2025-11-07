@@ -3,10 +3,9 @@
 
 import { useEffect, useRef } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import type { SessionData } from '@/lib/types';
-import { Briefcase, Target, Landmark } from 'lucide-react';
+import { Briefcase, Target, Landmark, FileText } from 'lucide-react';
 
 type StepProps = {
   sessionData: Partial<SessionData>;
@@ -101,25 +100,23 @@ export default function StepDossier({ sessionData, updateSessionData }: StepProp
         </Alert>
 
         <div className="flex items-center gap-3">
-            <Briefcase className="h-6 w-6 text-primary" />
+            <FileText className="h-6 w-6 text-primary" />
             <h3 className="font-semibold text-lg text-primary">Firm Dossier</h3>
         </div>
         
         <div className="space-y-4 pr-4">
             {content.dossier.map((item, index) => (
               <Card key={index} className="bg-secondary/40">
-                <CardHeader className="flex flex-row items-center gap-4 !pb-4">
+                <CardContent className="p-4 flex items-center gap-4">
                   <div className="p-3 bg-primary/10 rounded-lg">
                     <item.icon className="h-6 w-6 text-primary" />
                   </div>
-                  <div>
-                    <p className="text-muted-foreground">
-                        <span className="font-semibold text-card-foreground">{item.label}:</span>
-                        {' '}
-                        {item.value}
-                    </p>
-                  </div>
-                </CardHeader>
+                  <p className="text-muted-foreground text-sm sm:text-base">
+                      <span className="font-semibold text-card-foreground">{item.label}:</span>
+                      {' '}
+                      {item.value}
+                  </p>
+                </CardContent>
               </Card>
             ))}
         </div>
