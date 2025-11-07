@@ -110,7 +110,7 @@ export default function StepComprehension({ sessionData, updateSessionData }: St
                   <FormControl>
                     <RadioGroup onValueChange={field.onChange} value={field.value} className="space-y-2">
                       {q1Options.map(option => (
-                         <Label key={option} htmlFor={`q1-${option}`} className="flex items-center space-x-3 p-3 border rounded-md cursor-pointer bg-background has-[:checked]:bg-secondary has-[:checked]:border-accent transition-colors">
+                         <Label key={option} htmlFor={`q1-${option}`} className="flex items-center space-x-3 p-2 cursor-pointer has-[:checked]:text-accent transition-colors">
                             <FormControl><RadioGroupItem value={option} id={`q1-${option}`} /></FormControl>
                             <span className="font-normal text-base">{option}</span>
                         </Label>
@@ -129,7 +129,7 @@ export default function StepComprehension({ sessionData, updateSessionData }: St
                   <FormControl>
                     <RadioGroup onValueChange={field.onChange} value={field.value} className="space-y-2">
                        {q2Options.map(option => (
-                         <Label key={option} htmlFor={`q2-${option}`} className="flex items-center space-x-3 p-3 border rounded-md cursor-pointer bg-background has-[:checked]:bg-secondary has-[:checked]:border-accent transition-colors">
+                         <Label key={option} htmlFor={`q2-${option}`} className="flex items-center space-x-3 p-2 cursor-pointer has-[:checked]:text-accent transition-colors">
                             <FormControl><RadioGroupItem value={option} id={`q2-${option}`} /></FormControl>
                             <span className="font-normal text-base">{option}</span>
                         </Label>

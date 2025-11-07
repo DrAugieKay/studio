@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useForm } from 'react-hook-form';
@@ -90,7 +91,7 @@ export default function StepObjectiveChoice({ sessionData, updateSessionData }: 
                     <FormControl>
                         <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="space-y-2">
                         {['Option A: Growth Equity Fund', 'Option B: Balanced Mutual Fund', 'Option C: Government Treasury Bond Portfolio', 'Option D: I do not know / Prefer not to decide'].map(option => (
-                            <Label key={option} htmlFor={`choice-${option}`} className="flex items-center space-x-3 p-3 border rounded-md cursor-pointer bg-background has-[:checked]:bg-secondary has-[:checked]:border-accent transition-colors">
+                            <Label key={option} htmlFor={`choice-${option}`} className="flex items-center space-x-3 p-2 cursor-pointer has-[:checked]:text-accent transition-colors">
                                 <FormControl><RadioGroupItem value={option} id={`choice-${option}`} /></FormControl>
                                 <span className="font-normal text-base">{option}</span>
                             </Label>
@@ -115,7 +116,7 @@ export default function StepObjectiveChoice({ sessionData, updateSessionData }: 
                              className="w-full space-y-2"
                             >
                                {likertOptions.map((option) => (
-                                <Label key={option} htmlFor={`${key}-${option}`} className="flex items-center space-x-3 p-3 border rounded-md cursor-pointer bg-background has-[:checked]:bg-secondary has-[:checked]:border-accent transition-colors">
+                                <Label key={option} htmlFor={`${key}-${option}`} className="flex items-center space-x-3 p-2 cursor-pointer has-[:checked]:text-accent transition-colors">
                                     <FormControl><RadioGroupItem value={option} id={`${key}-${option}`} /></FormControl>
                                     <span className="font-normal text-sm">{option}</span>
                                 </Label>
