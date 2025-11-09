@@ -1,51 +1,58 @@
+
 'use client';
 
 import * as React from 'react';
-import { TrendingUp } from 'lucide-react';
-import { Label, Pie, PieChart } from 'recharts';
-
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { Pie, PieChart, Label } from 'recharts';
 import {
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
 } from '@/components/ui/chart';
-
-const chartData = [
-  { status: 'Completed', sessions: 275, fill: 'var(--color-completed)' },
-  { status: 'Abandoned', sessions: 50, fill: 'var(--color-abandoned)' },
-  { status: 'In Progress', sessions: 25, fill: 'var(--color-inprogress)' },
-];
+import type { SessionData } from '@/lib/types';
 
 const chartConfig = {
   sessions: {
     label: 'Sessions',
   },
-  completed: {
+  Completed: {
     label: 'Completed',
     color: 'hsl(var(--chart-2))',
   },
-  abandoned: {
+  Abandoned: {
     label: 'Abandoned',
     color: 'hsl(var(--chart-5))',
   },
-  inprogress: {
+  'In Progress': {
     label: 'In Progress',
     color: 'hsl(var(--chart-3))',
   },
 };
 
-export default function CompletionRateChart() {
+type CompletionRateChartProps = {
+    sessions: SessionData[] | null;
+};
+
+export default function CompletionRateChart({ sessions }: CompletionRateChartProps) {
+  const chartData = React.useMemo(() => {
+    if (!sessions) return [];
+    
+    const statusCounts = sessions.reduce((acc, session) => {
+        acc[session.status] = (acc[session.status] || 0) + 1;
+        return acc;
+    }, {} as Record<SessionData['status'], number>);
+
+    return Object.entries(chartConfig)
+        .filter(([key]) => key !== 'sessions')
+        .map(([status, config]) => ({
+            status,
+            sessions: statusCounts[status as SessionData['status']] || 0,
+            fill: `var(--color-${status.replace(' ', '')})`,
+        }));
+  }, [sessions]);
+
   const totalSessions = React.useMemo(() => {
-    return chartData.reduce((acc, curr) => acc + curr.sessions, 0);
-  }, []);
+    return sessions?.length || 0;
+  }, [sessions]);
 
   return (
       <ChartContainer

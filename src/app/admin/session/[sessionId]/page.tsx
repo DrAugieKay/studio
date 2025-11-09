@@ -2,13 +2,17 @@
 'use client';
 
 import { useParams } from 'next/navigation';
-import { mockDetailedSessions } from '@/lib/data';
-import { getQualityFlags } from '@/lib/quality-flags';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { AlertCircle, CheckCircle2, Clock, BarChartHorizontal } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Clock, BarChartHorizontal, Loader2 } from 'lucide-react';
+import { getQualityFlags } from '@/lib/quality-flags';
 import { getComposites } from '@/lib/composites';
+import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
+import { doc } from 'firebase/firestore';
+import type { SessionData } from '@/lib/types';
+
+const EXPERIMENT_ID = 'exp_001';
 
 const flagDetails: Record<string, { label: string; Icon: React.ElementType, className: string }> = {
     'flag_comprehension': { label: 'Comprehension Failure', Icon: AlertCircle, className: 'bg-yellow-500/20 text-yellow-700 border-yellow-500/30' },
@@ -20,9 +24,23 @@ const flagDetails: Record<string, { label: string; Icon: React.ElementType, clas
 export default function SessionDetailPage() {
     const params = useParams();
     const sessionId = params.sessionId as string;
+    const firestore = useFirestore();
 
-    const session = mockDetailedSessions.find(s => s.id === sessionId);
+    const participantDocRef = useMemoFirebase(() => {
+        if (!firestore || !sessionId) return null;
+        return doc(firestore, `experiment_meta/${EXPERIMENT_ID}/participants`, sessionId);
+    }, [firestore, sessionId]);
+
+    const { data: session, isLoading } = useDoc<SessionData>(participantDocRef);
     
+    if (isLoading) {
+        return (
+            <div className="flex h-64 w-full items-center justify-center">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+        );
+    }
+
     if (!session) {
         return <div>Session not found.</div>;
     }

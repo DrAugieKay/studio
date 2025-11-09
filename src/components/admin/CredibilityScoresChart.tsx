@@ -1,7 +1,8 @@
+
 'use client';
 
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts';
-
+import { useMemo } from 'react';
 import {
   ChartContainer,
   ChartTooltip,
@@ -9,11 +10,8 @@ import {
   ChartLegend,
   ChartLegendContent,
 } from '@/components/ui/chart';
-
-const chartData = [
-    { source: 'AI', honesty: 4.5, trustworthiness: 4.2, expertise: 4.8 },
-    { source: 'Human', honesty: 5.8, trustworthiness: 6.1, expertise: 6.2 },
-];
+import type { SessionData } from '@/lib/types';
+import { getComposites } from '@/lib/composites';
 
 const chartConfig = {
   honesty: {
@@ -30,7 +28,53 @@ const chartConfig = {
   },
 };
 
-export default function CredibilityScoresChart() {
+type CredibilityScoresChartProps = {
+    sessions: SessionData[] | null;
+};
+
+export default function CredibilityScoresChart({ sessions }: CredibilityScoresChartProps) {
+    const chartData = useMemo(() => {
+        if (!sessions) return [];
+
+        const totals = {
+            human: { cr_trust: 0, cr_comp: 0, cr_good: 0, count: 0 },
+            ai: { cr_trust: 0, cr_comp: 0, cr_good: 0, count: 0 },
+        };
+
+        sessions.forEach(session => {
+            if (!session.condition) return;
+            const source = session.condition.advisorySource;
+            const composites = getComposites(session);
+
+            if (composites.cr_trust !== null) {
+                totals[source].cr_trust += composites.cr_trust;
+            }
+            if (composites.cr_comp !== null) {
+                totals[source].cr_comp += composites.cr_comp;
+            }
+            if (composites.cr_good !== null) {
+                totals[source].cr_good += composites.cr_good;
+            }
+            totals[source].count++;
+        });
+
+        return [
+            {
+                source: 'AI',
+                honesty: totals.ai.count > 0 ? totals.ai.cr_trust / totals.ai.count : 0,
+                trustworthiness: totals.ai.count > 0 ? totals.ai.cr_good / totals.ai.count : 0,
+                expertise: totals.ai.count > 0 ? totals.ai.cr_comp / totals.ai.count : 0,
+            },
+            {
+                source: 'Human',
+                honesty: totals.human.count > 0 ? totals.human.cr_trust / totals.human.count : 0,
+                trustworthiness: totals.human.count > 0 ? totals.human.cr_good / totals.human.count : 0,
+                expertise: totals.human.count > 0 ? totals.human.cr_comp / totals.human.count : 0,
+            },
+        ];
+
+    }, [sessions]);
+
   return (
       <ChartContainer config={chartConfig} className="h-[250px] w-full">
         <BarChart 

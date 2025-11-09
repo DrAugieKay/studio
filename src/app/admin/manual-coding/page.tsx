@@ -1,55 +1,61 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import ManualCodingTask from '@/components/admin/ManualCodingTask';
-import { CheckCircle2, TriangleAlert } from 'lucide-react';
-import type { CodingTask } from '@/lib/types';
+import { CheckCircle2, TriangleAlert, Loader2 } from 'lucide-react';
+import type { SessionData, CodingTask } from '@/lib/types';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection, query, where } from 'firebase/firestore';
 
-
-const mockCodingTasks: CodingTask[] = [
-  {
-    id: 'SESS_8A2B4C',
-    rationale: 'The decision was based primarily on the need for capital preservation. Option C offered the highest degree of safety, which aligns with the board’s conservative mandate. The lower return was an acceptable trade-off for risk mitigation.',
-    coderA_codes: ['Capital Preservation', 'Risk Aversion'],
-    coderB_codes: ['Capital Preservation', 'Risk Aversion'],
-  },
-  {
-    id: 'SESS_D5E6F7',
-    rationale: 'I chose Option B because it provided a balance between growth and risk. While Option C was safer, the potential returns were too low to justify completely ignoring market opportunities. Option B felt like a reasonable compromise.',
-    coderA_codes: ['Balanced Approach', 'Growth Focus'],
-    coderB_codes: ['Balanced Approach'],
-  },
-  {
-    id: 'SESS_J1K2L3',
-    rationale: 'Risk mitigation was the key factor. Given the firm’s strategic goals, losing principal was not an option. Government bonds were the only choice that guaranteed the capital would be available for the IoT launch.',
-    coderA_codes: ['Risk Aversion', 'Strategic Alignment'],
-    coderB_codes: ['Risk Aversion'],
-  },
-  {
-    id: 'SESS_M4N5P6',
-    rationale: 'Felt the advisory for C was the most compelling and detailed.',
-    coderA_codes: ['Trust in Advisory'],
-    coderB_codes: ['Trust in Advisory'],
-  },
-];
-
+const EXPERIMENT_ID = 'exp_001';
 
 const predefinedCodes = ['Capital Preservation', 'Risk Aversion', 'Balanced Approach', 'Growth Focus', 'Trust in Advisory', 'Strategic Alignment'];
 
 export default function ManualCodingPage() {
-  const [selectedTask, setSelectedTask] = useState<CodingTask>(mockCodingTasks[0]);
+  const [selectedTask, setSelectedTask] = useState<CodingTask | null>(null);
   const [kappaScore, setKappaScore] = useState(0.68); // Mock kappa score < 0.70 to show warning
+  
+  const firestore = useFirestore();
+
+  const codingTasksQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return query(
+        collection(firestore, `experiment_meta/${EXPERIMENT_ID}/participants`),
+        where('openRationale', '!=', null)
+    );
+  }, [firestore]);
+
+  const { data: sessions, isLoading } = useCollection<SessionData>(codingTasksQuery);
+
+  const codingTasks: CodingTask[] = useMemo(() => {
+    if (!sessions) return [];
+    return sessions.map(session => ({
+        id: session.id,
+        rationale: session.openRationale || '',
+        // These would come from another collection in a real app
+        coderA_codes: session.id.includes('D5E6F7') ? ['Balanced Approach', 'Growth Focus'] : ['Risk Aversion'], 
+        coderB_codes: session.id.includes('D5E6F7') ? ['Balanced Approach'] : ['Risk Aversion'],
+    }));
+  }, [sessions]);
+
 
   const handleSelectTask = (task: CodingTask) => {
     setSelectedTask(task);
   };
   
-  const tasksWithRationale = mockCodingTasks.filter(r => r.rationale);
+  if (isLoading) {
+    return (
+        <div className="flex h-64 w-full items-center justify-center">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <p className="ml-3 text-muted-foreground">Loading coding tasks...</p>
+        </div>
+    );
+  }
 
   return (
     <div className="w-full">
@@ -97,7 +103,7 @@ export default function ManualCodingPage() {
               <CardContent>
                 <ScrollArea className="h-96">
                   <div className="space-y-2">
-                    {tasksWithRationale.map(task => (
+                    {codingTasks.length > 0 ? codingTasks.map(task => (
                       <Button
                         key={task.id}
                         variant={selectedTask?.id === task.id ? 'secondary' : 'ghost'}
@@ -109,7 +115,11 @@ export default function ManualCodingPage() {
                           <p className="text-xs text-muted-foreground truncate">{task.rationale}</p>
                         </div>
                       </Button>
-                    ))}
+                    )) : (
+                        <div className="text-center p-8 text-muted-foreground">
+                            No responses with rationale found.
+                        </div>
+                    )}
                   </div>
                 </ScrollArea>
               </CardContent>
@@ -124,7 +134,7 @@ export default function ManualCodingPage() {
                   predefinedCodes={predefinedCodes}
                 />
              ) : (
-                <div className="flex items-center justify-center h-full text-muted-foreground">
+                <div className="flex items-center justify-center h-full text-muted-foreground rounded-lg border border-dashed">
                     <p>Select a participant response to begin validation.</p>
                 </div>
              )}
@@ -133,4 +143,3 @@ export default function ManualCodingPage() {
     </div>
   );
 }
-

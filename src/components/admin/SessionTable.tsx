@@ -11,80 +11,36 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import type { ParticipantSession } from '@/lib/types';
-import { Eye } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import type { SessionData } from '@/lib/types';
+import { Eye, Loader2 } from 'lucide-react';
 import Link from 'next/link';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection, query } from 'firebase/firestore';
 
-const initialMockSessions: Omit<ParticipantSession, 'startTime' | 'endTime'>[] = [
-  {
-    id: 'SESS_A1B2C3',
-    status: 'Completed',
-    condition: { advisorySource: 'human', linguisticFrame: 'abstract', scenario: 'xyz' },
-  },
-  {
-    id: 'SESS_G8H9I0',
-    status: 'Abandoned',
-    condition: { advisorySource: 'ai', linguisticFrame: 'concrete', scenario: 'techtrend' },
-  },
-   {
-    id: 'SESS_X4Y5Z6',
-    status: 'Completed',
-    condition: { advisorySource: 'ai', linguisticFrame: 'abstract', scenario: 'xyz' },
-  },
-  {
-    id: 'SESS_8A2B4C',
-    status: 'Completed',
-    condition: { advisorySource: 'ai', linguisticFrame: 'abstract', scenario: 'xyz' },
-  },
-  {
-    id: 'SESS_D5E6F7',
-    status: 'In Progress',
-    condition: { advisorySource: 'human', linguisticFrame: 'concrete', scenario: 'techtrend' },
-  },
-];
-
-
-const getClientSideSessions = (): ParticipantSession[] => [
-    {
-        ...initialMockSessions[0],
-        startTime: new Date('2024-07-29T11:00:00Z'),
-        endTime: new Date('2024-07-29T11:22:15Z'),
-    },
-     {
-        ...initialMockSessions[1],
-        startTime: new Date('2024-07-28T09:45:00Z'),
-        endTime: new Date('2024-07-28T09:51:23Z'),
-    },
-    {
-        ...initialMockSessions[2],
-        startTime: new Date('2024-07-29T14:10:00Z'),
-        endTime: new Date('2024-07-29T14:30:05Z'),
-    },
-    {
-        ...initialMockSessions[3],
-        startTime: new Date('2024-07-28T10:00:00Z'),
-        endTime: new Date('2024-07-28T10:18:32Z'),
-    },
-    {
-        ...initialMockSessions[4],
-        startTime: new Date('2024-07-28T11:30:15Z'),
-        endTime: null,
-    }
-];
-
+const EXPERIMENT_ID = 'exp_001';
 
 export default function SessionTable() {
-    const [sessions, setSessions] = useState<ParticipantSession[]>([]);
+    const firestore = useFirestore();
 
-    useEffect(() => {
-        // Set sessions on the client side to avoid hydration mismatch
-        setSessions(getClientSideSessions());
-    }, []);
+    const participantsCollectionQuery = useMemoFirebase(() => {
+      if (!firestore) return null;
+      return query(collection(firestore, `experiment_meta/${EXPERIMENT_ID}/participants`));
+    }, [firestore]);
 
-    const formatCondition = (condition: ParticipantSession['condition']) => {
+    const { data: sessions, isLoading } = useCollection<SessionData>(participantsCollectionQuery);
+    
+    const formatCondition = (condition: SessionData['condition']) => {
         if (!condition) return 'N/A';
         return `${condition.advisorySource.toUpperCase()} / ${condition.linguisticFrame.toUpperCase()} / ${condition.scenario.toUpperCase()}`;
+    }
+
+    if (isLoading) {
+        return (
+            <div className="flex items-center justify-center p-8">
+                <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                <p className="ml-2 text-muted-foreground">Loading sessions...</p>
+            </div>
+        );
     }
 
   return (
@@ -101,7 +57,7 @@ export default function SessionTable() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {sessions.map((session) => (
+          {sessions && sessions.map((session) => (
             <TableRow key={session.id}>
               <TableCell className="font-medium">{session.id}</TableCell>
               <TableCell>
@@ -118,8 +74,8 @@ export default function SessionTable() {
                   {session.status}
                 </Badge>
               </TableCell>
-              <TableCell>{session.startTime.toLocaleString()}</TableCell>
-              <TableCell>{session.endTime?.toLocaleString() ?? 'N/A'}</TableCell>
+              <TableCell>{new Date(session.startTime).toLocaleString()}</TableCell>
+              <TableCell>{session.endTime ? new Date(session.endTime).toLocaleString() : 'N/A'}</TableCell>
               <TableCell>{formatCondition(session.condition)}</TableCell>
               <TableCell className="text-right">
                 <Button variant="ghost" size="icon" asChild>
@@ -131,9 +87,15 @@ export default function SessionTable() {
               </TableCell>
             </TableRow>
           ))}
+           {(!sessions || sessions.length === 0) && (
+              <TableRow>
+                  <TableCell colSpan={6} className="h-24 text-center">
+                      No participant sessions found.
+                  </TableCell>
+              </TableRow>
+           )}
         </TableBody>
       </Table>
     </div>
   );
 }
-

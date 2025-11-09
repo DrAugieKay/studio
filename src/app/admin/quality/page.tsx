@@ -1,17 +1,19 @@
 
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useMemo } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { AlertCircle, Clock, BarChartHorizontal } from 'lucide-react';
-import { mockDetailedSessions } from '@/lib/data';
+import { AlertCircle, Clock, BarChartHorizontal, Loader2 } from 'lucide-react';
 import { getQualityFlags } from '@/lib/quality-flags';
 import type { SessionData } from '@/lib/types';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection, query } from 'firebase/firestore';
 
+const EXPERIMENT_ID = 'exp_001';
 
-type FlaggedSession = SessionData & { id: string; status: 'Completed' | 'In Progress' | 'Abandoned'; flags: string[] };
+type FlaggedSession = SessionData & { id: string; flags: string[] };
 
 const flagDetails: Record<string, { label: string; Icon: React.ElementType, className: string }> = {
     'flag_comprehension': { label: 'Comprehension Failure', Icon: AlertCircle, className: 'bg-yellow-500/20 text-yellow-700 border-yellow-500/30' },
@@ -20,20 +22,22 @@ const flagDetails: Record<string, { label: string; Icon: React.ElementType, clas
 };
 
 export default function DataQualityPage() {
-    const [flaggedSessions, setFlaggedSessions] = useState<FlaggedSession[]>([]);
+    const firestore = useFirestore();
 
-    useEffect(() => {
-        // Process the mock data to generate flags dynamically.
-        const sessionsWithFlags = mockDetailedSessions.map(session => ({
-            ...session,
-            flags: getQualityFlags(session),
-        }));
+    const participantsCollectionQuery = useMemoFirebase(() => {
+        if (!firestore) return null;
+        return query(collection(firestore, `experiment_meta/${EXPERIMENT_ID}/participants`));
+    }, [firestore]);
 
-        // Filter to only include sessions that have at least one flag.
-        const filteredSessions = sessionsWithFlags.filter(session => session.flags.length > 0);
+    const { data: sessions, isLoading } = useCollection<SessionData>(participantsCollectionQuery);
 
-        setFlaggedSessions(filteredSessions);
-    }, []);
+    const flaggedSessions = useMemo((): FlaggedSession[] => {
+        if (!sessions) return [];
+        return sessions
+            .map(session => ({ ...session, flags: getQualityFlags(session) }))
+            .filter(session => session.flags.length > 0);
+    }, [sessions]);
+
 
     const flagCounts = useMemo(() => {
         return flaggedSessions.reduce((acc, session) => {
@@ -44,6 +48,14 @@ export default function DataQualityPage() {
         }, {} as Record<string, number>);
     }, [flaggedSessions]);
     
+    if (isLoading) {
+        return (
+            <div className="flex h-64 w-full items-center justify-center">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                <p className="ml-3 text-muted-foreground">Loading quality data...</p>
+            </div>
+        );
+    }
 
     return (
         <div className="w-full">
