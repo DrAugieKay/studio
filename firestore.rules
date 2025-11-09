@@ -39,10 +39,11 @@ service cloud.firestore {
     /**
      * @description Checks if the request is made by an admin user.
      * Admins have a custom token claim `admin` set to `true`.
+     * This is a safe check that handles cases where token or claims might not exist.
      * @return {boolean} True if the user is an admin, false otherwise.
      */
     function isAdmin() {
-      return request.auth.token.admin == true;
+      return request.auth != null && request.auth.token.admin == true;
     }
 
     /**
@@ -87,6 +88,7 @@ service cloud.firestore {
      * @allow (write) Only the participant can write their own responses.
      */
     match /experiment_meta/{experimentMetaId}/participants/{participantId}/responses/{responseId} {
+       allow list: if isAdmin();
        allow read: if isOwner(participantId) || isAdmin();
        allow write: if isOwner(participantId);
     }
@@ -98,6 +100,7 @@ service cloud.firestore {
      * @allow (write) Only the participant can write their own composites.
      */
     match /experiment_meta/{experimentMetaId}/participants/{participantId}/derived_composites/{derivedCompositeId} {
+       allow list: if isAdmin();
        allow read: if isOwner(participantId) || isAdmin();
        allow write: if isOwner(participantId);
     }
@@ -109,6 +112,7 @@ service cloud.firestore {
      * @allow (write) Only the participant can write their own flags.
      */
     match /experiment_meta/{experimentMetaId}/participants/{participantId}/data_quality_flags/{dataQualityFlagId} {
+       allow list: if isAdmin();
        allow read: if isOwner(participantId) || isAdmin();
        allow write: if isOwner(participantId);
     }
@@ -132,6 +136,7 @@ service cloud.firestore {
      * @allow (write) Only the participant can write their own analysis.
      */
     match /experiment_meta/{experimentMetaId}/participants/{participantId}/responses/{responseId}/objective_linguistic_analysis/{objectiveLinguisticAnalysisId} {
+       allow list: if isAdmin();
        allow read: if isOwner(participantId) || isAdmin();
        allow write: if isOwner(participantId);
     }
@@ -143,6 +148,7 @@ service cloud.firestore {
      * @allow (write) Only the participant can write their own coding.
      */
     match /experiment_meta/{experimentMetaId}/participants/{participantId}/responses/{responseId}/manual_coding/{manualCodingId} {
+       allow list: if isAdmin();
        allow read: if isOwner(participantId) || isAdmin();
        allow write: if isOwner(participantId);
     }
@@ -154,8 +160,11 @@ service cloud.firestore {
        * @allow (write) Only the participant can write their own reconciliation.
        */
       match /experiment_meta/{experimentMetaId}/participants/{participantId}/payment_reconciliation/{paymentReconciliationId} {
+         allow list: if isAdmin();
          allow read: if isOwner(participantId) || isAdmin();
          allow write: if isOwner(participantId);
       }
   }
 }
+
+    
