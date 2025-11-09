@@ -3,9 +3,9 @@
  *
  * Core Philosophy:
  * This ruleset enforces a strict user-ownership model for participant-related data,
- * ensuring that only the participant (or authorized admin) can access their own data.
- * Admin audit logs are secured to allow only authenticated users to create them.
- * No public data access is allowed.
+ * ensuring that only the participant can access their own data. Admin users, identified
+ * by a custom token claim (`admin: true`), are granted read-only access to all
+ * participant data for monitoring and analysis.
  *
  * Data Structure:
  * The Firestore data is structured hierarchically, with experiment metadata at the top level,
@@ -14,18 +14,15 @@
  *
  * Key Security Decisions:
  * - No public data access.
- * - Strict ownership for participant data.
- * - Admin audit logs are append-only and require authentication.
- * - Listing operations are restricted to the owner.
+ * - Strict ownership for participant data writes (`isOwner`).
+ * - Read access is granted to the owner OR an admin.
+ * - List operations (reading a collection) are restricted to admins only.
+ * - Admin audit logs are append-only.
  *
  * Denormalization for Authorization:
  * This ruleset uses path-based authorization, assuming that the correct participant ID
- * is embedded in the document path.  This avoids the need for `get()` calls to verify
+ * is embedded in the document path. This avoids the need for `get()` calls to verify
  * ownership.
- *
- * Structural Segregation:
- * Admin audit logs are stored in a separate collection (`/admin_audit_logs`)
- * to isolate them from participant data and apply different security rules.
  */
 rules_version = '2';
 service cloud.firestore {
@@ -37,6 +34,15 @@ service cloud.firestore {
      */
     function isSignedIn() {
       return request.auth != null;
+    }
+
+    /**
+     * @description Checks if the request is made by an admin user.
+     * Admins have a custom token claim `admin` set to `true`.
+     * @return {boolean} True if the user is an admin, false otherwise.
+     */
+    function isAdmin() {
+      return request.auth.token.admin == true;
     }
 
     /**
@@ -63,41 +69,48 @@ service cloud.firestore {
     /**
      * @description Rules for the /experiment_meta/{experimentMetaId}/participants/{participantId} collection.
      * @path /experiment_meta/{experimentMetaId}/participants/{participantId}
-     * @allow (read, write) The participant can read and write their own participant document.
-     * @principle Enforces that participant documents can only be accessed by the participant with the matching document ID.
+     * @allow (list) Admins can list all participant documents.
+     * @allow (read) The participant can read their own document, or an admin can read any document.
+     * @allow (write) Only the participant can write to their own document.
+     * @principle Enforces that participant documents can only be written by the owner, but can be read by the owner or an admin.
      */
     match /experiment_meta/{experimentMetaId}/participants/{participantId} {
-      allow read, write: if isOwner(participantId);
+      allow list: if isAdmin();
+      allow read: if isOwner(participantId) || isAdmin();
+      allow write: if isOwner(participantId);
     }
 
     /**
      * @description Rules for the /experiment_meta/{experimentMetaId}/participants/{participantId}/responses/{responseId} collection.
      * @path /experiment_meta/{experimentMetaId}/participants/{participantId}/responses/{responseId}
-     * @allow (read, write) The participant can read and write their own response documents.
-     * @principle Enforces that response documents can only be accessed by the participant with the matching document ID.
+     * @allow (read) The participant can read their own responses, or an admin can.
+     * @allow (write) Only the participant can write their own responses.
      */
     match /experiment_meta/{experimentMetaId}/participants/{participantId}/responses/{responseId} {
-       allow read, write: if isOwner(participantId);
+       allow read: if isOwner(participantId) || isAdmin();
+       allow write: if isOwner(participantId);
     }
 
     /**
      * @description Rules for the /experiment_meta/{experimentMetaId}/participants/{participantId}/derived_composites/{derivedCompositeId} collection.
      * @path /experiment_meta/{experimentMetaId}/participants/{participantId}/derived_composites/{derivedCompositeId}
-     * @allow (read, write) The participant can read and write their own derived_composite documents.
-     * @principle Enforces that derived_composite documents can only be accessed by the participant with the matching document ID.
+     * @allow (read) The participant can read their own composites, or an admin can.
+     * @allow (write) Only the participant can write their own composites.
      */
     match /experiment_meta/{experimentMetaId}/participants/{participantId}/derived_composites/{derivedCompositeId} {
-       allow read, write: if isOwner(participantId);
+       allow read: if isOwner(participantId) || isAdmin();
+       allow write: if isOwner(participantId);
     }
 
     /**
      * @description Rules for the /experiment_meta/{experimentMetaId}/participants/{participantId}/data_quality_flags/{dataQualityFlagId} collection.
      * @path /experiment_meta/{experimentMetaId}/participants/{participantId}/data_quality_flags/{dataQualityFlagId}
-     * @allow (read, write) The participant can read and write their own data_quality_flag documents.
-     * @principle Enforces that data_quality_flag documents can only be accessed by the participant with the matching document ID.
+     * @allow (read) The participant can read their own flags, or an admin can.
+     * @allow (write) Only the participant can write their own flags.
      */
     match /experiment_meta/{experimentMetaId}/participants/{participantId}/data_quality_flags/{dataQualityFlagId} {
-       allow read, write: if isOwner(participantId);
+       allow read: if isOwner(participantId) || isAdmin();
+       allow write: if isOwner(participantId);
     }
 
     /**
@@ -115,33 +128,34 @@ service cloud.firestore {
     /**
      * @description Rules for the /experiment_meta/{experimentMetaId}/participants/{participantId}/responses/{responseId}/objective_linguistic_analysis/{objectiveLinguisticAnalysisId} collection.
      * @path /experiment_meta/{experimentMetaId}/participants/{participantId}/responses/{responseId}/objective_linguistic_analysis/{objectiveLinguisticAnalysisId}
-     * @allow (read, write) The participant can read and write their own objective_linguistic_analysis documents.
-     * @principle Enforces that objective_linguistic_analysis documents can only be accessed by the participant with the matching document ID.
+     * @allow (read) The participant can read their own analysis, or an admin can.
+     * @allow (write) Only the participant can write their own analysis.
      */
     match /experiment_meta/{experimentMetaId}/participants/{participantId}/responses/{responseId}/objective_linguistic_analysis/{objectiveLinguisticAnalysisId} {
-       allow read, write: if isOwner(participantId);
+       allow read: if isOwner(participantId) || isAdmin();
+       allow write: if isOwner(participantId);
     }
 
     /**
      * @description Rules for the /experiment_meta/{experimentMetaId}/participants/{participantId}/responses/{responseId}/manual_coding/{manualCodingId} collection.
      * @path /experiment_meta/{experimentMetaId}/participants/{participantId}/responses/{responseId}/manual_coding/{manualCodingId}
-     * @allow (read, write) The participant can read and write their own manual_coding documents.
-     * @principle Enforces that manual_coding documents can only be accessed by the participant with the matching document ID.
+     * @allow (read) The participant can read their own coding, or an admin can.
+     * @allow (write) Only the participant can write their own coding.
      */
     match /experiment_meta/{experimentMetaId}/participants/{participantId}/responses/{responseId}/manual_coding/{manualCodingId} {
-       allow read, write: if isOwner(participantId);
+       allow read: if isOwner(participantId) || isAdmin();
+       allow write: if isOwner(participantId);
     }
 
       /**
        * @description Rules for the /experiment_meta/{experimentMetaId}/participants/{participantId}/payment_reconciliation/{paymentReconciliationId} collection.
        * @path /experiment_meta/{experimentMetaId}/participants/{participantId}/payment_reconciliation/{paymentReconciliationId}
-       * @allow (read, write) The participant can read and write their own payment_reconciliation documents.
-       * @principle Enforces that payment_reconciliation documents can only be accessed by the participant with the matching document ID.
+       * @allow (read) The participant can read their own reconciliation, or an admin can.
+       * @allow (write) Only the participant can write their own reconciliation.
        */
       match /experiment_meta/{experimentMetaId}/participants/{participantId}/payment_reconciliation/{paymentReconciliationId} {
-         allow read, write: if isOwner(participantId);
+         allow read: if isOwner(participantId) || isAdmin();
+         allow write: if isOwner(participantId);
       }
   }
 }
-
-    
