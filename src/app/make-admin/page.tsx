@@ -14,7 +14,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, ShieldCheck, TriangleAlert } from 'lucide-react';
-import { setAdminClaim } from '@/actions/set-admin-claim';
+import { makeAdmin } from '@/ai/flows/make-admin-flow';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const formSchema = z.object({
@@ -45,7 +45,7 @@ export default function MakeAdminPage() {
 
   const onSubmit = async (values: MakeAdminFormValues) => {
     setIsLoading(true);
-    const result = await setAdminClaim(values.email);
+    const result = await makeAdmin(values.email);
     setIsLoading(false);
 
     if (result.success) {

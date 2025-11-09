@@ -125,8 +125,8 @@ service cloud.firestore {
      * @principle Enforces that only authenticated users can create admin_audit_log documents, and no one can read or modify them.
      */
     match /admin_audit_logs/{adminAuditLogId} {
-      allow get, list, update, delete: if false;
-      allow create: if isSignedIn();
+      allow update, delete: if false;
+      allow get, list, create: if isAdmin();
     }
 
     /**
@@ -166,5 +166,3 @@ service cloud.firestore {
       }
   }
 }
-
-    
