@@ -67,12 +67,12 @@ const organizationalProfileQuestions = {
         options: ['Technology / Software', 'Manufacturing / Industrial', 'Financial Services', 'Healthcare / Pharmaceuticals', 'Retail / Consumer Goods', 'Services / Consulting', 'Energy / Utilities', 'Other', 'Not applicable / Student'],
     },
     q2: {
-        question: 'ii. What is your organization\'s approximate annual revenue?',
-        options: ['Less than $50 million', '$50 million - $250 million', '$250 million - $1 billion', 'More than $1 billion', 'I do not know', 'Not applicable / Student'],
+        question: 'ii. What is the approximate annual budget or financial scope of the decisions you are involved in?',
+        options: ['Less than $100,000', '$100,000 – $1 million', '$1 million – $10 million', 'More than $10 million', 'I do not know', 'Not applicable / Student'],
     },
     q3: {
-        question: 'iii. How many employees does your organization have?',
-        options: ['Fewer than 100', '100 - 499', '500 - 999', '1,000 - 4,999', '5,000 or more', 'Not applicable / Student'],
+        question: 'iii. Which best describes your organization’s size?',
+        options: ['Small business or startup (typically fewer than 100 employees)', 'Mid-sized firm or division (typically 100-999 employees)', 'Large organization or multinational (typically 1,000+ employees)', 'Not applicable / Student', 'I do not know'],
     },
     q4: {
         question: 'iv. Which best describes your organization\'s ownership structure?',
@@ -313,5 +313,3 @@ export default function StepInitialAssessment({ sessionData, updateSessionData, 
     </>
   );
 }
-
-    
