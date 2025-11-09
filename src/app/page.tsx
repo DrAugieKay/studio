@@ -1,3 +1,4 @@
+
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { BrainCircuit, ArrowRight } from 'lucide-react';
@@ -13,7 +14,7 @@ export default function Home() {
       </header>
       <div className="flex-1 flex flex-col items-center justify-center text-center p-4">
         <div className="max-w-3xl w-full">
-          <div className="bg-card/50 p-8 rounded-t-xl">
+          <div className="bg-card/50 p-6 sm:p-8 rounded-t-xl">
             <div className="mb-6 flex justify-center">
               <div className="text-primary">
                 <BrainCircuit className="w-16 h-16" />
@@ -29,8 +30,8 @@ export default function Home() {
           
           <Separator />
 
-          <div className="bg-card/50 p-8 rounded-b-xl">
-              <p className="text-lg text-muted-foreground mb-6">
+          <div className="bg-card/50 p-6 sm:p-8 rounded-b-xl">
+              <p className="text-base sm:text-lg text-muted-foreground mb-6">
                 You are about to participate in a research study investigating financial decision-making with AI and human advisors. Your contribution is valuable.
               </p>
               <Button asChild size="lg">
@@ -43,7 +44,7 @@ export default function Home() {
         </div>
         
       </div>
-       <footer className="text-muted-foreground text-sm pb-8 text-center">
+       <footer className="text-muted-foreground text-sm pb-8 text-center px-4">
           <p>&copy; 2025 FAConLDQ Research Platform. All rights reserved.</p>
         </footer>
     </div>

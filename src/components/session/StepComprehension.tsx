@@ -98,7 +98,7 @@ export default function StepComprehension({ sessionData, updateSessionData }: St
           Let's check your understanding of the information presented.
         </CardDescription>
       </CardHeader>
-      <div className="p-6 pt-0">
+      <div className="pt-0">
         <Form {...form}>
           <form className="space-y-6">
             <FormField
@@ -110,8 +110,8 @@ export default function StepComprehension({ sessionData, updateSessionData }: St
                   <FormControl>
                     <RadioGroup onValueChange={field.onChange} value={field.value} className="space-y-1">
                       {q1Options.map(option => (
-                         <Label key={option} htmlFor={`q1-${option}`} className="flex items-center space-x-3 p-2 cursor-pointer has-[:checked]:text-accent transition-colors">
-                            <FormControl><RadioGroupItem value={option} id={`q1-${option}`} /></FormControl>
+                         <Label key={option} htmlFor={`q1-${option}`} className="flex items-start space-x-3 p-3 cursor-pointer has-[:checked]:text-accent transition-colors">
+                            <FormControl><RadioGroupItem value={option} id={`q1-${option}`} className="mt-1" /></FormControl>
                             <span className="font-normal text-base">{option}</span>
                         </Label>
                       ))}
@@ -129,8 +129,8 @@ export default function StepComprehension({ sessionData, updateSessionData }: St
                   <FormControl>
                     <RadioGroup onValueChange={field.onChange} value={field.value} className="space-y-1">
                        {q2Options.map(option => (
-                         <Label key={option} htmlFor={`q2-${option}`} className="flex items-center space-x-3 p-2 cursor-pointer has-[:checked]:text-accent transition-colors">
-                            <FormControl><RadioGroupItem value={option} id={`q2-${option}`} /></FormControl>
+                         <Label key={option} htmlFor={`q2-${option}`} className="flex items-start space-x-3 p-3 cursor-pointer has-[:checked]:text-accent transition-colors">
+                            <FormControl><RadioGroupItem value={option} id={`q2-${option}`} className="mt-1" /></FormControl>
                             <span className="font-normal text-base">{option}</span>
                         </Label>
                       ))}

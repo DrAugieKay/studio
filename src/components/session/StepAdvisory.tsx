@@ -1,3 +1,4 @@
+
 import { CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import type { SessionData } from '@/lib/types';
@@ -21,7 +22,7 @@ export default function StepAdvisory({ sessionData, updateSessionData }: StepPro
           Please review the following advisory memo related to the investment. You may need to scroll to see the full content.
         </CardDescription>
       </CardHeader>
-      <div className="p-6 pt-0">
+      <div className="pt-0">
         <ScrollArea className="h-[60vh] rounded-lg border">
           <AdvisoryMemo sessionData={sessionData} updateSessionData={updateSessionData} />
         </ScrollArea>

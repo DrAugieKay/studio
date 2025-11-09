@@ -92,14 +92,14 @@ export default function StepConsent({ updateSessionData, endSurvey, goToNextStep
 
   return (
     <>
-      <CardHeader>
-        <div className="flex items-center gap-3">
+      <CardHeader className="text-center sm:text-left">
+        <div className="flex flex-col sm:flex-row items-center gap-3">
           <FileText className="h-6 w-6 text-primary" />
           <CardTitle className="font-headline text-2xl">Informed Consent</CardTitle>
         </div>
         <CardDescription>Please read the following information carefully.</CardDescription>
       </CardHeader>
-      <div className="p-6 pt-0 space-y-8">
+      <div className="space-y-8">
         <div className="p-4 border rounded-lg text-sm text-muted-foreground bg-secondary/30">
           You are invited to participate in a research study on corporate financial decision-making. This study examines how different sources of financial advice influence organizational decision-making quality. It involves reviewing financial advice and making a business investment recommendation. It will take approximately 15-20 minutes to complete. Your participation is voluntary and anonymous. You may withdraw at any time without penalty. The study involves viewing a simulated financial advisory scenario. There are no known risks. By proceeding, you confirm you are at least 18 years old, speak the survey language fluently, and agree to participate under these terms.
         </div>
@@ -112,7 +112,7 @@ export default function StepConsent({ updateSessionData, endSurvey, goToNextStep
                 <RadioGroup
                   value={answers[q.id as keyof typeof answers]}
                   onValueChange={(value) => handleValueChange(q.id as keyof typeof answers, value as 'Yes' | 'No')}
-                  className="mt-3 grid grid-cols-2 gap-4"
+                  className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-4"
                 >
                   <Label htmlFor={`${q.id}-yes`} className="flex items-center space-x-3 p-4 border rounded-md cursor-pointer bg-background has-[:checked]:bg-secondary has-[:checked]:border-accent transition-colors">
                     <RadioGroupItem value="Yes" id={`${q.id}-yes`} />

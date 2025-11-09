@@ -76,7 +76,7 @@ export default function StepObjectiveChoice({ sessionData, updateSessionData }: 
           Based on all the information you have reviewed, please make your decision.
         </CardDescription>
       </CardHeader>
-      <div className="p-6 pt-0">
+      <div className="pt-0">
         {!choiceMade ? (
             <Form {...form}>
             <form className="space-y-8">
@@ -85,12 +85,12 @@ export default function StepObjectiveChoice({ sessionData, updateSessionData }: 
                 name="choice"
                 render={({ field }) => (
                     <FormItem className="space-y-3">
-                    <FormLabel className="font-semibold">a. Based on the advisory and your role, which investment option do you recommend?</FormLabel>
+                    <FormLabel className="font-semibold text-base">a. Based on the advisory and your role, which investment option do you recommend?</FormLabel>
                     <FormControl>
                         <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="space-y-1">
                         {['Option A: Growth Equity Fund', 'Option B: Balanced Mutual Fund', 'Option C: Government Treasury Bond Portfolio', 'Option D: I do not know / Prefer not to decide'].map(option => (
-                            <Label key={option} htmlFor={`choice-${option}`} className="flex items-center space-x-3 p-2 cursor-pointer has-[:checked]:text-accent transition-colors">
-                                <FormControl><RadioGroupItem value={option} id={`choice-${option}`} /></FormControl>
+                            <Label key={option} htmlFor={`choice-${option}`} className="flex items-start space-x-3 p-3 cursor-pointer has-[:checked]:text-accent transition-colors">
+                                <FormControl><RadioGroupItem value={option} id={`choice-${option}`} className="mt-1" /></FormControl>
                                 <span className="font-normal text-base">{option}</span>
                             </Label>
                         ))}
@@ -104,7 +104,7 @@ export default function StepObjectiveChoice({ sessionData, updateSessionData }: 
         ) : (
           <Form {...form}>
             <div className="space-y-6">
-                 <h3 className="font-semibold">b. Please indicate your agreement with the following statement about the decision you just made (or would make) after reviewing the advisory.</h3>
+                 <h3 className="font-semibold text-base">b. Please indicate your agreement with the following statement about the decision you just made (or would make) after reviewing the advisory.</h3>
                  {Object.entries(decisionQuestions).map(([key, label]) => (
                     <div key={key} className="space-y-3 p-4 border rounded-lg bg-secondary/30">
                         <Label htmlFor={key} className="text-base">{label}</Label>

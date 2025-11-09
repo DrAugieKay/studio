@@ -67,12 +67,12 @@ const organizationalProfileQuestions = {
         options: ['Technology / Software', 'Manufacturing / Industrial', 'Financial Services', 'Healthcare / Pharmaceuticals', 'Retail / Consumer Goods', 'Services / Consulting', 'Energy / Utilities', 'Other', 'Not applicable / Student'],
     },
     q2: {
-        question: 'ii. What is the approximate annual budget or financial scope of the decisions you are involved in?',
-        options: ['Less than $100,000', '$100,000 – $1 million', '$1 million – $10 million', 'More than $10 million', 'I do not know', 'Not applicable / Student'],
+        question: 'ii. What is the approximate annual revenue of your organization?',
+        options: ['Less than $1 million', '$1 million – $50 million', '$50 million – $500 million', 'More than $500 million', 'I do not know', 'Not applicable / Student'],
     },
     q3: {
-        question: 'iii. Which best describes your organization’s size?',
-        options: ['Small business or startup (typically fewer than 100 employees)', 'Mid-sized firm or division (typically 100-999 employees)', 'Large organization or multinational (typically 1,000+ employees)', 'Not applicable / Student', 'I do not know'],
+        question: 'iii. How many employees work at your organization?',
+        options: ['Fewer than 100 employees', '100 - 999 employees', '1,000 - 9,999 employees', '10,000 or more employees', 'I do not know', 'Not applicable / Student'],
     },
     q4: {
         question: 'iv. Which best describes your organization\'s ownership structure?',
@@ -233,7 +233,7 @@ export default function StepInitialAssessment({ sessionData, updateSessionData, 
           Please answer the following short questions about basic financial and numerical concepts. Choose the single best answer for each item.
         </CardDescription>
       </CardHeader>
-      <div className="p-6 pt-0">
+      <div className="pt-0">
         <Form {...form}>
           <form className="space-y-8" onSubmit={(e) => e.preventDefault()}>
             <h3 className="font-semibold">{currentSection.title}</h3>

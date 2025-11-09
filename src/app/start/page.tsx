@@ -214,7 +214,7 @@ export default function StartPage() {
   }
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen p-4 sm:p-6 md:p-8">
+    <div className="flex flex-col items-center justify-center min-h-screen bg-background p-4 sm:p-6 md:p-8">
       <div className="w-full max-w-4xl mx-auto">
         {!isDebrief && (
             <ProgressTracker
@@ -224,7 +224,7 @@ export default function StartPage() {
             />
         )}
         <Card className="mt-6 shadow-xl overflow-hidden">
-          <CardContent className="p-0">
+          <CardContent className="p-4 sm:p-6">
             {sessionData.condition ? (
               <CurrentStepComponent {...componentProps} />
             ) : (
@@ -257,5 +257,3 @@ export default function StartPage() {
     </div>
   );
 }
-
-    
