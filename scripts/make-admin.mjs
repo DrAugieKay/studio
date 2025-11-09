@@ -1,71 +1,73 @@
 // scripts/make-admin.mjs
-import admin from 'firebase-admin';
-import { readFile } from 'fs/promises';
+import { initializeApp, cert } from 'firebase-admin/app';
+import { getAuth } from 'firebase-admin/auth';
+import { readFileSync } from 'fs';
+import { resolve } from 'path';
 
 /**
- * This is a one-time use script to grant admin privileges to a user.
- *
- * HOW TO USE:
- * 1. Go to your Firebase Project Settings -> Service Accounts.
- * 2. Click "Generate new private key" and download the serviceAccountKey.json file.
- * 3. Place the downloaded 'serviceAccountKey.json' file in the root directory of this project.
- * 4. Create the user you want to make an admin in the Firebase Console (Authentication -> Users).
- * 5. Run this script from your terminal using the command:
- *    npm run make-admin -- an_email@example.com
- *
- *    (Replace 'an_email@example.com' with the actual email of the user).
- * 6. VERY IMPORTANT: For security, delete the 'serviceAccountKey.json' file after you have
- *    successfully created your admin.
+ * Sets a custom 'admin' claim on a Firebase user account.
+ * 
+ * Instructions:
+ * 1. Download your service account key from Firebase project settings
+ *    (Project settings > Service accounts > Generate new private key).
+ * 2. Rename the downloaded file to 'service-account.json' and place it in the root of this project.
+ * 3. Run this script from your terminal: `npm run make-admin your-email@example.com`
+ * 4. For the claim to take effect, the user must log out and log back in.
  */
 
-async function main() {
-  const email = process.argv[2];
+// --- Script Start ---
 
+const SERVICE_ACCOUNT_FILE = 'service-account.json';
+
+try {
+  // Check if an email was provided
+  const email = process.argv[2];
   if (!email) {
-    console.error('Error: Please provide an email address as an argument.');
-    console.error('Usage: npm run make-admin -- <email@example.com>');
-    process.exit(1);
+    throw new Error('Please provide an email address as an argument.');
   }
 
-  try {
-    // Read the service account key from the file system.
-    const serviceAccount = JSON.parse(
-      await readFile(new URL('../serviceAccountKey.json', import.meta.url))
-    );
+  // Resolve the absolute path to the service account key
+  const serviceAccountPath = resolve(process.cwd(), SERVICE_ACCOUNT_FILE);
 
-    // Initialize the Firebase Admin SDK.
-    admin.initializeApp({
-      credential: admin.credential.cert(serviceAccount),
+  // Load the service account key
+  let serviceAccount;
+  try {
+    serviceAccount = JSON.parse(readFileSync(serviceAccountPath, 'utf8'));
+  } catch (e) {
+    throw new Error(`'${SERVICE_ACCOUNT_FILE}' not found in the project root directory. Please follow the instructions in the script comments to download it from your Firebase project settings.`);
+  }
+
+  // Initialize the Firebase Admin SDK
+  initializeApp({
+    credential: cert(serviceAccount)
+  });
+
+  // Get the user by email and set the custom claim
+  console.log(`Fetching user: ${email}...`);
+  getAuth()
+    .getUserByEmail(email)
+    .then((user) => {
+      console.log(`Setting admin claim for user: ${user.uid}...`);
+      return getAuth().setCustomUserClaims(user.uid, { admin: true });
+    })
+    .then(() => {
+      console.log(`\n✅ Successfully set admin claim for ${email}`);
+      console.log('   The user must log out and log back in for the changes to take effect.');
+      process.exit(0);
+    })
+    .catch((error) => {
+      console.error('\n❌ An error occurred:');
+      if (error.code === 'auth/user-not-found') {
+        console.error(`   User with email "${email}" not found.`);
+        console.error('   Please make sure you have created the user in the Firebase Authentication console first.');
+      } else {
+        console.error(error.message);
+      }
+      process.exit(1);
     });
 
-    console.log(`Fetching user with email: ${email}...`);
-    const user = await admin.auth().getUserByEmail(email);
-
-    if (user.customClaims && user.customClaims.admin === true) {
-        console.log(`User ${email} is already an admin. No changes made.`);
-        process.exit(0);
-    }
-    
-    console.log('Setting custom claim { admin: true }...');
-    await admin.auth().setCustomUserClaims(user.uid, { admin: true });
-
-    console.log(`\n✅ Success! User '${email}' (UID: ${user.uid}) has been granted admin privileges.`);
-    console.log('IMPORTANT: The user must log out and log back in for the changes to take effect.');
-    process.exit(0);
-  } catch (error) {
+} catch (error) {
     console.error('\n❌ An error occurred:');
-    if (error.code === 'auth/user-not-found') {
-        console.error(`   User with email "${email}" not found.`);
-        console.error('   Please ensure the user has been created in the Firebase Authentication console first.');
-    } else if (error.code === 'ENOENT') {
-        console.error("   'serviceAccountKey.json' not found in the project root directory.");
-        console.error("   Please follow the instructions in the script comments to download it from your Firebase project settings.");
-    }
-    else {
-        console.error(error);
-    }
+    console.error(error.message);
     process.exit(1);
-  }
 }
-
-main();
