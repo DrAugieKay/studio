@@ -40,6 +40,33 @@ function calculateMean(responses: Record<string, string | null>): number | null 
     return sum / values.length;
 }
 
+/**
+ * Calculates financial literacy score.
+ */
+export function getFinancialLiteracyScore(session: SessionData) {
+    const answers = session.initialAssessments?.financialLiteracy || {};
+    const correctAnswers = {
+        q1: 'More than $102',
+        q2: 'Less than today',
+        q3: 'False',
+        q4: '1%',
+    };
+
+    const finlit1 = answers.q1 === correctAnswers.q1 ? 1 : 0;
+    const finlit2 = answers.q2 === correctAnswers.q2 ? 1 : 0;
+    const finlit3 = answers.q3 === correctAnswers.q3 ? 1 : 0;
+    const finlit4 = answers.q4 === correctAnswers.q4 ? 1 : 0;
+    
+    const score = finlit1 + finlit2 + finlit3 + finlit4;
+
+    const answeredCount = Object.values(answers).filter(a => a).length;
+    
+    // FINLIT_SUM computed if >=3 items present
+    const finlit_sum = answeredCount >= 3 ? score : null;
+
+    return { score: finlit_sum, finlit1, finlit2, finlit3, finlit4 };
+}
+
 
 /**
  * Calculates all derived composite scores for a given session.
@@ -70,9 +97,7 @@ export function getComposites(session: SessionData) {
 
     const pd_composite = calculateMean(session.mediators?.psychologicalDistance || {});
 
-    // Note: Financial literacy is a sum, not a mean, and has different scoring.
-    // This is a simplified placeholder. A more robust implementation would be needed.
-    const finlit_sum = Object.values(session.initialAssessments?.financialLiteracy || {}).length;
+    const { score: finlit_sum } = getFinancialLiteracyScore(session);
 
     // Risk tolerance with reverse scoring
     const riskToleranceResponses = session.controls?.riskTolerance;

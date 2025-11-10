@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -60,6 +61,9 @@ const stepNames = [
 const EXPERIMENT_ID = 'exp_001';
 const END_SURVEY_STEP = stepComponents.length - 1;
 
+// Function to generate a simple random seed
+const generateSeed = () => Math.random().toString(36).substring(2, 15);
+
 export default function StartPage() {
   const [currentStep, setCurrentStep] = useState(0);
   const [sessionData, setSessionData] = useState<Partial<SessionData> | null>(null);
@@ -81,6 +85,7 @@ export default function StartPage() {
 
   useEffect(() => {
     if (user && !sessionData) {
+      const seed = generateSeed();
       // User is authenticated, create the initial session data object
       const sources: ExperimentalCondition['advisorySource'][] = ['ai', 'human'];
       const frames: ExperimentalCondition['linguisticFrame'][] = ['abstract', 'concrete'];
@@ -100,6 +105,7 @@ export default function StartPage() {
 
       const initialData: Partial<SessionData> = {
         id: user.uid,
+        randomSeed: seed,
         startTime: new Date().toISOString(),
         status: 'In Progress',
         condition: assignedCondition,
@@ -126,7 +132,7 @@ export default function StartPage() {
       const experimentMetaRef = doc(firestore, 'experiment_meta', EXPERIMENT_ID);
       setDocumentNonBlocking(experimentMetaRef, {
         id: EXPERIMENT_ID,
-        seed: 'initial_seed_placeholder', // Replace with actual seed if needed
+        seed: 'initial_seed_placeholder', // This is a generic seed for the experiment meta, not participant-specific
         stimuliVersion: 'v1.0',
         lexiconVersion: 'v1.0'
       }, { merge: true });

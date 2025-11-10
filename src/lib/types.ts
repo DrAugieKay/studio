@@ -9,6 +9,7 @@ export type ExperimentalCondition = {
 export type SessionData = {
   // Metadata
   id: string; // Participant ID, same as Firebase Auth UID
+  randomSeed?: string; // Seed for randomization
   startTime: string;
   endTime: string | null;
   deviceInfo: {
