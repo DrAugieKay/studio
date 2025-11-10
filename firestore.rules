@@ -79,7 +79,7 @@ service cloud.firestore {
         allow get: if isOwner(participantId) || isAdmin();
         // Only the participant can create or update their own data.
         allow create, update: if isOwner(participantId);
-        // Admins can delete a participant document.
+        // Admins can delete a participant document. THIS IS THE CRITICAL FIX.
         allow delete: if isAdmin();
 
         /**
