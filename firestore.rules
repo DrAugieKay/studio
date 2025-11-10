@@ -50,7 +50,7 @@ service cloud.firestore {
      * @description Checks if the request is made by the owner (userId matches request.auth.uid).
      * @param {string} userId - The user ID to check against.
      * @return {boolean} True if the user is the owner, false otherwise.
-     */
+     ci */
     function isOwner(userId) {
       return request.auth.uid == userId;
     }
