@@ -61,7 +61,7 @@ const stepNames = [
 const EXPERIMENT_ID = 'exp_001';
 const END_SURVEY_STEP = stepComponents.length - 1;
 
-// Function to generate a simple random seed
+// Function to generate a simple random seed - must be called on client.
 const generateSeed = () => Math.random().toString(36).substring(2, 15);
 
 export default function StartPage() {
@@ -84,14 +84,14 @@ export default function StartPage() {
   }, [user, isUserLoading, auth]);
 
   useEffect(() => {
+    // This effect runs only on the client side after mount.
+    // It handles session creation which uses browser-specific APIs.
     if (user && !sessionData) {
       const seed = generateSeed();
-      // User is authenticated, create the initial session data object
       const sources: ExperimentalCondition['advisorySource'][] = ['ai', 'human'];
       const frames: ExperimentalCondition['linguisticFrame'][] = ['abstract', 'concrete'];
       const scenarios: ExperimentalCondition['scenario'][] = ['xyz', 'techtrend'];
 
-      // Use a separate PRNG for reproducible assignment if needed, but Math.random is fine for now
       const randomSourceIndex = Math.floor(Math.random() * sources.length);
       const randomFrameIndex = Math.floor(Math.random() * frames.length);
       const randomScenarioIndex = Math.floor(Math.random() * scenarios.length);
@@ -129,19 +129,18 @@ export default function StartPage() {
       console.log('Device Info:', deviceInfo);
       console.log('Creating participant document for UID:', user.uid);
 
-      // Create the document in Firestore
-      const participantDocRef = doc(firestore, `experiment_meta/${EXPERIMENT_ID}/participants`, user.uid);
-      setDocumentNonBlocking(participantDocRef, initialData, { merge: true });
+      if (firestore) {
+        const participantDocRef = doc(firestore, `experiment_meta/${EXPERIMENT_ID}/participants`, user.uid);
+        setDocumentNonBlocking(participantDocRef, initialData, { merge: true });
 
-      // Create a meta document if it doesn't exist
-      const experimentMetaRef = doc(firestore, 'experiment_meta', EXPERIMENT_ID);
-      setDocumentNonBlocking(experimentMetaRef, {
-        id: EXPERIMENT_ID,
-        seed: 'initial_seed_placeholder', // This is a generic seed for the experiment meta, not participant-specific
-        stimuliVersion: 'v1.0',
-        lexiconVersion: 'v1.0'
-      }, { merge: true });
-
+        const experimentMetaRef = doc(firestore, 'experiment_meta', EXPERIMENT_ID);
+        setDocumentNonBlocking(experimentMetaRef, {
+          id: EXPERIMENT_ID,
+          seed: 'initial_seed_placeholder',
+          stimuliVersion: 'v1.0',
+          lexiconVersion: 'v1.0'
+        }, { merge: true });
+      }
 
       setSessionData(initialData);
     }
@@ -153,7 +152,6 @@ export default function StartPage() {
         const newData = { ...prev, ...data };
         if (user && firestore) {
             const participantDocRef = doc(firestore, `experiment_meta/${EXPERIMENT_ID}/participants`, user.uid);
-            // Use non-blocking update to save to Firestore
             setDocumentNonBlocking(participantDocRef, newData, { merge: true });
         }
         return newData;
