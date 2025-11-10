@@ -69,7 +69,11 @@ export default function SessionTable() {
                       ? 'secondary'
                       : 'destructive'
                   }
-                  className={session.status === 'Completed' ? 'bg-green-600/20 text-green-700 border-green-600/30' : session.status === 'In Progress' ? 'bg-blue-600/20 text-blue-700 border-blue-600/30' : 'bg-red-600/20 text-red-700 border-red-600/30'}
+                  className={
+                    session.status === 'Completed' ? 'bg-green-600/20 text-green-700 border-green-600/30' 
+                    : session.status === 'In Progress' ? 'bg-blue-600/20 text-blue-700 border-blue-600/30' 
+                    : 'bg-red-600/20 text-red-700 border-red-600/30'
+                  }
                 >
                   {session.status}
                 </Badge>

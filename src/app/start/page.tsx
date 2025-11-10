@@ -160,6 +160,10 @@ export default function StartPage() {
 
   const handleNext = () => {
     if (currentStep < stepComponents.length - 1) {
+      // Logic to mark survey as complete when moving to the debrief step
+      if (stepNames[currentStep + 1] === 'Debrief') {
+          updateSessionData({ endTime: new Date().toISOString(), status: 'Completed' });
+      }
       setCurrentStep(currentStep + 1);
     } else {
       console.log('Final session data:', sessionData);
@@ -167,7 +171,8 @@ export default function StartPage() {
   };
   
   const handleCompleteSurvey = () => {
-    updateSessionData({ endTime: new Date().toISOString(), status: 'Completed' });
+    // This function is now just for navigation after debrief.
+    // The status is already set when the user arrives at the debrief step.
     router.push('/');
   }
 
@@ -214,7 +219,7 @@ export default function StartPage() {
     updateSessionData,
     endSurvey,
     goToNextStep: handleNext,
-    handleCompleteSurvey, // Pass the new function down
+    handleCompleteSurvey, // Pass the navigation function down
     setIsLastAssessmentSection,
     setIsLastMediatorSection,
     setIsLastControlSection,
