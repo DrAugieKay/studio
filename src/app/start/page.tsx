@@ -76,14 +76,14 @@ export default function StartPage() {
 
   useEffect(() => {
     // Start anonymous sign-in process when the component mounts
-    if (!user && !isUserLoading) {
+    if (!user && !isUserLoading && auth) {
       initiateAnonymousSignIn(auth);
     }
   }, [user, isUserLoading, auth]);
 
   useEffect(() => {
     // This effect runs only on the client side after mount.
-    // It handles session creation which uses browser-specific APIs.
+    // It handles session creation which uses browser-specific APIs and prevents hydration errors.
     if (user && !sessionData && firestore) {
       const seed = Math.random().toString(36).substring(2, 15);
       const sources: ExperimentalCondition['advisorySource'][] = ['ai', 'human'];
@@ -101,9 +101,9 @@ export default function StartPage() {
       };
       
       const deviceInfo = {
-        userAgent: navigator.userAgent,
-        screenWidth: window.screen.width,
-        screenHeight: window.screen.height,
+        userAgent: navigator.userAgent || 'Unknown',
+        screenWidth: window.screen.width || 0,
+        screenHeight: window.screen.height || 0,
       };
 
       const initialData: Partial<SessionData> = {
@@ -113,18 +113,32 @@ export default function StartPage() {
         status: 'In Progress',
         condition: assignedCondition,
         deviceInfo,
+        // Initialize all fields to prevent Firestore 'undefined' errors
         consent: false,
         consent_ageCheck: null,
         consent_isEmployed: null,
         consent_hasParticipated: null,
         consent_consentGiven: null,
+        initialAssessments: {
+            financialLiteracy: null,
+            roleAndExperience: null,
+            organizationalProfile: null,
+        },
+        dossierViewTime: 0,
+        dossierScrollCount: 0,
+        advisoryViewTime: 0,
+        advisoryScrollCount: 0,
+        comprehension: {},
         manipulationChecks: {},
+        objectiveChoice: null,
+        subjectiveDQ: {},
         mediators: {},
+        controls: {},
+        openRationale: null,
         endTime: null,
       };
 
       console.log('Assigned Condition:', assignedCondition);
-      console.log('Device Info:', deviceInfo);
       console.log('Creating participant document for UID:', user.uid);
 
       const participantDocRef = doc(firestore, `experiment_meta/${EXPERIMENT_ID}/participants`, user.uid);
@@ -221,7 +235,7 @@ export default function StartPage() {
     setIsLastControlSection,
   };
 
-  if (isUserLoading || !sessionData) {
+  if (isUserLoading || !sessionData || !auth || !firestore) {
     return (
         <div className="flex flex-col items-center justify-center min-h-screen p-4">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
