@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { useFirestore } from '@/firebase';
-import { collection, getDocs, writeBatch } from 'firebase/firestore';
+import { collection, getDocs, writeBatch, doc, DocumentReference, DocumentData, CollectionReference } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 
@@ -24,6 +24,17 @@ interface DeleteDataDialogProps {
 }
 
 const EXPERIMENT_ID = 'exp_001';
+
+// List of all subcollections under a participant
+const SUBCOLLECTIONS = [
+    'responses', 
+    'derived_composites', 
+    'data_quality_flags', 
+    'payment_reconciliation'
+];
+
+// Deeper nested subcollections
+const RESPONSE_SUBCOLLECTIONS = ['objective_linguistic_analysis', 'manual_coding'];
 
 export default function DeleteDataDialog({ isOpen, onClose }: DeleteDataDialogProps) {
   const [isDeleting, setIsDeleting] = useState(false);
@@ -56,38 +67,67 @@ export default function DeleteDataDialog({ isOpen, onClose }: DeleteDataDialogPr
             return;
         }
 
-        // Firestore limits batches to 500 operations.
-        // We'll process in chunks if there are more than 500 participants.
-        const chunks: any[] = [];
-        for (let i = 0; i < querySnapshot.docs.length; i += 500) {
-            chunks.push(querySnapshot.docs.slice(i, i + 500));
+        const deletePromises: Promise<void>[] = [];
+        const CHUNK_SIZE = 400; // Keep batch size well under 500 limit to be safe
+
+        // Create chunks of participant docs to process
+        const docChunks: DocumentData[][] = [];
+        for (let i = 0; i < querySnapshot.docs.length; i += CHUNK_SIZE) {
+            docChunks.push(querySnapshot.docs.slice(i, i + CHUNK_SIZE));
         }
 
-        for (const chunk of chunks) {
+        for (const docChunk of docChunks) {
             const batch = writeBatch(firestore);
-            chunk.forEach((doc: any) => {
-                batch.delete(doc.ref);
-            });
-            await batch.commit();
+            
+            for (const participantDoc of docChunk) {
+                const participantRef = participantDoc.ref;
+                
+                // 1. Queue the main participant document for deletion
+                batch.delete(participantRef);
+
+                // 2. Queue documents from direct subcollections
+                for (const subcollectionName of SUBCOLLECTIONS) {
+                    const subcollectionRef = collection(firestore, participantRef.path, subcollectionName);
+                    const subcollectionSnapshot = await getDocs(subcollectionRef);
+                    for (const subDoc of subcollectionSnapshot.docs) {
+                        batch.delete(subDoc.ref);
+
+                        // 3. Handle sub-sub-collections (e.g., under 'responses')
+                        if (subcollectionName === 'responses') {
+                            for (const responseSubColName of RESPONSE_SUBCOLLECTIONS) {
+                                const deepSubColRef = collection(firestore, subDoc.ref.path, responseSubColName);
+                                const deepSubColSnapshot = await getDocs(deepSubColRef);
+                                for (const deepDoc of deepSubColSnapshot.docs) {
+                                    batch.delete(deepDoc.ref);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            
+            // Commit the batch
+            deletePromises.push(batch.commit());
         }
+
+        await Promise.all(deletePromises);
 
         toast({
             title: "Success",
-            description: `${querySnapshot.size} participant sessions have been deleted. The session table will refresh.`,
+            description: `${querySnapshot.size} participant sessions and all related sub-collection data have been deleted. The table will refresh.`,
             className: "bg-green-100 text-green-800",
         });
 
-    } catch (error) {
+    } catch (error: any) {
         console.error("Error deleting data:", error);
         toast({
             variant: "destructive",
             title: "Deletion Failed",
-            description: "An error occurred while trying to delete the data. Please check the console for details.",
+            description: error.message || "An error occurred. Check console for details.",
         });
     } finally {
         setIsDeleting(false);
         onClose();
-        // The table will auto-refresh due to the real-time listener in `useCollection`.
     }
   };
 
@@ -97,7 +137,7 @@ export default function DeleteDataDialog({ isOpen, onClose }: DeleteDataDialogPr
         <AlertDialogHeader>
           <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
           <AlertDialogDescription>
-            This action cannot be undone. This will permanently delete all participant session data from the database. This includes all responses, composites, and flags.
+            This action cannot be undone. This will permanently delete all participant session data from the database, including all responses, composites, and flags.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>

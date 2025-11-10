@@ -1,3 +1,4 @@
+
 /**
  * @fileoverview Firestore Security Rules for the Advisory Insights Platform.
  *
@@ -23,7 +24,6 @@
  * Denormalization for Authorization:
  * This ruleset uses path-based authorization, assuming that the correct participant ID
  * is embedded in the document path. This avoids the need for `get()` calls to verify
-
  * ownership.
  */
 rules_version = '2';
@@ -52,7 +52,7 @@ service cloud.firestore {
      * @description Checks if the request is made by the owner (userId matches request.auth.uid).
      * @param {string} userId - The user ID to check against.
      * @return {boolean} True if the user is the owner, false otherwise.
-     ci */
+     */
     function isOwner(userId) {
       return request.auth.uid == userId;
     }
@@ -60,113 +60,48 @@ service cloud.firestore {
     /**
      * @description Rules for the /experiment_meta/{experimentMetaId} collection.
      * @path /experiment_meta/{experimentMetaId}
-     * @allow (create, update) Authenticated user can create or update an experiment_meta document.
-     * @deny (get, list, delete) No one can read, list or delete experiment meta documents.
-     * @principle Enforces that experiment_meta documents can only be written by an authenticated user.
      */
     match /experiment_meta/{experimentMetaId} {
-      allow get, list, delete: if false;
+      // Admins can read, no one else.
+      allow get: if isAdmin();
+      // Only signed-in users (the survey app itself) can create/update meta.
       allow create, update: if isSignedIn();
-    }
-
-    /**
-     * @description Rules for the /experiment_meta/{experimentMetaId}/participants/{participantId} collection.
-     * @path /experiment_meta/{experimentMetaId}/participants/{participantId}
-     * @allow (list) Admins can list all participant documents.
-     * @allow (read) The participant can read their own document, or an admin can read any document.
-     * @allow (write) Only the participant can write to their own document.
-     * @allow (delete) Admins can delete documents.
-     * @principle Enforces that participant documents can only be written by the owner, but can be read by the owner or an admin, and deleted by an admin.
-     */
-    match /experiment_meta/{experimentMetaId}/participants/{participantId} {
-      allow list: if isAdmin();
-      allow read: if isOwner(participantId) || isAdmin();
-      allow write: if isOwner(participantId);
-      allow delete: if isAdmin();
+      // No one can list or delete the top-level meta doc via client SDK.
+      allow list, delete: if false;
 
       /**
-       * @description Rules for the /experiment_meta/{experimentMetaId}/participants/{participantId}/responses/{responseId} collection.
-       * @path /experiment_meta/{experimentMetaId}/participants/{participantId}/responses/{responseId}
-       * @allow (read) The participant can read their own responses, or an admin can.
-       * @allow (write) Only the participant can write their own responses.
-       * @allow (delete) Admins can delete documents.
+       * @description Rules for the /experiment_meta/{experimentMetaId}/participants collection.
+       * @path /experiment_meta/{experimentMetaId}/participants/{participantId}
        */
-      match /responses/{responseId} {
-         allow list: if isAdmin();
-         allow read: if isOwner(participantId) || isAdmin();
-         allow write: if isOwner(participantId);
-         allow delete: if isAdmin();
+      match /participants/{participantId} {
+        // Admins can list all participant documents. Owners can read their own.
+        allow list: if isAdmin();
+        allow get: if isOwner(participantId) || isAdmin();
+        // Only the participant can create or update their own data.
+        allow create, update: if isOwner(participantId);
+        // Admins can delete a participant document.
+        allow delete: if isAdmin();
 
         /**
-         * @description Rules for the /experiment_meta/{experimentMetaId}/participants/{participantId}/responses/{responseId}/objective_linguistic_analysis/{objectiveLinguisticAnalysisId} collection.
-         * @path /experiment_meta/{experimentMetaId}/participants/{participantId}/responses/{responseId}/objective_linguistic_analysis/{objectiveLinguisticAnalysisId}
+         * @description Recursive rule for all subcollections under a participant.
+         * This grants admins full read/delete access to all nested data,
+         * while participants retain write access to their own nested data.
          */
-        match /objective_linguistic_analysis/{objectiveLinguisticAnalysisId} {
-           allow list: if isAdmin();
-           allow read: if isOwner(participantId) || isAdmin();
-           allow write: if isOwner(participantId);
-           allow delete: if isAdmin();
-        }
-
-        /**
-         * @description Rules for the /experiment_meta/{experimentMetaId}/participants/{participantId}/responses/{responseId}/manual_coding/{manualCodingId} collection.
-         * @path /experiment_meta/{experimentMetaId}/participants/{participantId}/responses/{responseId}/manual_coding/{manualCodingId}
-         */
-        match /manual_coding/{manualCodingId} {
-           allow list: if isAdmin();
-           allow read: if isOwner(participantId) || isAdmin();
-           allow write: if isOwner(participantId);
+        match /{path=**} {
+           allow list, get: if isOwner(participantId) || isAdmin();
+           allow create, update: if isOwner(participantId);
            allow delete: if isAdmin();
         }
       }
-
-      /**
-       * @description Rules for the /experiment_meta/{experimentMetaId}/participants/{participantId}/derived_composites/{derivedCompositeId} collection.
-       * @path /experiment_meta/{experimentMetaId}/participants/{participantId}/derived_composites/{derivedCompositeId}
-       */
-      match /derived_composites/{derivedCompositeId} {
-         allow list: if isAdmin();
-         allow read: if isOwner(participantId) || isAdmin();
-         allow write: if isOwner(participantId);
-         allow delete: if isAdmin();
-      }
-
-      /**
-       * @description Rules for the /experiment_meta/{experimentMetaId}/participants/{participantId}/data_quality_flags/{dataQualityFlagId} collection.
-       * @path /experiment_meta/{experimentMetaId}/participants/{participantId}/data_quality_flags/{dataQualityFlagId}
-       */
-      match /data_quality_flags/{dataQualityFlagId} {
-         allow list: if isAdmin();
-         allow read: if isOwner(participantId) || isAdmin();
-         allow write: if isOwner(participantId);
-         allow delete: if isAdmin();
-      }
-
-      /**
-       * @description Rules for the /experiment_meta/{experimentMetaId}/participants/{participantId}/payment_reconciliation/{paymentReconciliationId} collection.
-       * @path /experiment_meta/{experimentMetaId}/participants/{participantId}/payment_reconciliation/{paymentReconciliationId}
-       */
-      match /payment_reconciliation/{paymentReconciliationId} {
-         allow list: if isAdmin();
-         allow read: if isOwner(participantId) || isAdmin();
-         allow write: if isOwner(participantId);
-         allow delete: if isAdmin();
-      }
     }
-
 
     /**
      * @description Rules for the /admin_audit_logs/{adminAuditLogId} collection.
      * @path /admin_audit_logs/{adminAuditLogId}
-     * @allow (create) Authenticated user can create an admin_audit_log document.
-     * @deny (get, list, update, delete) No one can get, list, update, or delete admin_audit_log documents.
-     * @principle Enforces that only authenticated users can create admin_audit_log documents, and no one can read or modify them.
      */
     match /admin_audit_logs/{adminAuditLogId} {
-      allow update, delete: if false;
-      allow get, list, create: if isAdmin();
+      allow read, list, create: if isAdmin();
+      allow update, delete: if false; // Audit logs should be immutable.
     }
   }
 }
-
-    
