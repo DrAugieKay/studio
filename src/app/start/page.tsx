@@ -155,6 +155,11 @@ export default function StartPage() {
       setSessionData(initialData);
     }
   }, [user, sessionData, firestore]);
+  
+  useEffect(() => {
+    // Scroll to top when step changes
+    window.scrollTo(0, 0);
+  }, [currentStep]);
 
 
   const updateSessionData = (data: Partial<SessionData>) => {
