@@ -1,10 +1,9 @@
-
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
 import type { SessionData, ExperimentalCondition } from '@/lib/types';
 import { useAuth, useFirestore, useUser } from '@/firebase';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 
 import { Button } from '@/components/ui/button';
@@ -86,7 +85,7 @@ export default function StartPage() {
   useEffect(() => {
     // This effect runs only on the client side after mount.
     // It handles session creation which uses browser-specific APIs.
-    if (user && !sessionData) {
+    if (user && !sessionData && firestore) {
       const seed = generateSeed();
       const sources: ExperimentalCondition['advisorySource'][] = ['ai', 'human'];
       const frames: ExperimentalCondition['linguisticFrame'][] = ['abstract', 'concrete'];
@@ -129,18 +128,16 @@ export default function StartPage() {
       console.log('Device Info:', deviceInfo);
       console.log('Creating participant document for UID:', user.uid);
 
-      if (firestore) {
-        const participantDocRef = doc(firestore, `experiment_meta/${EXPERIMENT_ID}/participants`, user.uid);
-        setDocumentNonBlocking(participantDocRef, initialData, { merge: true });
+      const participantDocRef = doc(firestore, `experiment_meta/${EXPERIMENT_ID}/participants`, user.uid);
+      setDocumentNonBlocking(participantDocRef, initialData, { merge: true });
 
-        const experimentMetaRef = doc(firestore, 'experiment_meta', EXPERIMENT_ID);
-        setDocumentNonBlocking(experimentMetaRef, {
-          id: EXPERIMENT_ID,
-          seed: 'initial_seed_placeholder',
-          stimuliVersion: 'v1.0',
-          lexiconVersion: 'v1.0'
-        }, { merge: true });
-      }
+      const experimentMetaRef = doc(firestore, 'experiment_meta', EXPERIMENT_ID);
+      setDocumentNonBlocking(experimentMetaRef, {
+        id: EXPERIMENT_ID,
+        seed: 'initial_seed_placeholder',
+        stimuliVersion: 'v1.0',
+        lexiconVersion: 'v1.0'
+      }, { merge: true });
 
       setSessionData(initialData);
     }
