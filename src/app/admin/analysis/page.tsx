@@ -9,6 +9,7 @@ import CompletionRateChart from '@/components/admin/CompletionRateChart';
 import ChoiceDistributionChart from '@/components/admin/ChoiceDistributionChart';
 import CredibilityScoresChart from '@/components/admin/CredibilityScoresChart';
 import DescriptiveStatisticsAccordion from '@/components/admin/DescriptiveStatisticsAccordion';
+import CrossTabulation from '@/components/admin/CrossTabulation';
 import { getQualityFlags, checkComprehension } from '@/lib/quality-flags';
 import { getComposites, getFinancialLiteracyScore } from '@/lib/composites';
 import { codebookData } from '@/lib/codebook';
@@ -59,7 +60,7 @@ export default function DataAnalysisPage() {
         const dataToExport = sessions.map(session => {
             const qualityFlags = getQualityFlags(session);
             const composites = getComposites(session);
-            const { finlit1, finlit2, finlit3, finlit4 } = getFinancialLiteracyScore(session);
+            const { score: finlit_sum, finlit1, finlit2, finlit3, finlit4 } = getFinancialLiteracyScore(session);
             
             const { isOrgCorrect, isHorizonCorrect } = checkComprehension(session);
 
@@ -136,7 +137,7 @@ export default function DataAnalysisPage() {
                 finlit2,
                 finlit3,
                 finlit4,
-                FINLIT_SUM: composites.finlit_sum,
+                FINLIT_SUM: finlit_sum,
 
                 risk_f1: session.controls?.riskTolerance?.q1,
                 risk_f2: session.controls?.riskTolerance?.q2,
@@ -220,6 +221,12 @@ export default function DataAnalysisPage() {
                         <CredibilityScoresChart sessions={sessions} />
                     </CardContent>
                 </Card>
+            </div>
+            
+            <div>
+                <h2 className="text-2xl font-bold font-headline mb-4">Cross-Tabulations</h2>
+                 <p className="text-muted-foreground mb-6">Explore the relationship between two categorical variables.</p>
+                <CrossTabulation sessions={sessions} />
             </div>
 
             <div>
