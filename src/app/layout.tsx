@@ -1,6 +1,8 @@
+
 import type { Metadata } from 'next';
 import { Toaster } from '@/components/ui/toaster';
 import { FirebaseClientProvider } from '@/firebase';
+import ScrollToTop from '@/components/common/ScrollToTop';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -25,6 +27,7 @@ export default function RootLayout({
       </head>
       <body className="font-body antialiased h-full">
         <FirebaseClientProvider>
+          <ScrollToTop />
           <main>{children}</main>
         </FirebaseClientProvider>
         <Toaster />
