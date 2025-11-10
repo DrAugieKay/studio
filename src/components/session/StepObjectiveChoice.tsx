@@ -35,6 +35,13 @@ const likertOptions = [
     'Strongly agree',
 ];
 
+const choiceOptions = [
+    'Option A: Growth Equity Fund', 
+    'Option B: Balanced Mutual Fund', 
+    'Option C: Government Treasury Bond Portfolio', 
+    'Option D: I do not know / Prefer not to decide'
+];
+
 export default function StepObjectiveChoice({ sessionData, updateSessionData }: StepProps) {
   const [choiceMade, setChoiceMade] = useState(!!sessionData.objectiveChoice);
   const form = useForm<FormValues>({
@@ -76,7 +83,7 @@ export default function StepObjectiveChoice({ sessionData, updateSessionData }: 
           Based on all the information you have reviewed, please make your decision.
         </CardDescription>
       </CardHeader>
-      <div className="pt-0">
+      <div className="p-6 pt-0">
         {!choiceMade ? (
             <Form {...form}>
             <form className="space-y-8">
@@ -88,9 +95,9 @@ export default function StepObjectiveChoice({ sessionData, updateSessionData }: 
                     <FormLabel className="font-semibold text-base">a. Based on the advisory and your role, which investment option do you recommend?</FormLabel>
                     <FormControl>
                         <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="space-y-1">
-                        {['Option A: Growth Equity Fund', 'Option B: Balanced Mutual Fund', 'Option C: Government Treasury Bond Portfolio', 'Option D: I do not know / Prefer not to decide'].map(option => (
-                            <Label key={option} htmlFor={`choice-${option}`} className="flex items-start space-x-3 p-3 cursor-pointer has-[:checked]:text-accent transition-colors">
-                                <FormControl><RadioGroupItem value={option} id={`choice-${option}`} className="mt-1" /></FormControl>
+                        {choiceOptions.map((option, index) => (
+                            <Label key={option} htmlFor={`choice-${index}`} className="flex items-start space-x-3 p-3 cursor-pointer has-[:checked]:text-accent transition-colors">
+                                <FormControl><RadioGroupItem value={option} id={`choice-${index}`} className="mt-1" /></FormControl>
                                 <span className="font-normal text-base">{option}</span>
                             </Label>
                         ))}
@@ -114,9 +121,9 @@ export default function StepObjectiveChoice({ sessionData, updateSessionData }: 
                              value={subjectiveValues[key as keyof typeof subjectiveValues] !== null ? likertOptions[subjectiveValues[key as keyof typeof subjectiveValues]!] : ''}
                              className="w-full space-y-1"
                             >
-                               {likertOptions.map((option) => (
-                                <Label key={option} htmlFor={`${key}-${option}`} className="flex items-center space-x-3 p-2 cursor-pointer has-[:checked]:text-accent transition-colors">
-                                    <FormControl><RadioGroupItem value={option} id={`${key}-${option}`} /></FormControl>
+                               {likertOptions.map((option, index) => (
+                                <Label key={option} htmlFor={`${key}-${index}`} className="flex items-center space-x-3 p-2 cursor-pointer has-[:checked]:text-accent transition-colors">
+                                    <FormControl><RadioGroupItem value={option} id={`${key}-${index}`} /></FormControl>
                                     <span className="font-normal text-sm">{option}</span>
                                 </Label>
                                ))}
