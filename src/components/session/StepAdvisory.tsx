@@ -25,26 +25,26 @@ export default function StepAdvisory({ sessionData, updateSessionData }: StepPro
           scrollCount++;
         };
     
-        if (scrollableContent) {
-            // The actual scrollable element is the viewport inside the ScrollArea
-            const viewport = scrollableContent.querySelector('div[data-radix-scroll-area-viewport]');
-            if (viewport) {
-                viewport.addEventListener('scroll', handleScroll);
-            }
+        // Find the scrollable viewport within the ScrollArea component
+        const viewport = scrollableContent?.querySelector('div[data-radix-scroll-area-viewport]');
+        if (viewport) {
+            viewport.addEventListener('scroll', handleScroll);
         }
         
+        // This is the cleanup function that runs when the component unmounts
         return () => {
-          if (scrollableContent) {
-            const viewport = scrollableContent.querySelector('div[data-radix-scroll-area-viewport]');
-            if (viewport) {
-                viewport.removeEventListener('scroll', handleScroll);
-            }
+          if (viewport) {
+            viewport.removeEventListener('scroll', handleScroll);
           }
           const viewTime = Date.now() - startTime;
           console.log(`Advisory view time: ${viewTime}ms, Scrolls: ${scrollCount}`);
+          // Update the session data ONLY on unmount
           updateSessionData({ advisoryViewTime: viewTime, advisoryScrollCount: scrollCount });
         };
-      }, [updateSessionData]);
+      // The empty dependency array ensures this effect runs only once on mount
+      // and the cleanup function runs only on unmount.
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      }, []);
 
 
   return (
