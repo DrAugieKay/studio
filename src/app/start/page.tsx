@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -60,8 +61,6 @@ const stepNames = [
 const EXPERIMENT_ID = 'exp_001';
 const END_SURVEY_STEP = stepComponents.length - 1;
 
-// Function to generate a simple random seed - must be called on client.
-const generateSeed = () => Math.random().toString(36).substring(2, 15);
 
 export default function StartPage() {
   const [currentStep, setCurrentStep] = useState(0);
@@ -86,7 +85,7 @@ export default function StartPage() {
     // This effect runs only on the client side after mount.
     // It handles session creation which uses browser-specific APIs.
     if (user && !sessionData && firestore) {
-      const seed = generateSeed();
+      const seed = Math.random().toString(36).substring(2, 15);
       const sources: ExperimentalCondition['advisorySource'][] = ['ai', 'human'];
       const frames: ExperimentalCondition['linguisticFrame'][] = ['abstract', 'concrete'];
       const scenarios: ExperimentalCondition['scenario'][] = ['xyz', 'techtrend'];
