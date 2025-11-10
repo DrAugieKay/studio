@@ -4,7 +4,7 @@
 import { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Download, Loader2, BookText } from 'lucide-react';
+import { Download, Loader2, BookText, FileSpreadsheet } from 'lucide-react';
 import CompletionRateChart from '@/components/admin/CompletionRateChart';
 import ChoiceDistributionChart from '@/components/admin/ChoiceDistributionChart';
 import CredibilityScoresChart from '@/components/admin/CredibilityScoresChart';
@@ -23,6 +23,7 @@ const EXPERIMENT_ID = 'exp_001';
 
 export default function DataAnalysisPage() {
     const [isExporting, setIsExporting] = useState(false);
+    const [isRawExporting, setIsRawExporting] = useState(false);
     const firestore = useFirestore();
 
     const participantsCollectionQuery = useMemoFirebase(() => {
@@ -50,6 +51,75 @@ export default function DataAnalysisPage() {
     
     const handleExportCodebook = () => {
         downloadCsv(codebookData, 'codebook.csv');
+    };
+
+    const handleExportRaw = () => {
+        if (!sessions) return;
+        setIsRawExporting(true);
+        console.log('Starting raw CSV export...');
+
+        const dataToExport = sessions.map(session => {
+            const qualityFlags = getQualityFlags(session);
+            const duration = session.startTime && session.endTime ? (new Date(session.endTime).getTime() - new Date(session.startTime).getTime()) / 1000 : 'NA';
+
+            const flattened: Record<string, any> = {
+                participant_id: session.id,
+                random_seed: session.randomSeed,
+                start_time: session.startTime,
+                end_time: session.endTime,
+                duration_seconds: duration,
+                status: session.status,
+
+                condition_source: session.condition?.advisorySource,
+                condition_frame: session.condition?.linguisticFrame,
+                condition_scenario: session.condition?.scenario,
+
+                device_user_agent: session.deviceInfo?.userAgent,
+                device_screen_width: session.deviceInfo?.screenWidth,
+                device_screen_height: session.deviceInfo?.screenHeight,
+                
+                dossier_view_time_ms: session.dossierViewTime,
+                dossier_scroll_count: session.dossierScrollCount,
+                advisory_view_time_ms: session.advisoryViewTime,
+                advisory_scroll_count: session.advisoryScrollCount,
+                
+                consent_ageCheck: session.consent_ageCheck,
+                consent_isEmployed: session.consent_isEmployed,
+                consent_hasParticipated: session.consent_hasParticipated,
+                consent_consentGiven: session.consent_consentGiven,
+
+                ...Object.fromEntries(Object.entries(session.initialAssessments?.financialLiteracy || {}).map(([key, value]) => [`finlit_${key}`, value])),
+                ...Object.fromEntries(Object.entries(session.initialAssessments?.roleAndExperience || {}).map(([key, value]) => [`role_${key}`, value])),
+                ...Object.fromEntries(Object.entries(session.initialAssessments?.organizationalProfile || {}).map(([key, value]) => [`org_${key}`, value])),
+                
+                ...Object.fromEntries(Object.entries(session.comprehension || {}).map(([key, value]) => [`comp_${key}`, value])),
+                ...Object.fromEntries(Object.entries(session.manipulationChecks || {}).map(([key, value]) => [`manip_${key}`, value])),
+                
+                objective_choice: session.objectiveChoice,
+                ...Object.fromEntries(Object.entries(session.subjectiveDQ || {}).map(([key, value]) => [`subj_dq_${key}`, value])),
+                
+                open_rationale: session.openRationale,
+
+                ...Object.fromEntries(Object.entries(session.mediators?.advisoryCredibility || {}).map(([key, value]) => [`cred_${key}`, value])),
+                ...Object.fromEntries(Object.entries(session.mediators?.psychologicalDistance || {}).map(([key, value]) => [`pd_${key}`, value])),
+                ...Object.fromEntries(Object.entries(session.mediators?.linguisticAbstractness || {}).map(([key, value]) => [`la_perc_${key}`, value])),
+                ...Object.fromEntries(Object.entries(session.mediators?.outcomeFraming || {}).map(([key, value]) => [`of_${key}`, value])),
+
+                ...Object.fromEntries(Object.entries(session.controls?.riskTolerance || {}).map(([key, value]) => [`risk_${key}`, value])),
+                ...Object.fromEntries(Object.entries(session.controls?.digitalLiteracy || {}).map(([key, value]) => [`diglit_${key}`, value])),
+                
+                la_objective_score: session.la_objective,
+
+                flags: qualityFlags.join(', '),
+            };
+
+            return flattened;
+        });
+
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+        downloadCsv(dataToExport, `advisory_insights_raw_audit_${timestamp}.csv`);
+        setIsRawExporting(false);
+        console.log('Raw export successful.');
     };
 
     const handleExport = () => {
@@ -179,7 +249,15 @@ export default function DataAnalysisPage() {
                     <h1 className="text-3xl font-bold font-headline">Data Analysis & Export</h1>
                     <p className="text-muted-foreground mt-1">Visualize, analyze, and export the collected study data.</p>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2 justify-end">
+                    <Button onClick={handleExportRaw} variant="outline" disabled={isRawExporting || !sessions || sessions.length === 0}>
+                        {isRawExporting ? (
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                            <FileSpreadsheet className="mr-2 h-4 w-4" />
+                        )}
+                        {isRawExporting ? 'Exporting...' : 'Export Raw Audit Log'}
+                    </Button>
                      <Button onClick={handleExportCodebook} variant="outline">
                         <BookText className="mr-2 h-4 w-4" />
                         Download Codebook
@@ -190,7 +268,7 @@ export default function DataAnalysisPage() {
                         ) : (
                             <Download className="mr-2 h-4 w-4" />
                         )}
-                        {isExporting ? 'Exporting...' : 'Export Data to CSV'}
+                        {isExporting ? 'Exporting...' : 'Export Processed Data'}
                     </Button>
                 </div>
             </div>
