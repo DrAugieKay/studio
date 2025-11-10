@@ -4,7 +4,7 @@
 import { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Download, Loader2, BookText } from 'lucide-react';
+import { Download, Loader2, BookText, ListCollapse } from 'lucide-react';
 import CompletionRateChart from '@/components/admin/CompletionRateChart';
 import ChoiceDistributionChart from '@/components/admin/ChoiceDistributionChart';
 import CredibilityScoresChart from '@/components/admin/CredibilityScoresChart';
@@ -15,6 +15,7 @@ import Papa from 'papaparse';
 import type { SessionData } from '@/lib/types';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query } from 'firebase/firestore';
+import Link from 'next/link';
 
 const EXPERIMENT_ID = 'exp_001';
 
@@ -178,6 +179,12 @@ export default function DataAnalysisPage() {
                     <p className="text-muted-foreground mt-1">Visualize and export the collected study data.</p>
                 </div>
                 <div className="flex gap-2">
+                    <Button variant="outline" asChild>
+                        <Link href="/admin/descriptives">
+                            <ListCollapse className="mr-2 h-4 w-4" />
+                            View Descriptive Statistics
+                        </Link>
+                    </Button>
                      <Button onClick={handleExportCodebook} variant="outline">
                         <BookText className="mr-2 h-4 w-4" />
                         Download Codebook
