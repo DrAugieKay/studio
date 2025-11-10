@@ -4,10 +4,11 @@
 import { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Download, Loader2, BookText, ListCollapse } from 'lucide-react';
+import { Download, Loader2, BookText } from 'lucide-react';
 import CompletionRateChart from '@/components/admin/CompletionRateChart';
 import ChoiceDistributionChart from '@/components/admin/ChoiceDistributionChart';
 import CredibilityScoresChart from '@/components/admin/CredibilityScoresChart';
+import DescriptiveStatisticsAccordion from '@/components/admin/DescriptiveStatisticsAccordion';
 import { getQualityFlags, checkComprehension } from '@/lib/quality-flags';
 import { getComposites, getFinancialLiteracyScore } from '@/lib/composites';
 import { codebookData } from '@/lib/codebook';
@@ -15,7 +16,6 @@ import Papa from 'papaparse';
 import type { SessionData } from '@/lib/types';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query } from 'firebase/firestore';
-import Link from 'next/link';
 
 const EXPERIMENT_ID = 'exp_001';
 
@@ -172,19 +172,13 @@ export default function DataAnalysisPage() {
     }
 
     return (
-        <div className="w-full">
-            <div className="flex justify-between items-center mb-6">
+        <div className="w-full space-y-8">
+            <div className="flex justify-between items-center">
                 <div>
                     <h1 className="text-3xl font-bold font-headline">Data Analysis & Export</h1>
-                    <p className="text-muted-foreground mt-1">Visualize and export the collected study data.</p>
+                    <p className="text-muted-foreground mt-1">Visualize, analyze, and export the collected study data.</p>
                 </div>
                 <div className="flex gap-2">
-                    <Button variant="outline" asChild>
-                        <Link href="/admin/descriptives">
-                            <ListCollapse className="mr-2 h-4 w-4" />
-                            View Descriptive Statistics
-                        </Link>
-                    </Button>
                      <Button onClick={handleExportCodebook} variant="outline">
                         <BookText className="mr-2 h-4 w-4" />
                         Download Codebook
@@ -226,6 +220,12 @@ export default function DataAnalysisPage() {
                         <CredibilityScoresChart sessions={sessions} />
                     </CardContent>
                 </Card>
+            </div>
+
+            <div>
+                <h2 className="text-2xl font-bold font-headline mb-4">Descriptive Statistics</h2>
+                <p className="text-muted-foreground mb-6">Frequencies and summary statistics for key questionnaire variables. Click a section to expand.</p>
+                <DescriptiveStatisticsAccordion sessions={sessions} />
             </div>
         </div>
     );

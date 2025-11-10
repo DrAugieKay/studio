@@ -5,7 +5,7 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { SidebarProvider, Sidebar, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarContent, SidebarHeader, SidebarTrigger, SidebarRail, SidebarInset } from '@/components/ui/sidebar';
-import { Users, BarChart, NotebookPen, ShieldCheck, SlidersHorizontal, Loader2, ListCollapse } from 'lucide-react';
+import { Users, BarChart, NotebookPen, ShieldCheck, SlidersHorizontal, Loader2 } from 'lucide-react';
 import Header from '@/components/common/Header';
 import { useUser } from '@/firebase';
 import { useEffect } from 'react';
@@ -59,24 +59,12 @@ export default function AdminLayout({
                 <SidebarMenuItem>
                   <SidebarMenuButton
                     asChild
-                    isActive={pathname === '/admin/analysis'}
+                    isActive={pathname.startsWith('/admin/analysis')}
                     tooltip="Data Analysis"
                   >
                     <Link href="/admin/analysis">
                       <BarChart />
                       Data Analysis
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={pathname === '/admin/descriptives'}
-                    tooltip="Descriptive Statistics"
-                  >
-                    <Link href="/admin/descriptives">
-                      <ListCollapse />
-                      Descriptives
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
