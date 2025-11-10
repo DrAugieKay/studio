@@ -91,10 +91,15 @@ export default function StartPage() {
       const frames: ExperimentalCondition['linguisticFrame'][] = ['abstract', 'concrete'];
       const scenarios: ExperimentalCondition['scenario'][] = ['xyz', 'techtrend'];
 
+      // Use a separate PRNG for reproducible assignment if needed, but Math.random is fine for now
+      const randomSourceIndex = Math.floor(Math.random() * sources.length);
+      const randomFrameIndex = Math.floor(Math.random() * frames.length);
+      const randomScenarioIndex = Math.floor(Math.random() * scenarios.length);
+
       const assignedCondition: ExperimentalCondition = {
-        advisorySource: sources[Math.floor(Math.random() * sources.length)],
-        linguisticFrame: frames[Math.floor(Math.random() * frames.length)],
-        scenario: scenarios[Math.floor(Math.random() * scenarios.length)],
+        advisorySource: sources[randomSourceIndex],
+        linguisticFrame: frames[randomFrameIndex],
+        scenario: scenarios[randomScenarioIndex],
       };
       
       const deviceInfo = {
@@ -259,7 +264,7 @@ export default function StartPage() {
             {showNextButton && <Button
               onClick={handleNext}
               disabled={isNextDisabled}
-              className="bg-accent hover:bg-accent/90 text-accent-foreground"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground"
             >
               {currentStep === stepComponents.length - 3 ? 'Finish' : 'Next'}
               <ArrowRight className="ml-2 h-4 w-4" />
