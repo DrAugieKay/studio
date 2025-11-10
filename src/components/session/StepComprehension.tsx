@@ -8,7 +8,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import type { SessionData } from '@/lib/types';
 import { useEffect, useMemo, useState } from 'react';
-import { ClipboardCheck } from 'lucide-react';
+import { ClipboardCheck, Loader2 } from 'lucide-react';
 
 type StepProps = {
   sessionData: Partial<SessionData>;
@@ -21,23 +21,13 @@ type ComprehensionFormValues = {
 };
 
 const shuffleArray = (array: string[]) => {
-    let currentIndex = array.length,  randomIndex;
-  
-    // While there remain elements to shuffle.
-    while (currentIndex > 0) {
-  
-      // Pick a remaining element.
-      randomIndex = Math.floor(Math.random() * currentIndex);
-      currentIndex--;
-  
-      // And swap it with the current element.
-      [array[currentIndex], array[randomIndex]] = [
-        array[randomIndex], array[currentIndex]];
+    const newArray = [...array];
+    for (let i = newArray.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
     }
-  
-    return array;
-}
-
+    return newArray;
+};
 
 export default function StepComprehension({ sessionData, updateSessionData }: StepProps) {
   const form = useForm<ComprehensionFormValues>({
@@ -49,8 +39,8 @@ export default function StepComprehension({ sessionData, updateSessionData }: St
 
   const { watch } = form;
   
-  const [q1Options, setQ1Options] = useState<string[]>([]);
-  const [q2Options, setQ2Options] = useState<string[]>([]);
+  const [shuffledQ1Options, setShuffledQ1Options] = useState<string[] | null>(null);
+  const [shuffledQ2Options, setShuffledQ2Options] = useState<string[] | null>(null);
 
   const scenarioName = useMemo(() => {
     if (sessionData.condition?.scenario === 'techtrend') return 'TechTrend Innovations';
@@ -59,16 +49,17 @@ export default function StepComprehension({ sessionData, updateSessionData }: St
   }, [sessionData.condition?.scenario]);
 
   useEffect(() => {
-    // This runs only on the client, preventing hydration mismatch from random shuffling
+    // This effect runs only on the client side after mount.
+    // This prevents hydration errors by ensuring the server and client render the same initial non-shuffled state.
     if (scenarioName) {
         const distractors = ['Zhongmen Holdings', 'Dailies Construction', 'ManTech Innovation', "I don't remember"];
         const allOptions = [scenarioName, ...distractors.filter(d => d !== scenarioName)];
         const optionsToShuffle = allOptions.filter(o => o !== "I don't remember");
         const shuffled = shuffleArray(optionsToShuffle);
-        setQ1Options([...shuffled, "I don't remember"]);
+        setShuffledQ1Options([...shuffled, "I don't remember"]);
     }
     
-    setQ2Options(shuffleArray(['6 months', '12 months', '24 months', "I don't remember"]));
+    setShuffledQ2Options(shuffleArray(['6 months', '12 months', '24 months', "I don't remember"]));
   }, [scenarioName]);
 
 
@@ -79,11 +70,13 @@ export default function StepComprehension({ sessionData, updateSessionData }: St
     return () => subscription.unsubscribe();
   }, [watch, updateSessionData]);
 
-  if (q1Options.length === 0 || q2Options.length === 0) {
-    // Render a placeholder or loading state until options are shuffled on the client
+  if (!shuffledQ1Options || !shuffledQ2Options) {
+    // Render a loading state until the options are shuffled on the client.
+    // This is crucial for preventing hydration mismatch.
     return (
-        <div className="p-8 text-center">
-            <p className="text-muted-foreground">Loading questions...</p>
+        <div className="flex h-64 w-full items-center justify-center">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <p className="ml-3 text-muted-foreground">Loading questions...</p>
         </div>
     );
   }
@@ -110,7 +103,7 @@ export default function StepComprehension({ sessionData, updateSessionData }: St
                   <FormLabel className="font-semibold text-base">a. According to the scenario, what is the name of the Organization whose financial advisory concerns you just reviewed?</FormLabel>
                   <FormControl>
                     <RadioGroup onValueChange={field.onChange} value={field.value} className="space-y-1">
-                      {q1Options.map(option => (
+                      {shuffledQ1Options.map(option => (
                          <Label key={option} htmlFor={`q1-${option}`} className="flex items-start space-x-3 p-3 cursor-pointer has-[:checked]:text-accent transition-colors">
                             <FormControl><RadioGroupItem value={option} id={`q1-${option}`} className="mt-1" /></FormControl>
                             <span className="font-normal text-base">{option}</span>
@@ -129,7 +122,7 @@ export default function StepComprehension({ sessionData, updateSessionData }: St
                   <FormLabel className="font-semibold text-base">b. What was the approximate time horizon mentioned for maintaining liquidity in the advisory?</FormLabel>
                   <FormControl>
                     <RadioGroup onValueChange={field.onChange} value={field.value} className="space-y-1">
-                       {q2Options.map(option => (
+                       {shuffledQ2Options.map(option => (
                          <Label key={option} htmlFor={`q2-${option}`} className="flex items-start space-x-3 p-3 cursor-pointer has-[:checked]:text-accent transition-colors">
                             <FormControl><RadioGroupItem value={option} id={`q2-${option}`} className="mt-1" /></FormControl>
                             <span className="font-normal text-base">{option}</span>

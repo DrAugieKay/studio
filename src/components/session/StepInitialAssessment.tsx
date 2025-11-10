@@ -93,61 +93,51 @@ const organizationalProfileQuestions = {
     },
 };
 
-
-const financialLiteracySchema = z.object({
-  q1: z.string().min(1, { message: 'Required' }),
-  q2: z.string().min(1, { message: 'Required' }),
-  q3: z.string().min(1, { message: 'Required' }),
-  q4: z.string().min(1, { message: 'Required' }),
-});
-
-const roleAndExperienceSchema = z.object({
-  q1: z.string().min(1, { message: 'Required' }),
-  q2: z.string().min(1, { message: 'Required' }),
-  q2_other: z.string().optional(),
-  q3: z.string().min(1, { message: 'Required' }),
-  q4: z.string().min(1, { message: 'Required' }),
-  q5: z.string().min(1, { message: 'Required' }),
-}).refine(data => !(data.q2 === 'Other' && !data.q2_other), {
-    message: "Please specify 'Other'",
-    path: ['q2_other'],
-});
-
-const organizationalProfileSchema = z.object({
-    q1: z.string().min(1, { message: 'Required' }),
-    q1_other: z.string().optional(),
-    q2: z.string().min(1, { message: 'Required' }),
-    q3: z.string().min(1, { message: 'Required' }),
-    q4: z.string().min(1, { message: 'Required' }),
-    q5: z.string().min(1, { message: 'Required' }),
-    q6: z.string().min(1, { message: 'Required' }),
-    q7: z.string().optional(),
-}).refine(data => !(data.q1 === 'Other' && !data.q1_other), {
-    message: "Please specify 'Other'",
-    path: ['q1_other'],
-});
-
 const sections = [
   {
     key: 'financialLiteracy',
     title: 'a. Financial Literacy (Please select the best answer).',
     questions: financialLiteracyQuestions,
-    schema: financialLiteracySchema,
-    defaultValues: { q1: '', q2: '', q3: '', q4: '' },
+    schema: z.object({
+      q1: z.string().min(1, { message: 'Required' }),
+      q2: z.string().min(1, { message: 'Required' }),
+      q3: z.string().min(1, { message: 'Required' }),
+      q4: z.string().min(1, { message: 'Required' }),
+    }),
   },
   {
     key: 'roleAndExperience',
     title: 'b. Your Role and Experience (Please select the best answer):',
     questions: roleAndExperienceQuestions,
-    schema: roleAndExperienceSchema,
-    defaultValues: { q1: '', q2: '', q2_other: '', q3: '', q4: '', q5: '' },
+    schema: z.object({
+      q1: z.string().min(1, { message: 'Required' }),
+      q2: z.string().min(1, { message: 'Required' }),
+      q2_other: z.string().optional(),
+      q3: z.string().min(1, { message: 'Required' }),
+      q4: z.string().min(1, { message: 'Required' }),
+      q5: z.string().min(1, { message: 'Required' }),
+    }).refine(data => !(data.q2 === 'Other' && !data.q2_other), {
+        message: "Please specify 'Other'",
+        path: ['q2_other'],
+    }),
   },
   {
     key: 'organizationalProfile',
     title: 'c. Organizational Profile',
     questions: organizationalProfileQuestions,
-    schema: organizationalProfileSchema,
-    defaultValues: { q1: '', q1_other: '', q2: '', q3: '', q4: '', q5: '', q6: '', q7: '' },
+    schema: z.object({
+      q1: z.string().min(1, { message: 'Required' }),
+      q1_other: z.string().optional(),
+      q2: z.string().min(1, { message: 'Required' }),
+      q3: z.string().min(1, { message: 'Required' }),
+      q4: z.string().min(1, { message: 'Required' }),
+      q5: z.string().min(1, { message: 'Required' }),
+      q6: z.string().min(1, { message: 'Required' }),
+      q7: z.string().optional(),
+    }).refine(data => !(data.q1 === 'Other' && !data.q1_other), {
+        message: "Please specify 'Other'",
+        path: ['q1_other'],
+    }),
   }
 ];
 
@@ -158,38 +148,16 @@ export default function StepInitialAssessment({ sessionData, updateSessionData, 
 
   const form = useForm({
     resolver: zodResolver(currentSection.schema),
-    defaultValues: {
-      ...currentSection.defaultValues,
-      ...(sessionData.initialAssessments?.[currentSection.key as keyof SessionData['initialAssessments']] || {}),
-    }
+    defaultValues: sessionData.initialAssessments?.[currentSection.key as keyof SessionData['initialAssessments']] || {},
+    mode: 'onChange'
   });
 
   const watchedValues = useWatch({ control: form.control });
   
   const allQuestionsAnswered = useMemo(() => {
-    const questionKeys = Object.keys(currentSection.questions);
-    if (questionKeys.length === 0) return true;
-
-    const allAnswered = questionKeys.every(key => {
-        const qDef = (currentSection.questions as any)[key];
-        if (qDef.isInput) {
-            return typeof (watchedValues as any)[key] !== 'undefined'; // Just needs to be defined for optional inputs
-        }
-        return !!(watchedValues as any)[key];
-    });
-    
-    if (!allAnswered) return false;
-
-    // Check conditional text inputs
-    if (currentSection.key === 'roleAndExperience' && (watchedValues as any).q2 === 'Other') {
-        return !!(watchedValues as any).q2_other;
-    }
-    if (currentSection.key === 'organizationalProfile' && (watchedValues as any).q1 === 'Other') {
-        return !!(watchedValues as any).q1_other;
-    }
-
-    return true;
-}, [watchedValues, currentSection]);
+    const result = currentSection.schema.safeParse(watchedValues);
+    return result.success;
+}, [watchedValues, currentSection.schema]);
 
 
   useEffect(() => {
@@ -216,10 +184,7 @@ export default function StepInitialAssessment({ sessionData, updateSessionData, 
         const nextSection = sections[nextSectionIndex];
         const nextSectionKey = nextSection.key as keyof SessionData['initialAssessments'];
         setCurrentSectionIndex(nextSectionIndex);
-        form.reset({
-            ...nextSection.defaultValues,
-            ...(sessionData.initialAssessments?.[nextSectionKey] || {}),
-        });
+        form.reset(sessionData.initialAssessments?.[nextSectionKey] || {});
     }
   };
   
