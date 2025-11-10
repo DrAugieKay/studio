@@ -87,10 +87,9 @@ service cloud.firestore {
          * This grants admins full read/delete access to all nested data,
          * while participants retain write access to their own nested data.
          */
-        match /{path=**} {
-           allow list, get: if isOwner(participantId) || isAdmin();
+        match /{document=**} {
+           allow get, list, delete: if isAdmin();
            allow create, update: if isOwner(participantId);
-           allow delete: if isAdmin();
         }
       }
     }
