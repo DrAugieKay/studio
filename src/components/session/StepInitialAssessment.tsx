@@ -89,6 +89,7 @@ const organizationalProfileQuestions = {
     q7: {
         question: 'vii. Headquarters country:',
         options: [],
+        isInput: true
     },
 };
 
@@ -169,15 +170,15 @@ export default function StepInitialAssessment({ sessionData, updateSessionData, 
     const questionKeys = Object.keys(currentSection.questions);
     if (questionKeys.length === 0) return true;
 
-    // For text input questions (optional ones)
-    if (currentSection.key === 'organizationalProfile') {
-        if (typeof (watchedValues as any).q7 === 'undefined') (watchedValues as any).q7 = ''; // It's optional
-    }
-
-    const radioQuestions = questionKeys.filter(key => (currentSection.questions as any)[key].options.length > 0);
-    const allRadioAnswered = radioQuestions.every(key => !!(watchedValues as any)[key]);
+    const allAnswered = questionKeys.every(key => {
+        const qDef = (currentSection.questions as any)[key];
+        if (qDef.isInput) {
+            return typeof (watchedValues as any)[key] !== 'undefined'; // Just needs to be defined for optional inputs
+        }
+        return !!(watchedValues as any)[key];
+    });
     
-    if (!allRadioAnswered) return false;
+    if (!allAnswered) return false;
 
     // Check conditional text inputs
     if (currentSection.key === 'roleAndExperience' && (watchedValues as any).q2 === 'Other') {
@@ -188,7 +189,7 @@ export default function StepInitialAssessment({ sessionData, updateSessionData, 
     }
 
     return true;
-}, [watchedValues, currentSection.questions, currentSection.key]);
+}, [watchedValues, currentSection]);
 
 
   useEffect(() => {
@@ -221,6 +222,65 @@ export default function StepInitialAssessment({ sessionData, updateSessionData, 
         });
     }
   };
+  
+  const renderQuestion = (key: string, q: any) => {
+    return (
+        <FormField
+            key={key}
+            control={form.control}
+            name={key as any}
+            render={({ field }) => (
+                <FormItem className="space-y-3 p-4 border rounded-lg bg-secondary/30">
+                    <FormLabel>{q.question}</FormLabel>
+                    <FormControl>
+                        {q.isInput ? (
+                             <Input {...field} placeholder="Your answer" value={field.value || ""} />
+                        ) : (
+                            <RadioGroup
+                                onValueChange={field.onChange}
+                                value={field.value || ""}
+                                className="space-y-2"
+                            >
+                                {q.options.map((option: string, index: number) => (
+                                    <FormItem key={index} className="flex items-center space-x-3">
+                                        <FormControl><RadioGroupItem value={option} /></FormControl>
+                                        <FormLabel className="font-normal">{option}</FormLabel>
+                                    </FormItem>
+                                ))}
+                            </RadioGroup>
+                        )}
+                    </FormControl>
+                    {currentSection.key === 'roleAndExperience' && key === 'q2' && (watchedValues as any).q2 === 'Other' && (
+                        <FormField
+                            control={form.control}
+                            name="q2_other"
+                            render={({ field }) => (
+                                <FormItem className="pt-2">
+                                    <FormControl>
+                                        <Input {...field} placeholder="Please specify" value={field.value || ""} />
+                                    </FormControl>
+                                </FormItem>
+                            )}
+                        />
+                    )}
+                    {currentSection.key === 'organizationalProfile' && key === 'q1' && (watchedValues as any).q1 === 'Other' && (
+                        <FormField
+                            control={form.control}
+                            name="q1_other"
+                            render={({ field }) => (
+                                <FormItem className="pt-2">
+                                    <FormControl>
+                                        <Input {...field} placeholder="Please specify" value={field.value || ""} />
+                                    </FormControl>
+                                </FormItem>
+                            )}
+                        />
+                    )}
+                </FormItem>
+            )}
+        />
+    )
+  }
 
   return (
     <>
@@ -233,72 +293,11 @@ export default function StepInitialAssessment({ sessionData, updateSessionData, 
           Please answer the following short questions about basic financial and numerical concepts. Choose the single best answer for each item.
         </CardDescription>
       </CardHeader>
-      <div className="pt-0">
+      <div className="p-6 pt-0">
         <Form {...form}>
           <form className="space-y-8" onSubmit={(e) => e.preventDefault()}>
             <h3 className="font-semibold">{currentSection.title}</h3>
-            {Object.keys(currentSection.questions).length > 0 ? (
-              Object.entries(currentSection.questions).map(([key, q]: [string, any]) => (
-                <FormField
-                  key={key}
-                  control={form.control}
-                  name={key as any}
-                  render={({ field }) => (
-                    <FormItem className="space-y-3 p-4 border rounded-lg bg-secondary/30">
-                      <FormLabel>{q.question}</FormLabel>
-                      <FormControl>
-                        {q.options.length > 0 ? (
-                            <RadioGroup 
-                                onValueChange={field.onChange} 
-                                value={field.value || ""}
-                                className="space-y-2"
-                            >
-                            {q.options.map((option: string) => (
-                                <FormItem key={option} className="flex items-center space-x-3">
-                                <FormControl><RadioGroupItem value={option} /></FormControl>
-                                <FormLabel className="font-normal">{option}</FormLabel>
-                                </FormItem>
-                            ))}
-                            </RadioGroup>
-                        ) : (
-                            <Input {...field} placeholder="Your answer" value={field.value || ""} />
-                        )}
-                      </FormControl>
-                      {currentSection.key === 'roleAndExperience' && key === 'q2' && (watchedValues as any).q2 === 'Other' && (
-                        <FormField
-                            control={form.control}
-                            name="q2_other"
-                            render={({ field }) => (
-                                <FormItem className="pt-2">
-                                    <FormControl>
-                                        <Input {...field} placeholder="Please specify" value={field.value || ""} />
-                                    </FormControl>
-                                </FormItem>
-                            )}
-                        />
-                      )}
-                      {currentSection.key === 'organizationalProfile' && key === 'q1' && (watchedValues as any).q1 === 'Other' && (
-                        <FormField
-                            control={form.control}
-                            name="q1_other"
-                            render={({ field }) => (
-                                <FormItem className="pt-2">
-                                    <FormControl>
-                                        <Input {...field} placeholder="Please specify" value={field.value || ""} />
-                                    </FormControl>
-                                </FormItem>
-                            )}
-                        />
-                      )}
-                    </FormItem>
-                  )}
-                />
-              ))
-            ) : (
-              <div className="text-muted-foreground p-4 border rounded-lg bg-secondary/30">
-                Questions for this section will be added soon.
-              </div>
-            )}
+            {Object.entries(currentSection.questions).map(([key, q]) => renderQuestion(key, q))}
 
             {!isLastSection && (
                 <div className="flex justify-end">

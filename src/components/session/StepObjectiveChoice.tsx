@@ -14,9 +14,12 @@ type StepProps = {
   updateSessionData: (data: Partial<SessionData>) => void;
 };
 
-type FormValues = {
-  choice: string;
-};
+const choiceOptions = [
+    'Option A: Growth Equity Fund', 
+    'Option B: Balanced Mutual Fund', 
+    'Option C: Government Treasury Bond Portfolio', 
+    'Option D: I do not know / Prefer not to decide'
+];
 
 const decisionQuestions = {
     confidence: "i. I am confident that the choice I selected is the right decision for the organization.",
@@ -26,54 +29,39 @@ const decisionQuestions = {
 };
 
 const likertOptions = [
-    'Strongly disagree',
-    'Disagree',
-    'Somewhat disagree',
-    'Neither agree nor disagree',
-    'Somewhat agree',
-    'Agree',
-    'Strongly agree',
-];
-
-const choiceOptions = [
-    'Option A: Growth Equity Fund', 
-    'Option B: Balanced Mutual Fund', 
-    'Option C: Government Treasury Bond Portfolio', 
-    'Option D: I do not know / Prefer not to decide'
+    'Strongly disagree', 'Disagree', 'Somewhat disagree',
+    'Neither agree nor disagree', 'Somewhat agree', 'Agree', 'Strongly agree',
 ];
 
 export default function StepObjectiveChoice({ sessionData, updateSessionData }: StepProps) {
   const [choiceMade, setChoiceMade] = useState(!!sessionData.objectiveChoice);
-  const form = useForm<FormValues>({
-    defaultValues: { choice: sessionData.objectiveChoice || '' },
+  
+  const form = useForm({
+    defaultValues: { 
+      choice: sessionData.objectiveChoice || '',
+      subjectiveDQ: {
+        confidence: sessionData.subjectiveDQ?.confidence ?? '',
+        informed: sessionData.subjectiveDQ?.informed ?? '',
+        clearBasis: sessionData.subjectiveDQ?.clearBasis ?? '',
+        satisfied: sessionData.subjectiveDQ?.satisfied ?? '',
+      }
+    },
   });
 
-  const [subjectiveValues, setSubjectiveValues] = useState({
-    confidence: sessionData.subjectiveDQ?.confidence ?? null,
-    informed: sessionData.subjectiveDQ?.informed ?? null,
-    clearBasis: sessionData.subjectiveDQ?.clearBasis ?? null,
-    satisfied: sessionData.subjectiveDQ?.satisfied ?? null,
-  });
-
-  const { watch } = form;
+  const { watch, setValue } = form;
 
   useEffect(() => {
     const subscription = watch((value) => {
-      const currentChoice = value.choice;
-      if (currentChoice && !choiceMade) {
-        updateSessionData({ objectiveChoice: currentChoice });
-        setTimeout(() => setChoiceMade(true), 100);
+      if (value.choice && !choiceMade) {
+        updateSessionData({ objectiveChoice: value.choice });
+        setChoiceMade(true);
+      }
+      if (value.subjectiveDQ) {
+        updateSessionData({ subjectiveDQ: value.subjectiveDQ });
       }
     });
     return () => subscription.unsubscribe();
   }, [watch, updateSessionData, choiceMade]);
-
-  const handleSliderChange = (key: keyof typeof subjectiveValues, newValue: string) => {
-    const newValues = { ...subjectiveValues, [key]: likertOptions.indexOf(newValue) };
-    setSubjectiveValues(newValues);
-    updateSessionData({ subjectiveDQ: newValues as Record<string, number> });
-  };
-
 
   return (
     <>
@@ -85,52 +73,59 @@ export default function StepObjectiveChoice({ sessionData, updateSessionData }: 
       </CardHeader>
       <div className="p-6 pt-0">
         {!choiceMade ? (
-            <Form {...form}>
+          <Form {...form}>
             <form className="space-y-8">
-                <FormField
+              <FormField
                 control={form.control}
                 name="choice"
                 render={({ field }) => (
-                    <FormItem className="space-y-3">
+                  <FormItem className="space-y-3">
                     <FormLabel className="font-semibold text-base">a. Based on the advisory and your role, which investment option do you recommend?</FormLabel>
                     <FormControl>
-                        <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="space-y-1">
+                      <RadioGroup onValueChange={field.onChange} value={field.value} className="space-y-1">
                         {choiceOptions.map((option, index) => (
-                            <Label key={option} htmlFor={`choice-${index}`} className="flex items-start space-x-3 p-3 cursor-pointer has-[:checked]:text-accent transition-colors">
-                                <FormControl><RadioGroupItem value={option} id={`choice-${index}`} className="mt-1" /></FormControl>
-                                <span className="font-normal text-base">{option}</span>
-                            </Label>
+                          <Label key={index} htmlFor={`choice-${index}`} className="flex items-start space-x-3 p-3 cursor-pointer has-[:checked]:text-accent transition-colors">
+                            <FormControl>
+                              <RadioGroupItem value={option} id={`choice-${index}`} className="mt-1" />
+                            </FormControl>
+                            <span className="font-normal text-base">{option}</span>
+                          </Label>
                         ))}
-                        </RadioGroup>
+                      </RadioGroup>
                     </FormControl>
-                    </FormItem>
+                  </FormItem>
                 )}
-                />
+              />
             </form>
-            </Form>
+          </Form>
         ) : (
           <Form {...form}>
             <div className="space-y-6">
-                 <h3 className="font-semibold text-base">b. Please indicate your agreement with the following statement about the decision you just made (or would make) after reviewing the advisory.</h3>
-                 {Object.entries(decisionQuestions).map(([key, label]) => (
-                    <div key={key} className="space-y-3 p-4 border rounded-lg bg-secondary/30">
-                        <Label htmlFor={key} className="text-base">{label}</Label>
-                        <div className="flex items-center gap-4 pt-2">
-                           <RadioGroup 
-                             onValueChange={(val) => handleSliderChange(key as keyof typeof subjectiveValues, val)} 
-                             value={subjectiveValues[key as keyof typeof subjectiveValues] !== null ? likertOptions[subjectiveValues[key as keyof typeof subjectiveValues]!] : ''}
-                             className="w-full space-y-1"
-                            >
-                               {likertOptions.map((option, index) => (
-                                <Label key={option} htmlFor={`${key}-${index}`} className="flex items-center space-x-3 p-2 cursor-pointer has-[:checked]:text-accent transition-colors">
-                                    <FormControl><RadioGroupItem value={option} id={`${key}-${index}`} /></FormControl>
-                                    <span className="font-normal text-sm">{option}</span>
-                                </Label>
-                               ))}
-                           </RadioGroup>
-                        </div>
-                    </div>
-                ))}
+              <h3 className="font-semibold text-base">b. Please indicate your agreement with the following statement about the decision you just made (or would make) after reviewing the advisory.</h3>
+              {Object.entries(decisionQuestions).map(([key, label], qIndex) => (
+                <FormField
+                  key={qIndex}
+                  control={form.control}
+                  name={`subjectiveDQ.${key as keyof typeof decisionQuestions}`}
+                  render={({ field }) => (
+                    <FormItem className="space-y-3 p-4 border rounded-lg bg-secondary/30">
+                      <FormLabel className="text-base">{label}</FormLabel>
+                      <FormControl>
+                        <RadioGroup onValueChange={field.onChange} value={field.value} className="w-full space-y-1">
+                          {likertOptions.map((option, oIndex) => (
+                            <Label key={oIndex} htmlFor={`${key}-${oIndex}`} className="flex items-center space-x-3 p-2 cursor-pointer has-[:checked]:text-accent transition-colors">
+                              <FormControl>
+                                <RadioGroupItem value={option} id={`${key}-${oIndex}`} />
+                              </FormControl>
+                              <span className="font-normal text-sm">{option}</span>
+                            </Label>
+                          ))}
+                        </RadioGroup>
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+              ))}
             </div>
           </Form>
         )}
