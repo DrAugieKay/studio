@@ -73,12 +73,14 @@ service cloud.firestore {
      * @allow (list) Admins can list all participant documents.
      * @allow (read) The participant can read their own document, or an admin can read any document.
      * @allow (write) Only the participant can write to their own document.
-     * @principle Enforces that participant documents can only be written by the owner, but can be read by the owner or an admin.
+     * @allow (delete) Admins can delete documents.
+     * @principle Enforces that participant documents can only be written by the owner, but can be read by the owner or an admin, and deleted by an admin.
      */
     match /experiment_meta/{experimentMetaId}/participants/{participantId} {
       allow list: if isAdmin();
       allow read: if isOwner(participantId) || isAdmin();
       allow write: if isOwner(participantId);
+      allow delete: if isAdmin();
     }
 
     /**
@@ -86,11 +88,13 @@ service cloud.firestore {
      * @path /experiment_meta/{experimentMetaId}/participants/{participantId}/responses/{responseId}
      * @allow (read) The participant can read their own responses, or an admin can.
      * @allow (write) Only the participant can write their own responses.
+     * @allow (delete) Admins can delete documents.
      */
     match /experiment_meta/{experimentMetaId}/participants/{participantId}/responses/{responseId} {
        allow list: if isAdmin();
        allow read: if isOwner(participantId) || isAdmin();
        allow write: if isOwner(participantId);
+       allow delete: if isAdmin();
     }
 
     /**
@@ -98,11 +102,13 @@ service cloud.firestore {
      * @path /experiment_meta/{experimentMetaId}/participants/{participantId}/derived_composites/{derivedCompositeId}
      * @allow (read) The participant can read their own composites, or an admin can.
      * @allow (write) Only the participant can write their own composites.
+     * @allow (delete) Admins can delete documents.
      */
     match /experiment_meta/{experimentMetaId}/participants/{participantId}/derived_composites/{derivedCompositeId} {
        allow list: if isAdmin();
        allow read: if isOwner(participantId) || isAdmin();
        allow write: if isOwner(participantId);
+       allow delete: if isAdmin();
     }
 
     /**
@@ -110,11 +116,13 @@ service cloud.firestore {
      * @path /experiment_meta/{experimentMetaId}/participants/{participantId}/data_quality_flags/{dataQualityFlagId}
      * @allow (read) The participant can read their own flags, or an admin can.
      * @allow (write) Only the participant can write their own flags.
+     * @allow (delete) Admins can delete documents.
      */
     match /experiment_meta/{experimentMetaId}/participants/{participantId}/data_quality_flags/{dataQualityFlagId} {
        allow list: if isAdmin();
        allow read: if isOwner(participantId) || isAdmin();
        allow write: if isOwner(participantId);
+       allow delete: if isAdmin();
     }
 
     /**
@@ -134,11 +142,13 @@ service cloud.firestore {
      * @path /experiment_meta/{experimentMetaId}/participants/{participantId}/responses/{responseId}/objective_linguistic_analysis/{objectiveLinguisticAnalysisId}
      * @allow (read) The participant can read their own analysis, or an admin can.
      * @allow (write) Only the participant can write their own analysis.
+     * @allow (delete) Admins can delete documents.
      */
     match /experiment_meta/{experimentMetaId}/participants/{participantId}/responses/{responseId}/objective_linguistic_analysis/{objectiveLinguisticAnalysisId} {
        allow list: if isAdmin();
        allow read: if isOwner(participantId) || isAdmin();
        allow write: if isOwner(participantId);
+       allow delete: if isAdmin();
     }
 
     /**
@@ -146,11 +156,13 @@ service cloud.firestore {
      * @path /experiment_meta/{experimentMetaId}/participants/{participantId}/responses/{responseId}/manual_coding/{manualCodingId}
      * @allow (read) The participant can read their own coding, or an admin can.
      * @allow (write) Only the participant can write their own coding.
+     * @allow (delete) Admins can delete documents.
      */
     match /experiment_meta/{experimentMetaId}/participants/{participantId}/responses/{responseId}/manual_coding/{manualCodingId} {
        allow list: if isAdmin();
        allow read: if isOwner(participantId) || isAdmin();
        allow write: if isOwner(participantId);
+       allow delete: if isAdmin();
     }
 
       /**
@@ -158,11 +170,13 @@ service cloud.firestore {
        * @path /experiment_meta/{experimentMetaId}/participants/{participantId}/payment_reconciliation/{paymentReconciliationId}
        * @allow (read) The participant can read their own reconciliation, or an admin can.
        * @allow (write) Only the participant can write their own reconciliation.
+       * @allow (delete) Admins can delete documents.
        */
       match /experiment_meta/{experimentMetaId}/participants/{participantId}/payment_reconciliation/{paymentReconciliationId} {
          allow list: if isAdmin();
          allow read: if isOwner(participantId) || isAdmin();
          allow write: if isOwner(participantId);
+         allow delete: if isAdmin();
       }
   }
 }
