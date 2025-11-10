@@ -52,6 +52,7 @@ export type SessionData = {
   } | null;
   openRationale: string | null;
   status: 'Completed' | 'In Progress' | 'Abandoned';
+  la_objective?: number;
 };
 
 export type ParticipantSession = {

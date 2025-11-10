@@ -1,3 +1,4 @@
+
 import type { SessionData } from './types';
 
 /**
@@ -6,9 +7,9 @@ import type { SessionData } from './types';
  * As per spec: flag_comprehension = 1 if comp_org = 0 AND comp_horizon = 0.
  * The correct answers depend on the scenario.
  */
-function checkComprehension(session: SessionData): boolean {
+export function checkComprehension(session: SessionData): { isOrgCorrect: boolean, isHorizonCorrect: boolean, flag: boolean } {
   if (!session.condition || !session.comprehension) {
-    return false;
+    return { isOrgCorrect: false, isHorizonCorrect: false, flag: false };
   }
 
   const correctOrg = session.condition.scenario === 'techtrend' ? 'TechTrend Innovations' : 'XYZ Manufacturing';
@@ -18,7 +19,8 @@ function checkComprehension(session: SessionData): boolean {
   const isHorizonCorrect = session.comprehension.q2 === correctHorizon;
   
   // Flag if both are incorrect.
-  return !isOrgCorrect && !isHorizonCorrect;
+  const flag = !isOrgCorrect && !isHorizonCorrect;
+  return { isOrgCorrect, isHorizonCorrect, flag };
 }
 
 /**
@@ -80,7 +82,7 @@ function checkStraightLining(session: SessionData): boolean {
 export function getQualityFlags(session: SessionData): string[] {
     const flags: string[] = [];
 
-    if (checkComprehension(session)) {
+    if (checkComprehension(session).flag) {
         flags.push('flag_comprehension');
     }
     if (checkViewTime(session)) {

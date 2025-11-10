@@ -1,45 +1,22 @@
 
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Download, Loader2, BookText } from 'lucide-react';
 import CompletionRateChart from '@/components/admin/CompletionRateChart';
 import ChoiceDistributionChart from '@/components/admin/ChoiceDistributionChart';
 import CredibilityScoresChart from '@/components/admin/CredibilityScoresChart';
-import { getQualityFlags } from '@/lib/quality-flags';
+import { getQualityFlags, checkComprehension } from '@/lib/quality-flags';
 import { getComposites, getFinancialLiteracyScore } from '@/lib/composites';
+import { codebookData } from '@/lib/codebook';
 import Papa from 'papaparse';
 import type { SessionData } from '@/lib/types';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query } from 'firebase/firestore';
 
 const EXPERIMENT_ID = 'exp_001';
-
-const codebookData = [
-    { Variable: 'participant_id', Label: 'Participant Identifier', Type: 'String', ScoringRule: 'Unique alphanumeric ID assigned by platform', MissingnessRule: 'Never missing (required)' },
-    { Variable: 'random_seed', Label: 'RNG Seed', Type: 'String', ScoringRule: 'Seed used for randomization (logged)', MissingnessRule: 'Retain; not used in analysis' },
-    { Variable: 'start_time', Label: 'Session start timestamp', Type: 'Datetime', ScoringRule: 'ISO-8601 timestamp', MissingnessRule: 'If missing, flag for logging issues' },
-    { Variable: 'device_type', Label: 'Device used', Type: 'Categorical', ScoringRule: 'Desktop / Mobile / Tablet', MissingnessRule: 'If missing, report but keep in models if available' },
-    { Variable: 'advisory_view_time', Label: 'Advisory viewing time (s)', Type: 'Numeric', ScoringRule: 'Seconds displayed; recorded from page load to next page', MissingnessRule: 'If <0 or missing, flag; used in sensitivity checks' },
-    { Variable: 'comp_org', Label: 'Comprehension: org name', Type: 'Binary', ScoringRule: '1 = correct; 0 = incorrect', MissingnessRule: 'If missing, treated as incorrect for sensitivity flags' },
-    { Variable: 'man_algo', Label: 'Perceived algorithmic origin', Type: 'Scale', ScoringRule: '1-7 Likert (1=not at all...7=very much)', MissingnessRule: 'Composite use requires non-missing' },
-    { Variable: 'man_whodoneit', Label: 'Forced-choice belief about source', Type: 'Categorical', ScoringRule: '1=AI; 2=Human; 3=Unsure', MissingnessRule: 'If missing, record as NA' },
-    { Variable: 'choice_code', Label: 'Objective choice code', Type: 'Categorical', ScoringRule: 'Numeric code mapping options A/B/C; normative = C', MissingnessRule: 'If missing, exclude from OBJ_DQ analyses' },
-    { Variable: 'dq1...dq4', Label: 'Subjective DQ items', Type: 'Scale', ScoringRule: 'Four 7-point Likert items; DQ_SUB_MEAN = mean(DQ1-DQ4)', MissingnessRule: 'Compute mean if >=75% items present; otherwise missing' },
-    { Variable: 'cr_trust1...3', Label: 'Credibility - trust items', Type: 'Scale', ScoringRule: 'Three 7-point items; CR_TRUST = mean', MissingnessRule: 'Subscale mean if >=75% present' },
-    { Variable: 'cr_good1...3', Label: 'Credibility - goodwill items', Type: 'Scale', ScoringRule: 'Three 7-point items; CR_GOOD = mean', MissingnessRule: 'Subscale mean if >=75% present' },
-    { Variable: 'cr_comp', Label: 'Credibility competence (mean)', Type: 'Numeric', ScoringRule: 'Mean(cr_comp1..3)', MissingnessRule: 'Missing if <75% present' },
-    { Variable: 'pd_temp/soc/spat/hyp', Label: 'Psychological distance items', Type: 'Scale', ScoringRule: 'Four 7-point items; PD_COMPOSITE = mean', MissingnessRule: 'Composite if >=75% items present' },
-    { Variable: 'la1...la4', Label: 'Perceived linguistic abstractness items', Type: 'Scale', ScoringRule: 'Four 7-point items; LA_PERCEIVED = mean', MissingnessRule: 'Composite if >=75% items present' },
-    { Variable: 'finlit1...4', Label: 'Financial literacy quiz items', Type: 'Binary', ScoringRule: 'Each scored 1=correct; 0=incorrect', MissingnessRule: 'FINLIT_SUM computed if >=3 items present' },
-    { Variable: 'risk_f1...5', Label: 'DOSPERT finance items', Type: 'Scale', ScoringRule: 'Five 1-7 items; RISK_F_5 reversed before composite', MissingnessRule: 'Composite if >=75% items present' },
-    { Variable: 'risk_f_composite', Label: 'Risk tolerance composite', Type: 'Numeric', ScoringRule: 'Mean of risk_f items after reverse coding', MissingnessRule: 'Missing if <75% present' },
-    { Variable: 'choice_reason_text', Label: 'Open rationale', Type: 'String', ScoringRule: 'Participant free-text for decision rationale', MissingnessRule: 'Free text redacted for PII before release' },
-    { Variable: 'flag_viewtime', Label: 'Flag: minimal exposure', Type: 'Binary', ScoringRule: '1 if dossier_view_time + advisory_view_time < 10s', MissingnessRule: 'Used for sensitivity exclusions' },
-    { Variable: 'flagged_any', Label: 'Any exclusion flag', Type: 'Binary', ScoringRule: '1 if any flag_comprehension OR flag_viewtime OR flag_straightline = 1', MissingnessRule: 'Not used in primary analysis; for robustness' },
-];
 
 
 export default function DataAnalysisPage() {
@@ -81,20 +58,17 @@ export default function DataAnalysisPage() {
         const dataToExport = sessions.map(session => {
             const qualityFlags = getQualityFlags(session);
             const composites = getComposites(session);
-            const { score, finlit1, finlit2, finlit3, finlit4 } = getFinancialLiteracyScore(session);
-
-            const isCompOrgCorrect = (() => {
-                if (!session.condition || !session.comprehension?.q1) return 0;
-                const correctOrg = session.condition.scenario === 'techtrend' ? 'TechTrend Innovations' : 'XYZ Manufacturing';
-                return session.comprehension.q1 === correctOrg ? 1 : 0;
-            })();
+            const { finlit1, finlit2, finlit3, finlit4 } = getFinancialLiteracyScore(session);
+            
+            const { isOrgCorrect, isHorizonCorrect } = checkComprehension(session);
 
             const mapChoiceToCode = (choice: string | null) => {
                 if (!choice) return 'NA';
                 if (choice.includes('Option A')) return 'A';
                 if (choice.includes('Option B')) return 'B';
                 if (choice.includes('Option C')) return 'C';
-                return 'D';
+                if (choice.includes('I do not know')) return 'D';
+                return 'NA';
             };
             
             const mapSourceAttribution = (attribution: string | null) => {
@@ -113,7 +87,8 @@ export default function DataAnalysisPage() {
                 device_type: session.deviceInfo?.userAgent.includes('Mobile') ? 'Mobile' : 'Desktop',
                 advisory_view_time: session.advisoryViewTime ? (session.advisoryViewTime / 1000).toFixed(2) : 0,
                 
-                comp_org: isCompOrgCorrect,
+                comp_org: Number(isOrgCorrect),
+                comp_horizon: Number(isHorizonCorrect),
                 
                 man_algo: session.manipulationChecks?.feltAlgorithm,
                 man_whodoneit: mapSourceAttribution(session.manipulationChecks?.sourceAttribution),
@@ -124,31 +99,43 @@ export default function DataAnalysisPage() {
                 dq2: session.subjectiveDQ?.informed,
                 dq3: session.subjectiveDQ?.clearBasis,
                 dq4: session.subjectiveDQ?.satisfied,
+                DQ_SUB_MEAN: composites.dq_sub_mean,
                 
                 cr_trust1: session.mediators?.advisoryCredibility?.q1,
                 cr_trust2: session.mediators?.advisoryCredibility?.q2,
                 cr_trust3: session.mediators?.advisoryCredibility?.q3,
-                
+                CR_TRUST: composites.cr_trust,
+
                 cr_good1: session.mediators?.advisoryCredibility?.q7,
                 cr_good2: session.mediators?.advisoryCredibility?.q8,
                 cr_good3: session.mediators?.advisoryCredibility?.q9,
+                CR_GOOD: composites.cr_good,
 
-                cr_comp: composites.cr_comp,
+                cr_comp1: session.mediators?.advisoryCredibility?.q4,
+                cr_comp2: session.mediators?.advisoryCredibility?.q5,
+                cr_comp3: session.mediators?.advisoryCredibility?.q6,
+                CR_COMP: composites.cr_comp,
+                CR_GLOBAL_MEAN: composites.cr_global_mean,
 
                 pd_temp: session.mediators?.psychologicalDistance?.q1,
                 pd_soc: session.mediators?.psychologicalDistance?.q2,
                 pd_spat: session.mediators?.psychologicalDistance?.q3,
                 pd_hyp: session.mediators?.psychologicalDistance?.q4,
+                PD_COMPOSITE: composites.pd_composite,
 
                 la1: session.mediators?.linguisticAbstractness?.q1,
                 la2: session.mediators?.linguisticAbstractness?.q2,
                 la3: session.mediators?.linguisticAbstractness?.q3,
                 la4: session.mediators?.linguisticAbstractness?.q4,
+                LA_PERCEIVED: composites.la_perceived,
+                
+                la_objective: session.la_objective ?? 'NA',
 
                 finlit1,
                 finlit2,
                 finlit3,
                 finlit4,
+                FINLIT_SUM: composites.finlit_sum,
 
                 risk_f1: session.controls?.riskTolerance?.q1,
                 risk_f2: session.controls?.riskTolerance?.q2,
@@ -156,10 +143,12 @@ export default function DataAnalysisPage() {
                 risk_f4: session.controls?.riskTolerance?.q4,
                 risk_f5: session.controls?.riskTolerance?.q5,
                 
-                risk_f_composite: composites.risk_f_composite,
+                RISK_F_COMPOSITE: composites.risk_f_composite,
                 choice_reason_text: session.openRationale ? "REDACTED" : "",
                 
+                flag_comprehension: Number(qualityFlags.includes('flag_comprehension')),
                 flag_viewtime: Number(qualityFlags.includes('flag_viewtime')),
+                flag_straightline: Number(qualityFlags.includes('flag_straightline')),
                 flagged_any: Number(qualityFlags.length > 0),
             };
 
@@ -234,5 +223,3 @@ export default function DataAnalysisPage() {
         </div>
     );
 }
-
-    

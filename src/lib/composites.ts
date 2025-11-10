@@ -23,13 +23,17 @@ const LIKERT_MAP: Record<string, number> = {
  * Calculates the mean of a set of Likert scale responses.
  * Returns null if the completeness threshold (>=75%) is not met.
  */
-function calculateMean(responses: Record<string, string | null>): number | null {
+function calculateMean(responses: Record<string, string | null> | null | undefined): number | null {
+    if (!responses) return null;
+
     const values = Object.values(responses)
         .map(response => response ? LIKERT_MAP[response] : null)
-        .filter(v => v !== null) as number[];
+        .filter(v => v !== null && v !== undefined) as number[];
     
     const totalItems = Object.keys(responses).length;
     
+    if (totalItems === 0) return null;
+
     if (values.length / totalItems < 0.75) {
         return null; // Completeness threshold not met
     }
@@ -80,40 +84,50 @@ export function getComposites(session: SessionData) {
         q1: session.mediators?.advisoryCredibility?.q1,
         q2: session.mediators?.advisoryCredibility?.q2,
         q3: session.mediators?.advisoryCredibility?.q3,
-    } as Record<string, string | null>);
+    });
     const cr_comp = calculateMean({
         q4: session.mediators?.advisoryCredibility?.q4,
         q5: session.mediators?.advisoryCredibility?.q5,
         q6: session.mediators?.advisoryCredibility?.q6,
-    } as Record<string, string | null>);
+    });
     const cr_good = calculateMean({
         q7: session.mediators?.advisoryCredibility?.q7,
         q8: session.mediators?.advisoryCredibility?.q8,
         q9: session.mediators?.advisoryCredibility?.q9,
-    } as Record<string, string | null>);
+    });
     
     const cr_all_means = [cr_trust, cr_comp, cr_good].filter(v => v !== null) as number[];
     const cr_global_mean = cr_all_means.length > 0 ? cr_all_means.reduce((a, b) => a + b, 0) / cr_all_means.length : null;
 
     const pd_composite = calculateMean(session.mediators?.psychologicalDistance || {});
 
+    const la_perceived = calculateMean(session.mediators?.linguisticAbstractness || {});
+
     const { score: finlit_sum } = getFinancialLiteracyScore(session);
 
-    // Risk tolerance with reverse scoring
+    // Risk tolerance with reverse scoring for risk_f5
     const riskToleranceResponses = session.controls?.riskTolerance;
     let risk_f_composite = null;
     if (riskToleranceResponses) {
-        const processedResponses = { ...riskToleranceResponses };
-        if (processedResponses.q5) {
-            // Reverse score q5
-            const originalScore = LIKERT_MAP[processedResponses.q5];
+        const processedResponsesForMean: Record<string, string | null> = {};
+        const q5Response = riskToleranceResponses.q5;
+        
+        // Copy over non-reversed items
+        if(riskToleranceResponses.q1) processedResponsesForMean.q1 = riskToleranceResponses.q1;
+        if(riskToleranceResponses.q2) processedResponsesForMean.q2 = riskToleranceResponses.q2;
+        if(riskToleranceResponses.q3) processedResponsesForMean.q3 = riskToleranceResponses.q3;
+        if(riskToleranceResponses.q4) processedResponsesForMean.q4 = riskToleranceResponses.q4;
+
+        if (q5Response) {
+            const originalScore = LIKERT_MAP[q5Response];
             if(originalScore) {
-                // Not a real Likert option, but need a string for calculateMean
-                const reversedScoreString = Object.keys(LIKERT_MAP).find(key => LIKERT_MAP[key] === (8 - originalScore)) || '';
-                processedResponses.q5 = reversedScoreString;
+                const reversedScore = 8 - originalScore;
+                // Find the string key for the reversed score to pass to calculateMean
+                const reversedScoreString = Object.keys(LIKERT_MAP).find(key => LIKERT_MAP[key] === reversedScore);
+                processedResponsesForMean.q5 = reversedScoreString || null;
             }
         }
-        risk_f_composite = calculateMean(processedResponses);
+        risk_f_composite = calculateMean(processedResponsesForMean);
     }
     
     return {
@@ -124,6 +138,7 @@ export function getComposites(session: SessionData) {
         cr_good,
         cr_global_mean,
         pd_composite,
+        la_perceived,
         finlit_sum,
         risk_f_composite,
     };
