@@ -83,11 +83,11 @@ export default function DataAnalysisPage() {
             const composites = getComposites(session);
             const { score, finlit1, finlit2, finlit3, finlit4 } = getFinancialLiteracyScore(session);
 
-            const isCompOrgCorrect = useMemo(() => {
+            const isCompOrgCorrect = (() => {
                 if (!session.condition || !session.comprehension?.q1) return 0;
                 const correctOrg = session.condition.scenario === 'techtrend' ? 'TechTrend Innovations' : 'XYZ Manufacturing';
                 return session.comprehension.q1 === correctOrg ? 1 : 0;
-            }, [session.condition, session.comprehension]);
+            })();
 
             const mapChoiceToCode = (choice: string | null) => {
                 if (!choice) return 'NA';
