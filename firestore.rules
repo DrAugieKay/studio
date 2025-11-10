@@ -5,7 +5,7 @@
  * This ruleset enforces a strict user-ownership model for participant-related data,
  * ensuring that only the participant can access their own data. Admin users, identified
  * by a custom token claim (`admin: true`), are granted read-only access to all
- * participant data for monitoring and analysis.
+ * participant data for monitoring and analysis, and full delete privileges for data management.
  *
  * Data Structure:
  * The Firestore data is structured hierarchically, with experiment metadata at the top level,
@@ -17,11 +17,13 @@
  * - Strict ownership for participant data writes (`isOwner`).
  * - Read access is granted to the owner OR an admin.
  * - List operations (reading a collection) are restricted to admins only.
- * - Admin audit logs are append-only.
+ * - Admin audit logs are append-only for admins.
+ * - Admins have full delete privileges across all participant data for maintenance.
  *
  * Denormalization for Authorization:
  * This ruleset uses path-based authorization, assuming that the correct participant ID
  * is embedded in the document path. This avoids the need for `get()` calls to verify
+
  * ownership.
  */
 rules_version = '2';
@@ -81,49 +83,77 @@ service cloud.firestore {
       allow read: if isOwner(participantId) || isAdmin();
       allow write: if isOwner(participantId);
       allow delete: if isAdmin();
+
+      /**
+       * @description Rules for the /experiment_meta/{experimentMetaId}/participants/{participantId}/responses/{responseId} collection.
+       * @path /experiment_meta/{experimentMetaId}/participants/{participantId}/responses/{responseId}
+       * @allow (read) The participant can read their own responses, or an admin can.
+       * @allow (write) Only the participant can write their own responses.
+       * @allow (delete) Admins can delete documents.
+       */
+      match /responses/{responseId} {
+         allow list: if isAdmin();
+         allow read: if isOwner(participantId) || isAdmin();
+         allow write: if isOwner(participantId);
+         allow delete: if isAdmin();
+
+        /**
+         * @description Rules for the /experiment_meta/{experimentMetaId}/participants/{participantId}/responses/{responseId}/objective_linguistic_analysis/{objectiveLinguisticAnalysisId} collection.
+         * @path /experiment_meta/{experimentMetaId}/participants/{participantId}/responses/{responseId}/objective_linguistic_analysis/{objectiveLinguisticAnalysisId}
+         */
+        match /objective_linguistic_analysis/{objectiveLinguisticAnalysisId} {
+           allow list: if isAdmin();
+           allow read: if isOwner(participantId) || isAdmin();
+           allow write: if isOwner(participantId);
+           allow delete: if isAdmin();
+        }
+
+        /**
+         * @description Rules for the /experiment_meta/{experimentMetaId}/participants/{participantId}/responses/{responseId}/manual_coding/{manualCodingId} collection.
+         * @path /experiment_meta/{experimentMetaId}/participants/{participantId}/responses/{responseId}/manual_coding/{manualCodingId}
+         */
+        match /manual_coding/{manualCodingId} {
+           allow list: if isAdmin();
+           allow read: if isOwner(participantId) || isAdmin();
+           allow write: if isOwner(participantId);
+           allow delete: if isAdmin();
+        }
+      }
+
+      /**
+       * @description Rules for the /experiment_meta/{experimentMetaId}/participants/{participantId}/derived_composites/{derivedCompositeId} collection.
+       * @path /experiment_meta/{experimentMetaId}/participants/{participantId}/derived_composites/{derivedCompositeId}
+       */
+      match /derived_composites/{derivedCompositeId} {
+         allow list: if isAdmin();
+         allow read: if isOwner(participantId) || isAdmin();
+         allow write: if isOwner(participantId);
+         allow delete: if isAdmin();
+      }
+
+      /**
+       * @description Rules for the /experiment_meta/{experimentMetaId}/participants/{participantId}/data_quality_flags/{dataQualityFlagId} collection.
+       * @path /experiment_meta/{experimentMetaId}/participants/{participantId}/data_quality_flags/{dataQualityFlagId}
+       */
+      match /data_quality_flags/{dataQualityFlagId} {
+         allow list: if isAdmin();
+         allow read: if isOwner(participantId) || isAdmin();
+         allow write: if isOwner(participantId);
+         allow delete: if isAdmin();
+      }
+
+      /**
+       * @description Rules for the /experiment_meta/{experimentMetaId}/participants/{participantId}/payment_reconciliation/{paymentReconciliationId} collection.
+       * @path /experiment_meta/{experimentMetaId}/participants/{participantId}/payment_reconciliation/{paymentReconciliationId}
+       */
+      match /payment_reconciliation/{paymentReconciliationId} {
+         allow list: if isAdmin();
+         allow read: if isOwner(participantId) || isAdmin();
+         allow write: if isOwner(participantId);
+         allow delete: if isAdmin();
+      }
     }
 
-    /**
-     * @description Rules for the /experiment_meta/{experimentMetaId}/participants/{participantId}/responses/{responseId} collection.
-     * @path /experiment_meta/{experimentMetaId}/participants/{participantId}/responses/{responseId}
-     * @allow (read) The participant can read their own responses, or an admin can.
-     * @allow (write) Only the participant can write their own responses.
-     * @allow (delete) Admins can delete documents.
-     */
-    match /experiment_meta/{experimentMetaId}/participants/{participantId}/responses/{responseId} {
-       allow list: if isAdmin();
-       allow read: if isOwner(participantId) || isAdmin();
-       allow write: if isOwner(participantId);
-       allow delete: if isAdmin();
-    }
-
-    /**
-     * @description Rules for the /experiment_meta/{experimentMetaId}/participants/{participantId}/derived_composites/{derivedCompositeId} collection.
-     * @path /experiment_meta/{experimentMetaId}/participants/{participantId}/derived_composites/{derivedCompositeId}
-     * @allow (read) The participant can read their own composites, or an admin can.
-     * @allow (write) Only the participant can write their own composites.
-     * @allow (delete) Admins can delete documents.
-     */
-    match /experiment_meta/{experimentMetaId}/participants/{participantId}/derived_composites/{derivedCompositeId} {
-       allow list: if isAdmin();
-       allow read: if isOwner(participantId) || isAdmin();
-       allow write: if isOwner(participantId);
-       allow delete: if isAdmin();
-    }
-
-    /**
-     * @description Rules for the /experiment_meta/{experimentMetaId}/participants/{participantId}/data_quality_flags/{dataQualityFlagId} collection.
-     * @path /experiment_meta/{experimentMetaId}/participants/{participantId}/data_quality_flags/{dataQualityFlagId}
-     * @allow (read) The participant can read their own flags, or an admin can.
-     * @allow (write) Only the participant can write their own flags.
-     * @allow (delete) Admins can delete documents.
-     */
-    match /experiment_meta/{experimentMetaId}/participants/{participantId}/data_quality_flags/{dataQualityFlagId} {
-       allow list: if isAdmin();
-       allow read: if isOwner(participantId) || isAdmin();
-       allow write: if isOwner(participantId);
-       allow delete: if isAdmin();
-    }
 
     /**
      * @description Rules for the /admin_audit_logs/{adminAuditLogId} collection.
@@ -136,47 +166,7 @@ service cloud.firestore {
       allow update, delete: if false;
       allow get, list, create: if isAdmin();
     }
-
-    /**
-     * @description Rules for the /experiment_meta/{experimentMetaId}/participants/{participantId}/responses/{responseId}/objective_linguistic_analysis/{objectiveLinguisticAnalysisId} collection.
-     * @path /experiment_meta/{experimentMetaId}/participants/{participantId}/responses/{responseId}/objective_linguistic_analysis/{objectiveLinguisticAnalysisId}
-     * @allow (read) The participant can read their own analysis, or an admin can.
-     * @allow (write) Only the participant can write their own analysis.
-     * @allow (delete) Admins can delete documents.
-     */
-    match /experiment_meta/{experimentMetaId}/participants/{participantId}/responses/{responseId}/objective_linguistic_analysis/{objectiveLinguisticAnalysisId} {
-       allow list: if isAdmin();
-       allow read: if isOwner(participantId) || isAdmin();
-       allow write: if isOwner(participantId);
-       allow delete: if isAdmin();
-    }
-
-    /**
-     * @description Rules for the /experiment_meta/{experimentMetaId}/participants/{participantId}/responses/{responseId}/manual_coding/{manualCodingId} collection.
-     * @path /experiment_meta/{experimentMetaId}/participants/{participantId}/responses/{responseId}/manual_coding/{manualCodingId}
-     * @allow (read) The participant can read their own coding, or an admin can.
-     * @allow (write) Only the participant can write their own coding.
-     * @allow (delete) Admins can delete documents.
-     */
-    match /experiment_meta/{experimentMetaId}/participants/{participantId}/responses/{responseId}/manual_coding/{manualCodingId} {
-       allow list: if isAdmin();
-       allow read: if isOwner(participantId) || isAdmin();
-       allow write: if isOwner(participantId);
-       allow delete: if isAdmin();
-    }
-
-      /**
-       * @description Rules for the /experiment_meta/{experimentMetaId}/participants/{participantId}/payment_reconciliation/{paymentReconciliationId} collection.
-       * @path /experiment_meta/{experimentMetaId}/participants/{participantId}/payment_reconciliation/{paymentReconciliationId}
-       * @allow (read) The participant can read their own reconciliation, or an admin can.
-       * @allow (write) Only the participant can write their own reconciliation.
-       * @allow (delete) Admins can delete documents.
-       */
-      match /experiment_meta/{experimentMetaId}/participants/{participantId}/payment_reconciliation/{paymentReconciliationId} {
-         allow list: if isAdmin();
-         allow read: if isOwner(participantId) || isAdmin();
-         allow write: if isOwner(participantId);
-         allow delete: if isAdmin();
-      }
   }
 }
+
+    
