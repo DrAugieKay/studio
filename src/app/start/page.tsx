@@ -155,6 +155,11 @@ export default function StartPage() {
       setSessionData(initialData);
     }
   }, [user, sessionData, firestore]);
+  
+  // This effect scrolls the window to the top whenever the current step changes.
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [currentStep]);
 
 
   const updateSessionData = (data: Partial<SessionData>) => {
