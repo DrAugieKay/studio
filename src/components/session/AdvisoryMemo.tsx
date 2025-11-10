@@ -3,11 +3,9 @@
 
 import type { SessionData } from '@/lib/types';
 import { BrainCircuit, User } from 'lucide-react';
-import { useEffect, useRef } from 'react';
 
 type StepProps = {
     sessionData: Partial<SessionData>;
-    updateSessionData: (data: Partial<SessionData>) => void;
 };
 
 const advisoryContent = {
@@ -82,33 +80,7 @@ const scenarioContent = {
     }
 }
 
-export default function AdvisoryMemo({ sessionData, updateSessionData }: StepProps) {
-    const scrollRef = useRef<HTMLDivElement>(null);
-
-    useEffect(() => {
-        const startTime = Date.now();
-        const scrollableContent = scrollRef.current;
-        let scrollCount = 0;
-    
-        const handleScroll = () => {
-          scrollCount++;
-        };
-    
-        if (scrollableContent) {
-            scrollableContent.addEventListener('scroll', handleScroll);
-        }
-        
-        return () => {
-          if (scrollableContent) {
-            scrollableContent.removeEventListener('scroll', handleScroll);
-          }
-          const viewTime = Date.now() - startTime;
-          console.log(`Advisory view time: ${viewTime}ms, Scrolls: ${scrollCount}`);
-          updateSessionData({ advisoryViewTime: viewTime, advisoryScrollCount: scrollCount });
-        };
-      }, []); // Intentionally empty
-
-
+export default function AdvisoryMemo({ sessionData }: StepProps) {
     const { condition } = sessionData;
     if (!condition) return <div className="p-8 text-center">Loading advisory...</div>;
 
@@ -118,7 +90,7 @@ export default function AdvisoryMemo({ sessionData, updateSessionData }: StepPro
     const today = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
 
     return (
-        <div className="bg-white text-gray-800 font-serif p-8" ref={scrollRef}>
+        <div className="bg-white text-gray-800 font-serif p-8">
             <header className="pb-4 border-b-2 border-gray-800">
                 <div className="flex items-center space-x-4">
                     <div className="flex-shrink-0">
