@@ -1,10 +1,10 @@
-
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
 import type { SessionData, ExperimentalCondition } from '@/lib/types';
 import { useAuth, useFirestore, useUser } from '@/firebase';
 import { doc, setDoc } from 'firebase/firestore';
+import { useRouter } from 'next/navigation';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -70,6 +70,7 @@ export default function StartPage() {
   const auth = useAuth();
   const firestore = useFirestore();
   const { user, isUserLoading } = useUser();
+  const router = useRouter();
 
   useEffect(() => {
     // Start anonymous sign-in process when the component mounts
@@ -155,6 +156,11 @@ export default function StartPage() {
       console.log('Final session data:', sessionData);
     }
   };
+  
+  const handleCompleteSurvey = () => {
+    updateSessionData({ endTime: new Date().toISOString(), status: 'Completed' });
+    router.push('/');
+  }
 
   const handlePrevious = () => {
     if (currentStep > 0) {
@@ -199,6 +205,7 @@ export default function StartPage() {
     updateSessionData,
     endSurvey,
     goToNextStep: handleNext,
+    handleCompleteSurvey, // Pass the new function down
     setIsLastAssessmentSection,
     setIsLastMediatorSection,
     setIsLastControlSection,
@@ -224,7 +231,7 @@ export default function StartPage() {
             />
         )}
         <Card className="mt-6 shadow-xl overflow-hidden">
-          <CardContent className="p-4 sm:p-6">
+          <CardContent className="p-4 sm:p-6 md:p-8">
             {sessionData.condition ? (
               <CurrentStepComponent {...componentProps} />
             ) : (

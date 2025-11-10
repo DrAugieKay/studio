@@ -1,9 +1,12 @@
 import { CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import Link from 'next/link';
 import { PartyPopper } from 'lucide-react';
 
-export default function StepDebrief() {
+type StepProps = {
+  handleCompleteSurvey: () => void;
+};
+
+export default function StepDebrief({ handleCompleteSurvey }: StepProps) {
   return (
     <div className="text-center p-6 sm:p-8 md:p-12">
         <div className="mb-6 flex justify-center">
@@ -32,10 +35,8 @@ export default function StepDebrief() {
                 This concludes the study. Thank you for your valuable contribution.
             </p>
         </div>
-        <Button asChild size="lg" className="mt-8">
-            <Link href="/">
-                Complete and Return to Home
-            </Link>
+        <Button onClick={handleCompleteSurvey} size="lg" className="mt-8">
+            Complete and Return to Home
         </Button>
       </div>
     </div>

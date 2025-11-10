@@ -77,7 +77,20 @@ export default function SessionDetailPage() {
                 <CardContent className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                     <div>
                         <p className="font-semibold">Status</p>
-                        <Badge variant={session.status === 'Completed' ? 'default' : session.status === 'In Progress' ? 'secondary' : 'destructive'} className={session.status === 'Completed' ? 'bg-green-600/20 text-green-700 border-green-600/30' : 'bg-red-600/20 text-red-700 border-red-600/30'}>{session.status}</Badge>
+                        <Badge
+                            variant={
+                                session.status === 'Completed' ? 'default'
+                                : session.status === 'In Progress' ? 'secondary'
+                                : 'destructive'
+                            }
+                            className={
+                                session.status === 'Completed' ? 'bg-green-600/20 text-green-700 border-green-600/30'
+                                : session.status === 'In Progress' ? 'bg-blue-600/20 text-blue-700 border-blue-600/30'
+                                : 'bg-red-600/20 text-red-700 border-red-600/30'
+                            }
+                        >
+                            {session.status}
+                        </Badge>
                     </div>
                     <div>
                         <p className="font-semibold">Condition</p>
