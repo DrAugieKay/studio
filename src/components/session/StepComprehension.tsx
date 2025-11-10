@@ -7,7 +7,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import type { SessionData } from '@/lib/types';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ClipboardCheck } from 'lucide-react';
 
 type StepProps = {
@@ -48,6 +48,9 @@ export default function StepComprehension({ sessionData, updateSessionData }: St
   });
 
   const { watch } = form;
+  
+  const [q1Options, setQ1Options] = useState<string[]>([]);
+  const [q2Options, setQ2Options] = useState<string[]>([]);
 
   const scenarioName = useMemo(() => {
     if (sessionData.condition?.scenario === 'techtrend') return 'TechTrend Innovations';
@@ -55,29 +58,18 @@ export default function StepComprehension({ sessionData, updateSessionData }: St
     return '';
   }, [sessionData.condition?.scenario]);
 
-  const q1Options = useMemo(() => {
-    if (!scenarioName) return [];
-    const distractors = ['Zhongmen Holdings', 'Dailies Construction', 'ManTech Innovation', "I don't remember"];
-    const allOptions = [scenarioName, ...distractors.filter(d => d !== scenarioName)]; // Ensure no duplicates
-    
-    // Shuffle the options to avoid order bias, but keep "I don't remember" at the end.
-    const optionsToShuffle = allOptions.filter(o => o !== "I don't remember");
-    const shuffled = shuffleArray(optionsToShuffle);
-    
-    // Add the correct company if it's not already in the shuffled list, to be safe.
-    if (!shuffled.includes(scenarioName)) {
-        shuffled.push(scenarioName);
+  useEffect(() => {
+    // This runs only on the client, preventing hydration mismatch from random shuffling
+    if (scenarioName) {
+        const distractors = ['Zhongmen Holdings', 'Dailies Construction', 'ManTech Innovation', "I don't remember"];
+        const allOptions = [scenarioName, ...distractors.filter(d => d !== scenarioName)];
+        const optionsToShuffle = allOptions.filter(o => o !== "I don't remember");
+        const shuffled = shuffleArray(optionsToShuffle);
+        setQ1Options([...shuffled, "I don't remember"]);
     }
-
-    // Filter out any other correct answer that might have slipped in.
-    const finalShuffled = shuffled.filter(opt => opt === scenarioName || !['TechTrend Innovations', 'XYZ Manufacturing'].includes(opt));
-
-
-    return [...finalShuffled, "I don't remember"];
+    
+    setQ2Options(shuffleArray(['6 months', '12 months', '24 months', "I don't remember"]));
   }, [scenarioName]);
-
-
-  const q2Options = useMemo(() => shuffleArray(['6 months', '12 months', '24 months', "I don't remember"]), []);
 
 
   useEffect(() => {
@@ -86,6 +78,15 @@ export default function StepComprehension({ sessionData, updateSessionData }: St
     });
     return () => subscription.unsubscribe();
   }, [watch, updateSessionData]);
+
+  if (q1Options.length === 0 || q2Options.length === 0) {
+    // Render a placeholder or loading state until options are shuffled on the client
+    return (
+        <div className="p-8 text-center">
+            <p className="text-muted-foreground">Loading questions...</p>
+        </div>
+    );
+  }
 
   return (
     <>
@@ -98,7 +99,7 @@ export default function StepComprehension({ sessionData, updateSessionData }: St
           Let's check your understanding of the information presented.
         </CardDescription>
       </CardHeader>
-      <div className="pt-0">
+      <div className="p-6 pt-0">
         <Form {...form}>
           <form className="space-y-6">
             <FormField
