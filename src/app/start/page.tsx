@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -58,6 +59,7 @@ const stepNames = [
 ];
 
 const EXPERIMENT_ID = 'exp_001';
+const DEBRIEF_STEP = stepComponents.length - 2;
 const END_SURVEY_STEP = stepComponents.length - 1;
 
 
@@ -173,16 +175,20 @@ export default function StartPage() {
   };
 
   const handleNext = () => {
-    if (currentStep < stepComponents.length - 1) {
-      setCurrentStep(currentStep + 1);
+    const nextStep = currentStep + 1;
+    if (nextStep < stepComponents.length) {
+      // Logic to mark survey as complete when reaching the Debrief step
+      if (nextStep === DEBRIEF_STEP) {
+        updateSessionData({ endTime: new Date().toISOString(), status: 'Completed' });
+      }
+      setCurrentStep(nextStep);
     } else {
       console.log('Final session data:', sessionData);
     }
   };
   
   const handleCompleteSurvey = () => {
-    // Correctly log completion time and status only when this button is clicked.
-    updateSessionData({ endTime: new Date().toISOString(), status: 'Completed' });
+    // This button just navigates home. Completion is logged when Debrief is reached.
     router.push('/');
   }
 
