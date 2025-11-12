@@ -4,6 +4,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { FirebaseClientProvider } from '@/firebase';
 import ScrollToTop from '@/components/common/ScrollToTop';
 import './globals.css';
+import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
 
 export const metadata: Metadata = {
   title: 'Advisory Insights Platform',
@@ -27,6 +28,7 @@ export default function RootLayout({
       </head>
       <body className="font-body antialiased h-full">
         <FirebaseClientProvider>
+          <FirebaseErrorListener />
           <ScrollToTop />
           <main>{children}</main>
         </FirebaseClientProvider>
