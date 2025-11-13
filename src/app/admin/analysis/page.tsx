@@ -70,6 +70,15 @@ export default function DataAnalysisPage() {
                 duration_seconds: duration,
                 status: session.status,
 
+                consent_ageCheck: session.consent_ageCheck,
+                consent_isEmployed: session.consent_isEmployed,
+                consent_hasParticipated: session.consent_hasParticipated,
+                consent_consentGiven: session.consent_consentGiven,
+
+                ...Object.fromEntries(Object.entries(session.initialAssessments?.financialLiteracy || {}).map(([key, value]) => [`finlit_${key}`, value])),
+                ...Object.fromEntries(Object.entries(session.initialAssessments?.roleAndExperience || {}).map(([key, value]) => [`role_${key}`, value])),
+                ...Object.fromEntries(Object.entries(session.initialAssessments?.organizationalProfile || {}).map(([key, value]) => [`org_${key}`, value])),
+
                 condition_source: session.condition?.advisorySource,
                 condition_frame: session.condition?.linguisticFrame,
                 condition_scenario: session.condition?.scenario,
@@ -82,15 +91,6 @@ export default function DataAnalysisPage() {
                 dossier_scroll_count: session.dossierScrollCount,
                 advisory_view_time_ms: session.advisoryViewTime,
                 advisory_scroll_count: session.advisoryScrollCount,
-                
-                consent_ageCheck: session.consent_ageCheck,
-                consent_isEmployed: session.consent_isEmployed,
-                consent_hasParticipated: session.consent_hasParticipated,
-                consent_consentGiven: session.consent_consentGiven,
-
-                ...Object.fromEntries(Object.entries(session.initialAssessments?.financialLiteracy || {}).map(([key, value]) => [`finlit_${key}`, value])),
-                ...Object.fromEntries(Object.entries(session.initialAssessments?.roleAndExperience || {}).map(([key, value]) => [`role_${key}`, value])),
-                ...Object.fromEntries(Object.entries(session.initialAssessments?.organizationalProfile || {}).map(([key, value]) => [`org_${key}`, value])),
                 
                 ...Object.fromEntries(Object.entries(session.comprehension || {}).map(([key, value]) => [`comp_${key}`, value])),
                 ...Object.fromEntries(Object.entries(session.manipulationChecks || {}).map(([key, value]) => [`manip_${key}`, value])),
@@ -108,8 +108,6 @@ export default function DataAnalysisPage() {
                 ...Object.fromEntries(Object.entries(session.controls?.riskTolerance || {}).map(([key, value]) => [`risk_${key}`, value])),
                 ...Object.fromEntries(Object.entries(session.controls?.digitalLiteracy || {}).map(([key, value]) => [`diglit_${key}`, value])),
                 
-                la_objective_score: session.la_objective,
-
                 flags: qualityFlags.join(', '),
             };
 
