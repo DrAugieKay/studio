@@ -44,7 +44,34 @@ const calculateMeanStd = (data: (string | null | undefined)[]) => {
     return { mean: mean.toFixed(2), std: std.toFixed(2) };
 };
 
+const calculateNumericStats = (data: (number | null | undefined)[]) => {
+    const numericData = data.filter((d): d is number => d !== null && d !== undefined);
+    if (numericData.length === 0) return { mean: 'N/A', std: 'N/A', min: 'N/A', max: 'N/A' };
+
+    const mean = numericData.reduce((a, b) => a + b, 0) / numericData.length;
+    const std = Math.sqrt(numericData.map(x => Math.pow(x - mean, 2)).reduce((a, b) => a + b, 0) / numericData.length);
+    const min = Math.min(...numericData);
+    const max = Math.max(...numericData);
+
+    return { 
+        mean: mean.toFixed(2), 
+        std: std.toFixed(2),
+        min: min.toFixed(2),
+        max: max.toFixed(2),
+    };
+}
+
 const QUESTION_SETS = {
+    behavioralMetrics: {
+        title: "Behavioral Metrics",
+        type: 'numeric',
+        questions: {
+            dossierViewTime: "Dossier View Time (seconds)",
+            dossierScrollCount: "Dossier Scroll Count",
+            advisoryViewTime: "Advisory View Time (seconds)",
+            advisoryScrollCount: "Advisory Scroll Count",
+        }
+    },
     informedConsent: {
         title: "Informed Consent Responses",
         type: 'frequency',
@@ -187,16 +214,22 @@ export default function DescriptiveStatisticsAccordion({ sessions }: Descriptive
         if (!sessions) return {};
 
         const allStats: Record<string, any> = {
+            behavioralMetrics: {
+                dossierViewTime: calculateNumericStats(sessions.map(s => s.dossierViewTime / 1000)), // convert to seconds
+                dossierScrollCount: calculateNumericStats(sessions.map(s => s.dossierScrollCount)),
+                advisoryViewTime: calculateNumericStats(sessions.map(s => s.advisoryViewTime / 1000)), // convert to seconds
+                advisoryScrollCount: calculateNumericStats(sessions.map(s => s.advisoryScrollCount)),
+            },
             informedConsent: Object.fromEntries(Object.keys(QUESTION_SETS.informedConsent.questions).map(key => [
                 key, calculateFrequency(sessions.map(s => s[key as keyof SessionData]))
             ])),
-            financialLiteracy: Object.fromEntries(Object.keys(QUESTION_SETS.financialLiteracy.questions).map(key => [
+            financialLiteracy: Object.fromEntries(Object.entries(QUESTION_SETS.financialLiteracy.questions).map(([key]) => [
                 key, calculateFrequency(sessions.map(s => s.initialAssessments?.financialLiteracy?.[key as keyof typeof s.initialAssessments.financialLiteracy]))
             ])),
-            comprehensionChecks: Object.fromEntries(Object.keys(QUESTION_SETS.comprehensionChecks.questions).map(key => [
+             comprehensionChecks: Object.fromEntries(Object.entries(QUESTION_SETS.comprehensionChecks.questions).map(([key]) => [
                 key, calculateFrequency(sessions.map(s => s.comprehension?.[key as keyof typeof s.comprehension]))
             ])),
-            manipulationChecks: Object.fromEntries(Object.keys(QUESTION_SETS.manipulationChecks.questions).map(key => [
+            manipulationChecks: Object.fromEntries(Object.entries(QUESTION_SETS.manipulationChecks.questions).map(([key]) => [
                 key, calculateFrequency(sessions.map(s => s.manipulationChecks?.[key as keyof typeof s.manipulationChecks]))
             ])),
             objectiveChoice: {
@@ -220,11 +253,28 @@ export default function DescriptiveStatisticsAccordion({ sessions }: Descriptive
             riskTolerance: Object.fromEntries(Object.keys(QUESTION_SETS.riskTolerance.questions).map(key => [
                 key, calculateMeanStd(sessions.map(s => s.controls?.riskTolerance?.[key as keyof typeof s.controls.riskTolerance]))
             ])),
-            roleAndExperience: Object.fromEntries(Object.keys(QUESTION_SETS.roleAndExperience.questions).map(key => [
-                key, calculateFrequency(sessions.map(s => s.initialAssessments?.roleAndExperience?.[key as keyof typeof s.initialAssessments.roleAndExperience]))
+            roleAndExperience: Object.fromEntries(Object.entries(QUESTION_SETS.roleAndExperience.questions).map(([key]) => [
+                key, calculateFrequency(sessions.map(s => {
+                    const profile = s.initialAssessments?.roleAndExperience;
+                    if (!profile) return null;
+                    // Handle 'other' text fields
+                    if (key === 'q2' && (profile as any).q2 === 'Other') {
+                        const otherText = (profile as any).q2_other;
+                        return otherText ? `Other: ${otherText}` : 'Other';
+                    }
+                    return profile[key as keyof typeof profile];
+                }))
             ])),
-            organizationalProfile: Object.fromEntries(Object.keys(QUESTION_SETS.organizationalProfile.questions).map(key => [
-                key, calculateFrequency(sessions.map(s => s.initialAssessments?.organizationalProfile?.[key as keyof typeof s.initialAssessments.organizationalProfile]))
+            organizationalProfile: Object.fromEntries(Object.entries(QUESTION_SETS.organizationalProfile.questions).map(([key]) => [
+                key, calculateFrequency(sessions.map(s => {
+                    const profile = s.initialAssessments?.organizationalProfile;
+                    if (!profile) return null;
+                     if (key === 'q1' && (profile as any).q1 === 'Other') {
+                        const otherText = (profile as any).q1_other;
+                        return otherText ? `Other: ${otherText}` : 'Other';
+                    }
+                    return profile[key as keyof typeof profile];
+                }))
             ])),
         };
         
@@ -232,33 +282,25 @@ export default function DescriptiveStatisticsAccordion({ sessions }: Descriptive
 
     }, [sessions]);
 
-    const renderFrequencyTable = (questionSetKey: keyof typeof QUESTION_SETS) => {
+    const renderFrequencyTable = (questionSetKey: keyof typeof QUESTION_SETS, questionKey: string) => {
         const questionSet = QUESTION_SETS[questionSetKey];
         if (!questionSet) return null;
         
         const dataSet = stats[questionSetKey];
         if (!dataSet || Object.keys(dataSet).length === 0) return <p className="text-muted-foreground">No data available.</p>;
-
+        
+        const data = dataSet[questionKey];
+        if (!data || Object.keys(data).length === 0) return <div><p className="text-muted-foreground">No data available.</p></div>;
+        
         return (
-            <div className="space-y-6">
-                {Object.entries(questionSet.questions).map(([key, label]) => {
-                    const data = dataSet[key];
-                    if (!data || Object.keys(data).length === 0) return <div key={key}><h4 className="font-semibold mb-2">{label as string}</h4><p className="text-muted-foreground">No data available.</p></div>;
-                    return (
-                        <div key={key}>
-                            <h4 className="font-semibold mb-2">{label as string}</h4>
-                            <Table>
-                                <TableHeader><TableRow><TableHead>Response</TableHead><TableHead className="text-right">Frequency</TableHead><TableHead className="text-right">Percentage</TableHead></TableRow></TableHeader>
-                                <TableBody>
-                                    {Object.entries(data as Record<string, { count: number; percentage: string }>).sort(([, a], [, b]) => b.count - a.count).map(([response, values]) => (
-                                        <TableRow key={response}><TableCell>{response || "N/A"}</TableCell><TableCell className="text-right">{values.count}</TableCell><TableCell className="text-right">{values.percentage}</TableCell></TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        </div>
-                    )
-                })}
-            </div>
+            <Table>
+                <TableHeader><TableRow><TableHead>Response</TableHead><TableHead className="text-right">Frequency</TableHead><TableHead className="text-right">Percentage</TableHead></TableRow></TableHeader>
+                <TableBody>
+                    {Object.entries(data as Record<string, { count: number; percentage: string }>).sort(([, a], [, b]) => b.count - a.count).map(([response, values]) => (
+                        <TableRow key={response}><TableCell>{response || "N/A"}</TableCell><TableCell className="text-right">{values.count}</TableCell><TableCell className="text-right">{values.percentage}</TableCell></TableRow>
+                    ))}
+                </TableBody>
+            </Table>
         )
     };
 
@@ -278,6 +320,29 @@ export default function DescriptiveStatisticsAccordion({ sessions }: Descriptive
         );
     };
 
+    const renderNumericStatsTable = (questionSetKey: 'behavioralMetrics') => {
+        const questionSet = QUESTION_SETS[questionSetKey];
+        const data = stats[questionSetKey];
+        if (!data) return <p className="text-muted-foreground">No data available.</p>;
+        return (
+            <Table>
+                <TableHeader><TableRow><TableHead>Metric</TableHead><TableHead className="text-right">Mean</TableHead><TableHead className="text-right">Std. Dev.</TableHead><TableHead className="text-right">Min</TableHead><TableHead className="text-right">Max</TableHead></TableRow></TableHeader>
+                <TableBody>
+                    {Object.entries(questionSet.questions).map(([key, label]) => (
+                        <TableRow key={key}>
+                            <TableCell>{label as string}</TableCell>
+                            <TableCell className="text-right">{data[key].mean}</TableCell>
+                            <TableCell className="text-right">{data[key].std}</TableCell>
+                            <TableCell className="text-right">{data[key].min}</TableCell>
+                            <TableCell className="text-right">{data[key].max}</TableCell>
+                        </TableRow>
+                    ))}
+                </TableBody>
+            </Table>
+        );
+    };
+
+
     if (!sessions || Object.keys(stats).length === 0) {
         return <p className="text-muted-foreground text-center py-8">No session data available to calculate statistics.</p>;
     }
@@ -290,8 +355,18 @@ export default function DescriptiveStatisticsAccordion({ sessions }: Descriptive
                     <AccordionContent>
                         <Card>
                             <CardContent className="p-6">
-                                {type === 'frequency' ? renderFrequencyTable(key as keyof typeof QUESTION_SETS)
-                                 : renderMeanStdTable(key as keyof typeof QUESTION_SETS)}
+                                {type === 'numeric' ? (
+                                    renderNumericStatsTable(key as 'behavioralMetrics')
+                                ) : type === 'frequency' ? (
+                                    <div className="space-y-6">
+                                        {Object.entries(QUESTION_SETS[key as keyof typeof QUESTION_SETS].questions).map(([qKey, qLabel]) => (
+                                            <div key={qKey}>
+                                                <h4 className="font-semibold mb-2">{qLabel as string}</h4>
+                                                {renderFrequencyTable(key as keyof typeof QUESTION_SETS, qKey)}
+                                            </div>
+                                        ))}
+                                    </div>
+                                 ) : renderMeanStdTable(key as keyof typeof QUESTION_SETS)}
                             </CardContent>
                         </Card>
                     </AccordionContent>
@@ -300,5 +375,3 @@ export default function DescriptiveStatisticsAccordion({ sessions }: Descriptive
         </Accordion>
     );
 }
-
-    
