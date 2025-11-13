@@ -63,7 +63,7 @@ export default function SessionTable() {
             setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
         } else {
             setSortKey(key);
-            setSortDirection('asc');
+            setSortDirection('desc');
         }
     };
 
