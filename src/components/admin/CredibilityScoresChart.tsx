@@ -14,16 +14,16 @@ import type { SessionData } from '@/lib/types';
 import { getComposites } from '@/lib/composites';
 
 const chartConfig = {
-  honesty: {
-    label: 'Honesty',
+  trust: {
+    label: 'Trust',
     color: 'hsl(var(--chart-1))',
   },
-  trustworthiness: {
-    label: 'Trustworthiness',
+  goodwill: {
+    label: 'Goodwill',
     color: 'hsl(var(--chart-2))',
   },
-  expertise: {
-    label: 'Expertise',
+  competence: {
+    label: 'Competence',
     color: 'hsl(var(--chart-3))',
   },
 };
@@ -42,7 +42,7 @@ export default function CredibilityScoresChart({ sessions }: CredibilityScoresCh
         };
 
         sessions.forEach(session => {
-            if (!session.condition) return;
+            if (!session.condition || !session.status || session.status !== 'Completed') return;
             const source = session.condition.advisorySource;
             const composites = getComposites(session);
 
@@ -61,15 +61,15 @@ export default function CredibilityScoresChart({ sessions }: CredibilityScoresCh
         return [
             {
                 source: 'AI',
-                honesty: totals.ai.count > 0 ? totals.ai.cr_trust / totals.ai.count : 0,
-                trustworthiness: totals.ai.count > 0 ? totals.ai.cr_good / totals.ai.count : 0,
-                expertise: totals.ai.count > 0 ? totals.ai.cr_comp / totals.ai.count : 0,
+                trust: totals.ai.count > 0 ? totals.ai.cr_trust / totals.ai.count : 0,
+                goodwill: totals.ai.count > 0 ? totals.ai.cr_good / totals.ai.count : 0,
+                competence: totals.ai.count > 0 ? totals.ai.cr_comp / totals.ai.count : 0,
             },
             {
                 source: 'Human',
-                honesty: totals.human.count > 0 ? totals.human.cr_trust / totals.human.count : 0,
-                trustworthiness: totals.human.count > 0 ? totals.human.cr_good / totals.human.count : 0,
-                expertise: totals.human.count > 0 ? totals.human.cr_comp / totals.human.count : 0,
+                trust: totals.human.count > 0 ? totals.human.cr_trust / totals.human.count : 0,
+                goodwill: totals.human.count > 0 ? totals.human.cr_good / totals.human.count : 0,
+                competence: totals.human.count > 0 ? totals.human.cr_comp / totals.human.count : 0,
             },
         ];
 
@@ -82,7 +82,7 @@ export default function CredibilityScoresChart({ sessions }: CredibilityScoresCh
             margin={{ top: 20, right: 20, bottom: 20, left: 0 }}
         >
           <CartesianGrid vertical={false} />
-          <YAxis />
+          <YAxis domain={[0, 7]} tickCount={8} />
           <XAxis
             dataKey="source"
             tickLine={false}
@@ -91,9 +91,9 @@ export default function CredibilityScoresChart({ sessions }: CredibilityScoresCh
           />
           <ChartTooltip content={<ChartTooltipContent />} />
           <ChartLegend content={<ChartLegendContent />} />
-          <Bar dataKey="honesty" fill="var(--color-honesty)" radius={4} />
-          <Bar dataKey="trustworthiness" fill="var(--color-trustworthiness)" radius={4} />
-          <Bar dataKey="expertise" fill="var(--color-expertise)" radius={4} />
+          <Bar dataKey="trust" fill="var(--color-trust)" radius={4} />
+          <Bar dataKey="goodwill" fill="var(--color-goodwill)" radius={4} />
+          <Bar dataKey="competence" fill="var(--color-competence)" radius={4} />
         </BarChart>
       </ChartContainer>
   );
