@@ -78,7 +78,7 @@ export default function DataAnalysisPage() {
                 ...Object.fromEntries(Object.entries(session.initialAssessments?.financialLiteracy || {}).map(([key, value]) => [`finlit_${key}`, value])),
                 ...Object.fromEntries(Object.entries(session.initialAssessments?.roleAndExperience || {}).map(([key, value]) => [`role_${key}`, value])),
                 ...Object.fromEntries(Object.entries(session.initialAssessments?.organizationalProfile || {}).map(([key, value]) => [`org_${key}`, value])),
-                org_q7: session.initialAssessments?.organizationalProfile?.q7,
+                org_q7: session.initialAssessments?.organizationalProfile?.q7 || 'NA',
 
                 condition_source: session.condition?.advisorySource,
                 condition_frame: session.condition?.linguisticFrame,
@@ -314,3 +314,5 @@ export default function DataAnalysisPage() {
         </div>
     );
 }
+
+    
