@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -42,7 +41,7 @@ const sections = [
       q5: 'v. Placing organizational funds in short-term government securities to preserve capital.',
     },
     options: rtLikertOptions,
-    schema: z.object({ q1: z.string(), q2: z.string(), q3: z.string(), q4: z.string(), q5: z.string() }),
+    schema: z.object({ q1: z.string().min(1, 'Required'), q2: z.string().min(1, 'Required'), q3: z.string().min(1, 'Required'), q4: z.string().min(1, 'Required'), q5: z.string().min(1, 'Required') }),
   },
   {
     key: 'digitalLiteracy',
@@ -56,7 +55,7 @@ const sections = [
       q5: 'v. I know where to find specialized online financial data or market analyses relevant to organizational decisions.',
     },
     options: dlLikertOptions,
-    schema: z.object({ q1: z.string(), q2: z.string(), q3: z.string(), q4: z.string(), q5: z.string() }),
+    schema: z.object({ q1: z.string().min(1, 'Required'), q2: z.string().min(1, 'Required'), q3: z.string().min(1, 'Required'), q4: z.string().min(1, 'Required'), q5: z.string().min(1, 'Required') }),
   },
   {
     key: 'openRationale',
@@ -77,7 +76,8 @@ export default function StepControls({ sessionData, updateSessionData, setIsLast
     resolver: zodResolver(currentSection.schema),
     defaultValues: currentSection.key === 'openRationale' 
       ? { rationale: sessionData.openRationale || '' }
-      : sessionData.controls?.[currentSection.key as keyof SessionData['controls']] || {}
+      : sessionData.controls?.[currentSection.key as keyof SessionData['controls']] || {},
+    mode: 'onChange',
   });
   
   const { watch } = form;
@@ -85,13 +85,29 @@ export default function StepControls({ sessionData, updateSessionData, setIsLast
 
   const allQuestionsAnswered = useMemo(() => {
     if (currentSection.key === 'openRationale') return true; // Optional field
-    return Object.keys(currentSection.questions).every(key => !!(watchedValues as any)[key]);
+    const result = currentSection.schema.safeParse(watchedValues);
+    return result.success;
   }, [watchedValues, currentSection]);
 
   useEffect(() => {
     setIsLastControlSection(isLastSection);
   }, [isLastSection, setIsLastControlSection]);
   
+  useEffect(() => {
+    // This effect is for the radio groups to save data on change
+    if (currentSection.key !== 'openRationale') {
+      const subscription = watch((value) => {
+        updateSessionData({
+          controls: {
+            ...sessionData.controls,
+            [currentSection.key]: value,
+          }
+        });
+      });
+      return () => subscription.unsubscribe();
+    }
+  }, [currentSection.key, sessionData.controls, updateSessionData, watch]);
+
   useEffect(() => {
     // This effect is for the open rationale text area to save data on change
     if (currentSection.key === 'openRationale') {
@@ -107,19 +123,7 @@ export default function StepControls({ sessionData, updateSessionData, setIsLast
     const isValid = await form.trigger();
     if (!isValid) return;
 
-    const formData = form.getValues();
-    
-    if(currentSection.key !== 'openRationale') {
-        updateSessionData({
-            controls: {
-                ...sessionData.controls,
-                [currentSection.key]: formData,
-            },
-        });
-    } else {
-        updateSessionData({ openRationale: (formData as any).rationale });
-    }
-
+    // Data is already saved by the useEffect watchers, so we just navigate.
     if (!isLastSection) {
       const nextSectionIndex = currentSectionIndex + 1;
       const nextSection = sections[nextSectionIndex];
