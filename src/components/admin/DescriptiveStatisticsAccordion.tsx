@@ -159,31 +159,31 @@ export default function DescriptiveStatisticsAccordion({ sessions }: Descriptive
                 consent_consentGiven: calculateFrequency(sessions.map(s => s.consent_consentGiven)),
             },
             financialLiteracy: Object.fromEntries(Object.keys(QUESTION_SETS.financialLiteracy.questions).map(key => [
-                key, calculateFrequency(sessions.map(s => s.initialAssessments?.financialLiteracy?.[key]))
+                key, calculateFrequency(sessions.map(s => s.initialAssessments?.financialLiteracy?.[key as keyof typeof s.initialAssessments.financialLiteracy]))
             ])),
             comprehensionChecks: Object.fromEntries(Object.keys(QUESTION_SETS.comprehensionChecks.questions).map(key => [
-                key, calculateFrequency(sessions.map(s => s.comprehension?.[key]))
+                key, calculateFrequency(sessions.map(s => s.comprehension?.[key as keyof typeof s.comprehension]))
             ])),
             manipulationChecks: Object.fromEntries(Object.keys(QUESTION_SETS.manipulationChecks.questions).map(key => [
-                key, calculateFrequency(sessions.map(s => s.manipulationChecks?.[key]))
+                key, calculateFrequency(sessions.map(s => s.manipulationChecks?.[key as keyof typeof s.manipulationChecks]))
             ])),
             objectiveChoice: {
                 objectiveChoice: calculateFrequency(sessions.map(s => s.objectiveChoice))
             },
             subjectiveDQ: Object.fromEntries(Object.keys(QUESTION_SETS.subjectiveDQ.questions).map(key => [
-                key, calculateMeanStd(sessions.map(s => s.subjectiveDQ?.[key]))
+                key, calculateMeanStd(sessions.map(s => s.subjectiveDQ?.[key as keyof typeof s.subjectiveDQ]))
             ])),
             outcomeFraming: Object.fromEntries(Object.keys(QUESTION_SETS.outcomeFraming.questions).map(key => [
-                key, calculateMeanStd(sessions.map(s => s.mediators?.outcomeFraming?.[key]))
+                key, calculateMeanStd(sessions.map(s => s.mediators?.outcomeFraming?.[key as keyof typeof s.mediators.outcomeFraming]))
             ])),
             riskTolerance: Object.fromEntries(Object.keys(QUESTION_SETS.riskTolerance.questions).map(key => [
-                key, calculateMeanStd(sessions.map(s => s.controls?.riskTolerance?.[key]))
+                key, calculateMeanStd(sessions.map(s => s.controls?.riskTolerance?.[key as keyof typeof s.controls.riskTolerance]))
             ])),
             roleAndExperience: Object.fromEntries(Object.keys(QUESTION_SETS.roleAndExperience.questions).map(key => [
-                key, calculateFrequency(sessions.map(s => s.initialAssessments?.roleAndExperience?.[key]))
+                key, calculateFrequency(sessions.map(s => s.initialAssessments?.roleAndExperience?.[key as keyof typeof s.initialAssessments.roleAndExperience]))
             ])),
             organizationalProfile: Object.fromEntries(Object.keys(QUESTION_SETS.organizationalProfile.questions).map(key => [
-                key, calculateFrequency(sessions.map(s => s.initialAssessments?.organizationalProfile?.[key]))
+                key, calculateFrequency(sessions.map(s => s.initialAssessments?.organizationalProfile?.[key as keyof typeof s.initialAssessments.organizationalProfile]))
             ])),
         };
         
@@ -202,10 +202,10 @@ export default function DescriptiveStatisticsAccordion({ sessions }: Descriptive
             <div className="space-y-6">
                 {Object.entries(questionSet.questions).map(([key, label]) => {
                     const data = dataSet[key];
-                    if (!data || Object.keys(data).length === 0) return <div key={key}><h4 className="font-semibold mb-2">{label}</h4><p className="text-muted-foreground">No data available.</p></div>;
+                    if (!data || Object.keys(data).length === 0) return <div key={key}><h4 className="font-semibold mb-2">{label as string}</h4><p className="text-muted-foreground">No data available.</p></div>;
                     return (
                         <div key={key}>
-                            <h4 className="font-semibold mb-2">{label}</h4>
+                            <h4 className="font-semibold mb-2">{label as string}</h4>
                             <Table>
                                 <TableHeader><TableRow><TableHead>Response</TableHead><TableHead className="text-right">Frequency</TableHead><TableHead className="text-right">Percentage</TableHead></TableRow></TableHeader>
                                 <TableBody>
@@ -230,7 +230,7 @@ export default function DescriptiveStatisticsAccordion({ sessions }: Descriptive
                 <TableHeader><TableRow><TableHead>Item</TableHead><TableHead className="text-right">Mean</TableHead><TableHead className="text-right">Std. Dev.</TableHead></TableRow></TableHeader>
                 <TableBody>
                     {Object.entries(questionSet.questions).map(([key, label]) => (
-                        <TableRow key={key}><TableCell>{label}</TableCell><TableCell className="text-right">{data[key].mean}</TableCell><TableCell className="text-right">{data[key].std}</TableCell></TableRow>
+                        <TableRow key={key}><TableCell>{label as string}</TableCell><TableCell className="text-right">{data[key].mean}</TableCell><TableCell className="text-right">{data[key].std}</TableCell></TableRow>
                     ))}
                 </TableBody>
             </Table>
