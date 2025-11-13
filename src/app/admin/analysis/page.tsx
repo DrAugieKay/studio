@@ -4,7 +4,7 @@
 import { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Download, Loader2, BookText, FileSpreadsheet } from 'lucide-react';
+import { Download, Loader2, BookText, FileSpreadsheet, BarChart3 } from 'lucide-react';
 import CompletionRateChart from '@/components/admin/CompletionRateChart';
 import ChoiceDistributionChart from '@/components/admin/ChoiceDistributionChart';
 import CredibilityScoresChart from '@/components/admin/CredibilityScoresChart';
@@ -12,6 +12,7 @@ import DescriptiveStatisticsAccordion from '@/components/admin/DescriptiveStatis
 import CrossTabulation from '@/components/admin/CrossTabulation';
 import { getQualityFlags, checkComprehension } from '@/lib/quality-flags';
 import { getComposites, getFinancialLiteracyScore } from '@/lib/composites';
+import { calculateAllDescriptiveStats, QUESTION_SETS } from '@/lib/descriptives';
 import { codebookData } from '@/lib/codebook';
 import Papa from 'papaparse';
 import type { SessionData } from '@/lib/types';
@@ -24,6 +25,7 @@ const EXPERIMENT_ID = 'exp_001';
 export default function DataAnalysisPage() {
     const [isExporting, setIsExporting] = useState(false);
     const [isRawExporting, setIsRawExporting] = useState(false);
+    const [isDescriptivesExporting, setIsDescriptivesExporting] = useState(false);
     const firestore = useFirestore();
 
     const participantsCollectionQuery = useMemoFirebase(() => {
@@ -51,6 +53,57 @@ export default function DataAnalysisPage() {
     
     const handleExportCodebook = () => {
         downloadCsv(codebookData, 'codebook.csv');
+    };
+
+    const handleExportDescriptives = () => {
+        if (!sessions) return;
+        setIsDescriptivesExporting(true);
+        console.log('Starting descriptives export...');
+
+        const stats = calculateAllDescriptiveStats(sessions);
+        const dataToExport: any[] = [];
+
+        Object.entries(QUESTION_SETS).forEach(([setKey, setDetails]) => {
+            const setData = stats[setKey as keyof typeof stats];
+            if (!setData) return;
+
+            dataToExport.push({ Section: setDetails.title });
+
+            if (setDetails.type === 'numeric') {
+                Object.entries(setDetails.questions).forEach(([qKey, qLabel]) => {
+                    const qData = setData[qKey];
+                    if (qData) {
+                       dataToExport.push({ Section: '', Item: qLabel, Statistic: 'Mean', Value: qData.mean });
+                       dataToExport.push({ Section: '', Item: qLabel, Statistic: 'Std. Dev.', Value: qData.std });
+                       dataToExport.push({ Section: '', Item: qLabel, Statistic: 'Min', Value: qData.min });
+                       dataToExport.push({ Section: '', Item: qLabel, Statistic: 'Max', Value: qData.max });
+                    }
+                });
+            } else if (setDetails.type === 'mean') {
+                 Object.entries(setDetails.questions).forEach(([qKey, qLabel]) => {
+                    const qData = setData[qKey];
+                    if (qData) {
+                        dataToExport.push({ Section: '', Item: qLabel, Statistic: 'Mean', Value: qData.mean });
+                        dataToExport.push({ Section: '', Item: qLabel, Statistic: 'Std. Dev.', Value: qData.std });
+                    }
+                 });
+            } else if (setDetails.type === 'frequency') {
+                Object.entries(setDetails.questions).forEach(([qKey, qLabel]) => {
+                    const qData = setData[qKey];
+                    if (qData) {
+                        dataToExport.push({ Section: '', Item: qLabel, Statistic: '---', Value: '---' });
+                         Object.entries(qData).forEach(([response, values]) => {
+                            dataToExport.push({ Section: '', Item: '', Statistic: response, Value: values.count, Percentage: values.percentage });
+                         });
+                    }
+                });
+            }
+             dataToExport.push({}); // Add a blank row for spacing
+        });
+        
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+        downloadCsv(dataToExport, `descriptive_stats_export_${timestamp}.csv`);
+        setIsDescriptivesExporting(false);
     };
 
     const handleExportRaw = () => {
@@ -310,6 +363,14 @@ export default function DataAnalysisPage() {
                      <Button onClick={handleExportCodebook} variant="outline">
                         <BookText className="mr-2 h-4 w-4" />
                         Download Codebook
+                    </Button>
+                    <Button onClick={handleExportDescriptives} variant="outline" disabled={isDescriptivesExporting || !sessions || sessions.length === 0}>
+                        {isDescriptivesExporting ? (
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                            <BarChart3 className="mr-2 h-4 w-4" />
+                        )}
+                        {isDescriptivesExporting ? 'Exporting...' : 'Download Descriptives'}
                     </Button>
                     <Button onClick={handleExport} disabled={isExporting || !sessions || sessions.length === 0}>
                         {isExporting ? (
