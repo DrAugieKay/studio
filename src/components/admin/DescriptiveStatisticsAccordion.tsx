@@ -152,27 +152,33 @@ export default function DescriptiveStatisticsAccordion({ sessions }: Descriptive
         if (!sessions) return {};
 
         const allStats: Record<string, any> = {
-            informedConsent: calculateFrequency(sessions.flatMap(s => [s.consent_ageCheck, s.consent_isEmployed, s.consent_hasParticipated, s.consent_consentGiven])),
-            financialLiteracy: calculateFrequency(sessions.flatMap(s => Object.values(s.initialAssessments?.financialLiteracy || {}))),
-            comprehensionChecks: calculateFrequency(sessions.flatMap(s => Object.values(s.comprehension || {}))),
-            manipulationChecks: calculateFrequency(sessions.flatMap(s => Object.values(s.manipulationChecks || {}))),
-            
+            informedConsent: {
+                consent_ageCheck: calculateFrequency(sessions.map(s => s.consent_ageCheck)),
+                consent_isEmployed: calculateFrequency(sessions.map(s => s.consent_isEmployed)),
+                consent_hasParticipated: calculateFrequency(sessions.map(s => s.consent_hasParticipated)),
+                consent_consentGiven: calculateFrequency(sessions.map(s => s.consent_consentGiven)),
+            },
+            financialLiteracy: Object.fromEntries(Object.keys(QUESTION_SETS.financialLiteracy.questions).map(key => [
+                key, calculateFrequency(sessions.map(s => s.initialAssessments?.financialLiteracy?.[key]))
+            ])),
+            comprehensionChecks: Object.fromEntries(Object.keys(QUESTION_SETS.comprehensionChecks.questions).map(key => [
+                key, calculateFrequency(sessions.map(s => s.comprehension?.[key]))
+            ])),
+            manipulationChecks: Object.fromEntries(Object.keys(QUESTION_SETS.manipulationChecks.questions).map(key => [
+                key, calculateFrequency(sessions.map(s => s.manipulationChecks?.[key]))
+            ])),
             objectiveChoice: {
                 objectiveChoice: calculateFrequency(sessions.map(s => s.objectiveChoice))
             },
-
             subjectiveDQ: Object.fromEntries(Object.keys(QUESTION_SETS.subjectiveDQ.questions).map(key => [
                 key, calculateMeanStd(sessions.map(s => s.subjectiveDQ?.[key]))
             ])),
-            
             outcomeFraming: Object.fromEntries(Object.keys(QUESTION_SETS.outcomeFraming.questions).map(key => [
                 key, calculateMeanStd(sessions.map(s => s.mediators?.outcomeFraming?.[key]))
             ])),
-
             riskTolerance: Object.fromEntries(Object.keys(QUESTION_SETS.riskTolerance.questions).map(key => [
                 key, calculateMeanStd(sessions.map(s => s.controls?.riskTolerance?.[key]))
             ])),
-
             roleAndExperience: Object.fromEntries(Object.keys(QUESTION_SETS.roleAndExperience.questions).map(key => [
                 key, calculateFrequency(sessions.map(s => s.initialAssessments?.roleAndExperience?.[key]))
             ])),
@@ -185,7 +191,7 @@ export default function DescriptiveStatisticsAccordion({ sessions }: Descriptive
 
     }, [sessions]);
 
-    const renderFrequencyTable = (questionSetKey: keyof typeof QUESTION_SETS, singleTable = false) => {
+    const renderFrequencyTable = (questionSetKey: keyof typeof QUESTION_SETS) => {
         const questionSet = QUESTION_SETS[questionSetKey];
         if (!questionSet) return null;
         
@@ -204,7 +210,7 @@ export default function DescriptiveStatisticsAccordion({ sessions }: Descriptive
                                 <TableHeader><TableRow><TableHead>Response</TableHead><TableHead className="text-right">Frequency</TableHead><TableHead className="text-right">Percentage</TableHead></TableRow></TableHeader>
                                 <TableBody>
                                     {Object.entries(data as Record<string, { count: number; percentage: string }>).sort(([, a], [, b]) => b.count - a.count).map(([response, values]) => (
-                                        <TableRow key={response}><TableCell>{response}</TableCell><TableCell className="text-right">{values.count}</TableCell><TableCell className="text-right">{values.percentage}</TableCell></TableRow>
+                                        <TableRow key={response}><TableCell>{response || "N/A"}</TableCell><TableCell className="text-right">{values.count}</TableCell><TableCell className="text-right">{values.percentage}</TableCell></TableRow>
                                     ))}
                                 </TableBody>
                             </Table>
@@ -243,8 +249,8 @@ export default function DescriptiveStatisticsAccordion({ sessions }: Descriptive
                     <AccordionContent>
                         <Card>
                             <CardContent className="p-6">
-                                {type === 'frequency' && renderFrequencyTable(key as keyof typeof QUESTION_SETS)}
-                                {type === 'mean' && renderMeanStdTable(key as keyof typeof QUESTION_SETS)}
+                                {type === 'frequency' ? renderFrequencyTable(key as keyof typeof QUESTION_SETS)
+                                 : renderMeanStdTable(key as keyof typeof QUESTION_SETS)}
                             </CardContent>
                         </Card>
                     </AccordionContent>
