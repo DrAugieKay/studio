@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -80,7 +81,6 @@ export default function StepControls({ sessionData, updateSessionData, setIsLast
     mode: 'onChange',
   });
   
-  const { watch } = form;
   const watchedValues = useWatch({ control: form.control });
 
   const allQuestionsAnswered = useMemo(() => {
@@ -94,29 +94,18 @@ export default function StepControls({ sessionData, updateSessionData, setIsLast
   }, [isLastSection, setIsLastControlSection]);
   
   useEffect(() => {
-    // This effect is for the radio groups to save data on change
-    if (currentSection.key !== 'openRationale') {
-      const subscription = watch((value) => {
+    const currentKey = currentSection.key;
+    if (currentKey !== 'openRationale') {
         updateSessionData({
           controls: {
             ...sessionData.controls,
-            [currentSection.key]: value,
+            [currentKey]: watchedValues,
           }
         });
-      });
-      return () => subscription.unsubscribe();
+    } else {
+        updateSessionData({ openRationale: (watchedValues as any).rationale || null });
     }
-  }, [currentSection.key, sessionData.controls, updateSessionData, watch]);
-
-  useEffect(() => {
-    // This effect is for the open rationale text area to save data on change
-    if (currentSection.key === 'openRationale') {
-      const subscription = watch((value) => {
-        updateSessionData({ openRationale: (value as any).rationale || null });
-      });
-      return () => subscription.unsubscribe();
-    }
-  }, [currentSection.key, watch, updateSessionData]);
+  }, [watchedValues, currentSection.key, sessionData.controls, updateSessionData]);
 
 
   const handleNextSection = async () => {
