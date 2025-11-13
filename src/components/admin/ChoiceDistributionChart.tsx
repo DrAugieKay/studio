@@ -25,24 +25,31 @@ export default function ChoiceDistributionChart({ sessions }: ChoiceDistribution
     const chartData = useMemo(() => {
         if (!sessions) return [];
         
+        const getChoiceCategory = (choice: string | null): string => {
+            if (!choice) return 'No Decision';
+            if (choice.startsWith('Option A')) return 'Option A';
+            if (choice.startsWith('Option B')) return 'Option B';
+            if (choice.startsWith('Option C')) return 'Option C';
+            if (choice.startsWith('Option D')) return 'No Decision';
+            return 'No Decision';
+        };
+
         const choiceCounts = sessions.reduce((acc, session) => {
-            const choice = session.objectiveChoice || 'No Choice';
-            acc[choice] = (acc[choice] || 0) + 1;
+            const category = getChoiceCategory(session.objectiveChoice);
+            acc[category] = (acc[category] || 0) + 1;
             return acc;
         }, {} as Record<string, number>);
 
-        // Ensure all possible choices are represented, even if count is 0
-        const allChoices = [
-            'Option A: Growth Equity Fund',
-            'Option B: Balanced Mutual Fund',
-            'Option C: Government Treasury Bond Portfolio',
-            'Option D: I do not know / Prefer not to decide',
-            'No Choice'
+        const allCategories = [
+            'Option A',
+            'Option B',
+            'Option C',
+            'No Decision'
         ];
 
-        return allChoices.map(choice => ({
-            choice: choice.startsWith('Option D') ? 'No Decide' : choice.replace(/(:.*)/, ''),
-            count: choiceCounts[choice] || 0,
+        return allCategories.map(category => ({
+            choice: category,
+            count: choiceCounts[category] || 0,
         }));
 
     }, [sessions]);
