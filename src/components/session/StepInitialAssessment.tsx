@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -165,17 +166,14 @@ export default function StepInitialAssessment({ sessionData, updateSessionData, 
   }, [isLastSection, setIsLastAssessmentSection]);
   
   useEffect(() => {
-    const subscription = watch((value) => {
-        const currentSectionKey = sections[currentSectionIndex].key;
-        updateSessionData({
-          initialAssessments: {
-            ...sessionData.initialAssessments,
-            [currentSectionKey]: value,
-          },
-        });
+    const currentSectionKey = sections[currentSectionIndex].key;
+    updateSessionData({
+      initialAssessments: {
+        ...sessionData.initialAssessments,
+        [currentSectionKey]: watchedValues,
+      },
     });
-    return () => subscription.unsubscribe();
-  }, [watch, updateSessionData, sessionData.initialAssessments, currentSectionIndex]);
+  }, [watchedValues, updateSessionData, sessionData.initialAssessments, currentSectionIndex]);
 
 
   const handleNextSection = async () => {

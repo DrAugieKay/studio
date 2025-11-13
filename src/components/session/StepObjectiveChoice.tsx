@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -48,20 +48,17 @@ export default function StepObjectiveChoice({ sessionData, updateSessionData }: 
     },
   });
 
-  const { watch, setValue } = form;
+  const watchedValues = useWatch({ control: form.control });
 
   useEffect(() => {
-    const subscription = watch((value) => {
-      if (value.choice && !choiceMade) {
-        updateSessionData({ objectiveChoice: value.choice });
-        setChoiceMade(true);
-      }
-      if (value.subjectiveDQ) {
-        updateSessionData({ subjectiveDQ: value.subjectiveDQ });
-      }
-    });
-    return () => subscription.unsubscribe();
-  }, [watch, updateSessionData, choiceMade]);
+    if (watchedValues.choice && !choiceMade) {
+      updateSessionData({ objectiveChoice: watchedValues.choice });
+      setChoiceMade(true);
+    }
+    if (watchedValues.subjectiveDQ) {
+      updateSessionData({ subjectiveDQ: watchedValues.subjectiveDQ });
+    }
+  }, [watchedValues, updateSessionData, choiceMade]);
 
   return (
     <>

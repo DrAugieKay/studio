@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -47,14 +47,11 @@ export default function StepManipulationChecks({ sessionData, updateSessionData 
     },
   });
 
-  const { watch } = form;
+  const watchedValues = useWatch({ control: form.control });
 
   useEffect(() => {
-    const subscription = watch((value) => {
-      updateSessionData({ manipulationChecks: value as Record<string, string> });
-    });
-    return () => subscription.unsubscribe();
-  }, [watch, updateSessionData]);
+    updateSessionData({ manipulationChecks: watchedValues as Record<string, string> });
+  }, [watchedValues, updateSessionData]);
 
   return (
     <>
@@ -67,7 +64,7 @@ export default function StepManipulationChecks({ sessionData, updateSessionData 
           Please answer the following questions based on your experience.
         </CardDescription>
       </CardHeader>
-      <div className="pt-0">
+      <div className="p-6 pt-0">
         <Form {...form}>
           <form className="space-y-6">
             <FormField
