@@ -115,19 +115,21 @@ export default function StepMediators({ sessionData, updateSessionData, setIsLas
     setIsLastMediatorSection(isLastSection);
   }, [isLastSection, setIsLastMediatorSection]);
 
+  useEffect(() => {
+    const currentKey = currentSection.key;
+    updateSessionData({
+      mediators: {
+        ...sessionData.mediators,
+        [currentKey]: watchedValues,
+      },
+    });
+  }, [watchedValues, currentSection.key, sessionData.mediators, updateSessionData]);
+
   const handleNextSection = async () => {
     const isValid = await form.trigger();
     if (!isValid) return;
 
-    const formData = form.getValues();
-    
-    updateSessionData({
-      mediators: {
-        ...sessionData.mediators,
-        [currentSection.key]: formData,
-      },
-    });
-
+    // Data is already saved by the useEffect watcher.
     if (!isLastSection) {
       const nextSectionIndex = currentSectionIndex + 1;
       const nextSectionKey = sections[nextSectionIndex].key as keyof SessionData['mediators'];
