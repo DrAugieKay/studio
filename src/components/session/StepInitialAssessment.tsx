@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -157,7 +156,7 @@ export default function StepInitialAssessment({ sessionData, updateSessionData, 
   const allQuestionsAnswered = useMemo(() => {
     const result = currentSection.schema.safeParse(watchedValues);
     return result.success;
-}, [watchedValues, currentSection.schema]);
+  }, [watchedValues, currentSection.schema]);
 
 
   useEffect(() => {
