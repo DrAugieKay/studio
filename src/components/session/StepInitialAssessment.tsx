@@ -151,7 +151,8 @@ export default function StepInitialAssessment({ sessionData, updateSessionData, 
     mode: 'onChange'
   });
 
-  const watchedValues = useWatch({ control: form.control });
+  const { control } = form;
+  const watchedValues = useWatch({ control });
   
   const allQuestionsAnswered = useMemo(() => {
     const result = currentSection.schema.safeParse(watchedValues);
@@ -162,22 +163,26 @@ export default function StepInitialAssessment({ sessionData, updateSessionData, 
   useEffect(() => {
     setIsLastAssessmentSection(isLastSection);
   }, [isLastSection, setIsLastAssessmentSection]);
+  
+  useEffect(() => {
+    const subscription = watch((value) => {
+        const currentSectionKey = sections[currentSectionIndex].key;
+        updateSessionData({
+          initialAssessments: {
+            ...sessionData.initialAssessments,
+            [currentSectionKey]: value,
+          },
+        });
+    });
+    return () => subscription.unsubscribe();
+  }, [watch, updateSessionData, sessionData.initialAssessments, currentSectionIndex]);
 
 
   const handleNextSection = async () => {
     const isValid = await form.trigger();
     if (!isValid) return;
 
-    const formData = form.getValues();
-    const currentSectionKey = sections[currentSectionIndex].key;
-    
-    updateSessionData({
-      initialAssessments: {
-        ...sessionData.initialAssessments,
-        [currentSectionKey]: formData,
-      },
-    });
-
+    // Data is saved via useEffect, so we just navigate
     if (!isLastSection) {
         const nextSectionIndex = currentSectionIndex + 1;
         const nextSection = sections[nextSectionIndex];
