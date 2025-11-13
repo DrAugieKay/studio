@@ -12,15 +12,20 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import type { SessionData } from '@/lib/types';
-import { Eye, Loader2 } from 'lucide-react';
+import { Eye, Loader2, ArrowUpDown } from 'lucide-react';
 import Link from 'next/link';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query } from 'firebase/firestore';
+import { useState, useMemo } from 'react';
 
 const EXPERIMENT_ID = 'exp_001';
 
+type SortKey = 'startTime' | 'status';
+
 export default function SessionTable() {
     const firestore = useFirestore();
+    const [sortKey, setSortKey] = useState<SortKey>('startTime');
+    const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
 
     const participantsCollectionQuery = useMemoFirebase(() => {
       if (!firestore) return null;
@@ -29,6 +34,39 @@ export default function SessionTable() {
 
     const { data: sessions, isLoading } = useCollection<SessionData>(participantsCollectionQuery);
     
+    const sortedSessions = useMemo(() => {
+        if (!sessions) return [];
+        return [...sessions].sort((a, b) => {
+            let valA, valB;
+
+            switch (sortKey) {
+                case 'startTime':
+                    valA = new Date(a.startTime).getTime();
+                    valB = new Date(b.startTime).getTime();
+                    break;
+                case 'status':
+                    valA = a.status;
+                    valB = b.status;
+                    break;
+                default:
+                    return 0;
+            }
+
+            if (valA < valB) return sortDirection === 'asc' ? -1 : 1;
+            if (valA > valB) return sortDirection === 'asc' ? 1 : -1;
+            return 0;
+        });
+    }, [sessions, sortKey, sortDirection]);
+    
+    const handleSort = (key: SortKey) => {
+        if (sortKey === key) {
+            setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
+        } else {
+            setSortKey(key);
+            setSortDirection('asc');
+        }
+    };
+
     const formatCondition = (condition: SessionData['condition']) => {
         if (!condition) return 'N/A';
         return `${condition.advisorySource.toUpperCase()} / ${condition.linguisticFrame.toUpperCase()} / ${condition.scenario.toUpperCase()}`;
@@ -49,15 +87,25 @@ export default function SessionTable() {
         <TableHeader>
           <TableRow>
             <TableHead>Session ID</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Start Time</TableHead>
+            <TableHead>
+                <Button variant="ghost" onClick={() => handleSort('status')}>
+                    Status
+                    <ArrowUpDown className="ml-2 h-4 w-4" />
+                </Button>
+            </TableHead>
+            <TableHead>
+                 <Button variant="ghost" onClick={() => handleSort('startTime')}>
+                    Start Time
+                    <ArrowUpDown className="ml-2 h-4 w-4" />
+                </Button>
+            </TableHead>
             <TableHead>End Time</TableHead>
             <TableHead>Condition</TableHead>
             <TableHead className="text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {sessions && sessions.map((session) => (
+          {sortedSessions && sortedSessions.map((session) => (
             <TableRow key={session.id}>
               <TableCell className="font-medium">{session.id}</TableCell>
               <TableCell>
@@ -91,7 +139,7 @@ export default function SessionTable() {
               </TableCell>
             </TableRow>
           ))}
-           {(!sessions || sessions.length === 0) && (
+           {(!sortedSessions || sortedSessions.length === 0) && (
               <TableRow>
                   <TableCell colSpan={6} className="h-24 text-center">
                       No participant sessions found.
