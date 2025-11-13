@@ -77,7 +77,13 @@ export default function DataAnalysisPage() {
 
                 ...Object.fromEntries(Object.entries(session.initialAssessments?.financialLiteracy || {}).map(([key, value]) => [`finlit_${key}`, value])),
                 ...Object.fromEntries(Object.entries(session.initialAssessments?.roleAndExperience || {}).map(([key, value]) => [`role_${key}`, value])),
-                ...Object.fromEntries(Object.entries(session.initialAssessments?.organizationalProfile || {}).map(([key, value]) => [`org_${key}`, value])),
+                
+                org_q1: session.initialAssessments?.organizationalProfile?.q1 || 'NA',
+                org_q2: session.initialAssessments?.organizationalProfile?.q2 || 'NA',
+                org_q3: session.initialAssessments?.organizationalProfile?.q3 || 'NA',
+                org_q4: session.initialAssessments?.organizationalProfile?.q4 || 'NA',
+                org_q5: session.initialAssessments?.organizationalProfile?.q5 || 'NA',
+                org_q6: session.initialAssessments?.organizationalProfile?.q6 || 'NA',
                 org_q7: session.initialAssessments?.organizationalProfile?.q7 || 'NA',
 
                 condition_source: session.condition?.advisorySource,
@@ -314,7 +320,5 @@ export default function DataAnalysisPage() {
         </div>
     );
 }
-
-    
 
     
