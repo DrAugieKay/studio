@@ -2,7 +2,7 @@
 'use client';
 
 import * as React from 'react';
-import { Pie, PieChart, Label } from 'recharts';
+import { Pie, PieChart, Label, Cell } from 'recharts';
 import {
   ChartContainer,
   ChartTooltip,
@@ -16,21 +16,40 @@ const chartConfig = {
   },
   Completed: {
     label: 'Completed',
-    color: 'hsl(var(--chart-2))',
+    color: 'hsl(142.1 76.2% 36.3%)', // Green
   },
   Abandoned: {
     label: 'Abandoned',
-    color: 'hsl(var(--chart-5))',
+    color: 'hsl(0 62.8% 30.6%)', // Red
   },
   'In Progress': {
     label: 'In Progress',
-    color: 'hsl(var(--chart-3))',
+    color: 'hsl(215 39% 30%)', // Blue
   },
 };
 
 type CompletionRateChartProps = {
     sessions: SessionData[] | null;
 };
+
+// Helper to render a custom label with the percentage
+const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }: any) => {
+    const RADIAN = Math.PI / 180;
+    const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
+    const x = cx + radius * Math.cos(-midAngle * RADIAN);
+    const y = cy + radius * Math.sin(-midAngle * RADIAN);
+
+    if (percent === 0) {
+        return null;
+    }
+
+    return (
+        <text x={x} y={y} fill="white" textAnchor={x > cx ? 'start' : 'end'} dominantBaseline="central" className="text-xs font-bold">
+            {`${(percent * 100).toFixed(0)}%`}
+        </text>
+    );
+};
+
 
 export default function CompletionRateChart({ sessions }: CompletionRateChartProps) {
   const chartData = React.useMemo(() => {
@@ -46,7 +65,7 @@ export default function CompletionRateChart({ sessions }: CompletionRateChartPro
         .map(([status, config]) => ({
             status,
             sessions: statusCounts[status as SessionData['status']] || 0,
-            fill: `var(--color-${status.replace(' ', '')})`,
+            fill: config.color,
         }));
   }, [sessions]);
 
@@ -70,7 +89,12 @@ export default function CompletionRateChart({ sessions }: CompletionRateChartPro
             nameKey="status"
             innerRadius={60}
             strokeWidth={5}
+            labelLine={false}
+            label={renderCustomizedLabel}
           >
+            {chartData.map((entry, index) => (
+                <Cell key={`cell-${index}`} fill={entry.fill} />
+            ))}
             <Label
               content={({ viewBox }) => {
                 if (viewBox && 'cx' in viewBox && 'cy' in viewBox) {
