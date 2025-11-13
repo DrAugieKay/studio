@@ -99,6 +99,41 @@ const QUESTION_SETS = {
             satisfied: "b-iv. I am satisfied with the decision I made based on the advisory.",
         }
     },
+    advisoryCredibility: {
+        title: "Advisory Credibility (CR)",
+        type: 'mean',
+        questions: {
+          q1: 'i. The advisory source is honest.',
+          q2: 'ii. The advisory source is trustworthy.',
+          q3: 'iii. The advisory source is sincere.',
+          q4: 'iv. The advisory source is competent.',
+          q5: 'v. The advisory source is knowledgeable.',
+          q6: 'vi. The advisory source is an expert.',
+          q7: 'vii. The advisory source cares about our organization’s best interests.',
+          q8: 'viii. The advisory source has our organization’s welfare at heart.',
+          q9: 'ix. The advisory source is concerned about our organization.',
+        },
+    },
+    psychologicalDistance: {
+        title: "Psychological Distance (PD)",
+        type: 'mean',
+        questions: {
+            q1: 'i. The scenario described felt distant in time for our organization.',
+            q2: 'ii. The advisory felt socially distant from stakeholders in our organization (e.g., it did not feel written for people like us).',
+            q3: 'iii. The scenario described felt geographically or contextually far from our organization’s operations.',
+            q4: 'iv. The events described in the scenario felt unlikely to occur for our organization.',
+        },
+    },
+    linguisticAbstractness: {
+        title: "Linguistic Abstractness (LA)",
+        type: 'mean',
+        questions: {
+            q1: 'i. The language used in the advisory was abstract and high-level.',
+            q2: 'ii. The advisory used general descriptions rather than specific, actionable steps.',
+            q3: 'iii. I had difficulty forming a clear, concrete mental picture of the recommended actions.',
+            q4: 'iv. The wording focused on broad principles rather than concrete procedures.',
+        },
+    },
     outcomeFraming: {
         title: "Outcome Framing (OF)",
         type: 'mean',
@@ -169,6 +204,15 @@ export default function DescriptiveStatisticsAccordion({ sessions }: Descriptive
             },
             subjectiveDQ: Object.fromEntries(Object.keys(QUESTION_SETS.subjectiveDQ.questions).map(key => [
                 key, calculateMeanStd(sessions.map(s => s.subjectiveDQ?.[key as keyof typeof s.subjectiveDQ]))
+            ])),
+            advisoryCredibility: Object.fromEntries(Object.keys(QUESTION_SETS.advisoryCredibility.questions).map(key => [
+                key, calculateMeanStd(sessions.map(s => s.mediators?.advisoryCredibility?.[key as keyof typeof s.mediators.advisoryCredibility]))
+            ])),
+            psychologicalDistance: Object.fromEntries(Object.keys(QUESTION_SETS.psychologicalDistance.questions).map(key => [
+                key, calculateMeanStd(sessions.map(s => s.mediators?.psychologicalDistance?.[key as keyof typeof s.mediators.psychologicalDistance]))
+            ])),
+            linguisticAbstractness: Object.fromEntries(Object.keys(QUESTION_SETS.linguisticAbstractness.questions).map(key => [
+                key, calculateMeanStd(sessions.map(s => s.mediators?.linguisticAbstractness?.[key as keyof typeof s.mediators.linguisticAbstractness]))
             ])),
             outcomeFraming: Object.fromEntries(Object.keys(QUESTION_SETS.outcomeFraming.questions).map(key => [
                 key, calculateMeanStd(sessions.map(s => s.mediators?.outcomeFraming?.[key as keyof typeof s.mediators.outcomeFraming]))
@@ -256,3 +300,5 @@ export default function DescriptiveStatisticsAccordion({ sessions }: Descriptive
         </Accordion>
     );
 }
+
+    
