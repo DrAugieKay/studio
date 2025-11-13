@@ -39,9 +39,9 @@ const sections = [
       q9: 'ix. The advisory source is concerned about our organization.',
     },
     schema: z.object({
-        q1: z.string(), q2: z.string(), q3: z.string(),
-        q4: z.string(), q5: z.string(), q6: z.string(),
-        q7: z.string(), q8: z.string(), q9: z.string(),
+        q1: z.string().min(1, 'Required'), q2: z.string().min(1, 'Required'), q3: z.string().min(1, 'Required'),
+        q4: z.string().min(1, 'Required'), q5: z.string().min(1, 'Required'), q6: z.string().min(1, 'Required'),
+        q7: z.string().min(1, 'Required'), q8: z.string().min(1, 'Required'), q9: z.string().min(1, 'Required'),
     }),
   },
   {
@@ -54,7 +54,10 @@ const sections = [
         q3: 'iii. The scenario described felt geographically or contextually far from our organization’s operations.',
         q4: 'iv. The events described in the scenario felt unlikely to occur for our organization.',
     },
-    schema: z.object({ q1: z.string(), q2: z.string(), q3: z.string(), q4: z.string() }),
+    schema: z.object({ 
+        q1: z.string().min(1, 'Required'), q2: z.string().min(1, 'Required'), 
+        q3: z.string().min(1, 'Required'), q4: z.string().min(1, 'Required') 
+    }),
   },
   {
     key: 'linguisticAbstractness',
@@ -66,7 +69,10 @@ const sections = [
         q3: 'iii. I had difficulty forming a clear, concrete mental picture of the recommended actions.',
         q4: 'iv. The wording focused on broad principles rather than concrete procedures.',
     },
-    schema: z.object({ q1: z.string(), q2: z.string(), q3: z.string(), q4: z.string() }),
+    schema: z.object({ 
+        q1: z.string().min(1, 'Required'), q2: z.string().min(1, 'Required'), 
+        q3: z.string().min(1, 'Required'), q4: z.string().min(1, 'Required') 
+    }),
   },
   {
     key: 'outcomeFraming',
@@ -78,7 +84,10 @@ const sections = [
         q3: 'iii. The advisory focused on probabilities and uncertainty.',
         q4: 'iv. The advisory focused on certain guaranteed outcomes.',
     },
-    schema: z.object({ q1: z.string(), q2: z.string(), q3: z.string(), q4: z.string() }),
+    schema: z.object({ 
+        q1: z.string().min(1, 'Required'), q2: z.string().min(1, 'Required'), 
+        q3: z.string().min(1, 'Required'), q4: z.string().min(1, 'Required') 
+    }),
   }
 ];
 
@@ -90,14 +99,16 @@ export default function StepMediators({ sessionData, updateSessionData, setIsLas
 
   const form = useForm({
     resolver: zodResolver(currentSection.schema),
-    defaultValues: sessionData.mediators?.[currentSection.key as keyof SessionData['mediators']] || {}
+    defaultValues: sessionData.mediators?.[currentSection.key as keyof SessionData['mediators']] || {},
+    mode: 'onChange'
   });
 
   const watchedValues = useWatch({ control: form.control });
 
   const allQuestionsAnswered = useMemo(() => {
-    return Object.keys(currentSection.questions).every(key => !!(watchedValues as any)[key]);
-  }, [watchedValues, currentSection.questions]);
+    const result = currentSection.schema.safeParse(watchedValues);
+    return result.success;
+  }, [watchedValues, currentSection.schema]);
 
   useEffect(() => {
     setIsLastMediatorSection(isLastSection);
@@ -118,8 +129,9 @@ export default function StepMediators({ sessionData, updateSessionData, setIsLas
 
     if (!isLastSection) {
       const nextSectionIndex = currentSectionIndex + 1;
+      const nextSectionKey = sections[nextSectionIndex].key as keyof SessionData['mediators'];
       setCurrentSectionIndex(nextSectionIndex);
-      form.reset(sessionData.mediators?.[sections[nextSectionIndex].key as keyof SessionData['mediators']] || {});
+      form.reset(sessionData.mediators?.[nextSectionKey] || {});
     }
   };
 
