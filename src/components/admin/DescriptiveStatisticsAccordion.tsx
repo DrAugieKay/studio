@@ -152,12 +152,9 @@ export default function DescriptiveStatisticsAccordion({ sessions }: Descriptive
         if (!sessions) return {};
 
         const allStats: Record<string, any> = {
-            informedConsent: {
-                consent_ageCheck: calculateFrequency(sessions.map(s => s.consent_ageCheck)),
-                consent_isEmployed: calculateFrequency(sessions.map(s => s.consent_isEmployed)),
-                consent_hasParticipated: calculateFrequency(sessions.map(s => s.consent_hasParticipated)),
-                consent_consentGiven: calculateFrequency(sessions.map(s => s.consent_consentGiven)),
-            },
+            informedConsent: Object.fromEntries(Object.keys(QUESTION_SETS.informedConsent.questions).map(key => [
+                key, calculateFrequency(sessions.map(s => s[key as keyof SessionData]))
+            ])),
             financialLiteracy: Object.fromEntries(Object.keys(QUESTION_SETS.financialLiteracy.questions).map(key => [
                 key, calculateFrequency(sessions.map(s => s.initialAssessments?.financialLiteracy?.[key as keyof typeof s.initialAssessments.financialLiteracy]))
             ])),
