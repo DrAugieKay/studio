@@ -135,6 +135,7 @@ const QUESTION_SETS = {
             q4: "Ownership Structure",
             q5: "Appetite for Financial Risk",
             q6: "Formal Investment Policy",
+            q7: "Headquarters country",
         }
     },
 };
