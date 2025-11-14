@@ -115,11 +115,17 @@ export default function StepMediators({ sessionData, updateSessionData, setIsLas
     setIsLastMediatorSection(isLastSection);
   }, [isLastSection, setIsLastMediatorSection]);
 
-  const handleValueChange = (newValues: any) => {
+  const handleValueChange = (formValues: any) => {
+    // Sanitize data: replace undefined with null
+    const sanitizedValues: Record<string, string | null> = {};
+    for (const key in formValues) {
+        sanitizedValues[key] = formValues[key] === undefined ? null : formValues[key];
+    }
+
     updateSessionData({
       mediators: {
         ...sessionData.mediators,
-        [currentSection.key]: newValues,
+        [currentSection.key]: sanitizedValues,
       },
     });
   };

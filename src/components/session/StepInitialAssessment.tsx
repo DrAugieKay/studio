@@ -33,7 +33,7 @@ const financialLiteracyQuestions = {
     options: ['True', 'False', "I don't know"],
   },
   q4: {
-    question: 'iv. If the chance of a particular event is 1 out of 100, what is the chance of that event expressed as a percentage?',
+    question: 'iv. What is the chance of a particular event is 1 out of 100, what is the chance of that event expressed as a percentage?',
     options: ['0.1%', '1%', '10%', "I don't know"],
   },
 };
@@ -165,11 +165,17 @@ export default function StepInitialAssessment({ sessionData, updateSessionData, 
     setIsLastAssessmentSection(isLastSection);
   }, [isLastSection, setIsLastAssessmentSection]);
   
-  const handleValueChange = (newValues: any) => {
+  const handleValueChange = (formValues: any) => {
+    // Sanitize data: replace undefined with null
+    const sanitizedValues: Record<string, string | null> = {};
+    for (const key in formValues) {
+        sanitizedValues[key] = formValues[key] === undefined ? null : formValues[key];
+    }
+  
     updateSessionData({
       initialAssessments: {
         ...sessionData.initialAssessments,
-        [currentSection.key]: newValues,
+        [currentSection.key]: sanitizedValues,
       },
     });
   };

@@ -93,17 +93,22 @@ export default function StepControls({ sessionData, updateSessionData, setIsLast
     setIsLastControlSection(isLastSection);
   }, [isLastSection, setIsLastControlSection]);
   
-  const handleValueChange = (newValues: any) => {
+  const handleValueChange = (formValues: any) => {
     const currentKey = currentSection.key;
     if (currentKey !== 'openRationale') {
+        // Sanitize data: replace undefined with null
+        const sanitizedValues: Record<string, string | null> = {};
+        for (const key in formValues) {
+            sanitizedValues[key] = formValues[key] === undefined ? null : formValues[key];
+        }
         updateSessionData({
           controls: {
             ...sessionData.controls,
-            [currentKey]: newValues,
+            [currentKey]: sanitizedValues,
           }
         });
     } else {
-        updateSessionData({ openRationale: newValues.rationale || null });
+        updateSessionData({ openRationale: formValues.rationale || null });
     }
   };
 
