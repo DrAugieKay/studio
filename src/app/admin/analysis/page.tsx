@@ -211,6 +211,7 @@ export default function DataAnalysisPage() {
                 dl_q_v: session.controls?.digitalLiteracy?.q5,
                 
                 rationale_text: session.openRationale,
+                la_objective: session.la_objective ?? 'NA',
 
                 flags: qualityFlags.join(', '),
             };
