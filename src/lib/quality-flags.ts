@@ -1,5 +1,6 @@
 
 import type { SessionData } from './types';
+import { LIKERT_MAP } from './descriptives';
 
 /**
  * Checks for comprehension failure.
@@ -35,18 +36,42 @@ function checkViewTime(session: SessionData): boolean {
 
 /**
  * Checks for straight-lining in Likert scale matrices.
- * Returns true if a participant gives the same response for 80% or more of the items in any single matrix.
+ * This function has two strategies:
+ * 1.  Contradiction Check: For scales with reverse-scored items (like Risk Tolerance), it checks if a user gives the same
+ *     strong answer to both a regular item and a reverse-scored item, which is logically inconsistent.
+ * 2.  Repetition Check: For scales without reverse-scored items, it falls back to checking if a user gives the same
+ *     response for 90% or more of the items.
  */
 function checkStraightLining(session: SessionData): boolean {
-    if (!session.mediators) return false;
+    if (!session.mediators && !session.controls) return false;
 
-    // We can check multiple matrices here. For now, let's focus on the longest one: advisoryCredibility.
+    // --- Strategy 1: Contradiction Check (more reliable) ---
+    const rt = session.controls?.riskTolerance;
+    if (rt) {
+        const riskTakingItems = [rt.q1, rt.q2, rt.q3, rt.q4].filter(Boolean); // Items where 'Extremely likely' is high risk
+        const riskAverseItem = rt.q5; // Item where 'Extremely likely' is low risk (reversed)
+
+        if (riskTakingItems.length > 0 && riskAverseItem) {
+            // Check for high-risk agreement contradiction
+            const highRiskValue = 'Extremely likely';
+            if (riskAverseItem === highRiskValue && riskTakingItems.includes(highRiskValue)) {
+                return true; // Contradiction: Claims to be extremely likely to take risks AND extremely likely to preserve capital.
+            }
+            // Check for low-risk agreement contradiction
+            const lowRiskValue = 'Extremely unlikely';
+            if (riskAverseItem === lowRiskValue && riskTakingItems.every(item => item === lowRiskValue)) {
+                 return true; // Contradiction: Claims to be extremely unlikely to preserve capital AND extremely unlikely to take any risks.
+            }
+        }
+    }
+
+
+    // --- Strategy 2: Repetition Check (less reliable, used as a fallback) ---
     const matricesToCheck = [
-        session.mediators.advisoryCredibility,
-        session.mediators.psychologicalDistance,
-        session.mediators.linguisticAbstractness,
-        session.mediators.outcomeFraming,
-        session.controls?.riskTolerance,
+        session.mediators?.advisoryCredibility,
+        session.mediators?.psychologicalDistance,
+        session.mediators?.linguisticAbstractness,
+        session.mediators?.outcomeFraming,
         session.controls?.digitalLiteracy,
     ];
 
@@ -65,10 +90,13 @@ function checkStraightLining(session: SessionData): boolean {
             return acc;
         }, {} as Record<string, number>);
 
+        if (Object.keys(responseCounts).length === 0) continue;
+
         const maxCount = Math.max(...Object.values(responseCounts));
         
-        if ((maxCount / totalResponses) >= 0.8) {
-            return true; // Found straight-lining in at least one matrix
+        // Use a 90% threshold for pure repetition to be more conservative
+        if ((maxCount / totalResponses) >= 0.9) {
+            return true; // Found high-repetition straight-lining in a matrix without reverse-scored items.
         }
     }
     
