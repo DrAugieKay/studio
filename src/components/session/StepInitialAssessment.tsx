@@ -180,7 +180,6 @@ export default function StepInitialAssessment({ sessionData, updateSessionData, 
     const isValid = await form.trigger();
     if (!isValid) return;
 
-    // Data is saved via useEffect, so we just navigate
     if (!isLastSection) {
         const nextSectionIndex = currentSectionIndex + 1;
         const nextSection = sections[nextSectionIndex];

@@ -8,7 +8,7 @@ export const LIKERT_MAP: Record<string, number> = {
     'Neither agree nor disagree': 4, 'Somewhat agree': 5, 'Agree': 6, 'Strongly agree': 7,
     // For risk tolerance scale
     'Extremely unlikely': 1, 'Moderately unlikely': 2, 'Somewhat unlikely': 3,
-    'Neither likely nor unlikely': 4, 'Somewhat likely': 'Moderately likely', 'Extremely likely': 7,
+    'Neither likely nor unlikely': 4, 'Somewhat likely': 5, 'Moderately likely': 6, 'Extremely likely': 7,
 };
 
 export const calculateFrequency = (data: (string | null | undefined)[]) => {
