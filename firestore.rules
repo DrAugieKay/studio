@@ -77,9 +77,9 @@ service cloud.firestore {
         // Admins can list all participant documents. Owners can read their own.
         allow list: if isAdmin();
         allow get: if isOwner(participantId) || isAdmin();
-        // Only the participant can create or update their own data.
-        allow create, update: if isOwner(participantId);
-        // Admins can delete a participant document. THIS IS THE CRITICAL FIX.
+        // Participant can create their own data, Admins can update it.
+        allow create, update: if isOwner(participantId) || isAdmin();
+        // Admins can delete a participant document.
         allow delete: if isAdmin();
 
         /**
@@ -89,7 +89,8 @@ service cloud.firestore {
          */
         match /{document=**} {
            allow get, list, delete: if isAdmin();
-           allow create, update: if isOwner(participantId);
+           // Allow admin updates on subcollections as well.
+           allow create, update: if isOwner(participantId) || isAdmin();
         }
       }
     }
