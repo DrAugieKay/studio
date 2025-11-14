@@ -93,19 +93,19 @@ export default function StepControls({ sessionData, updateSessionData, setIsLast
     setIsLastControlSection(isLastSection);
   }, [isLastSection, setIsLastControlSection]);
   
-  useEffect(() => {
+  const handleValueChange = (newValues: any) => {
     const currentKey = currentSection.key;
     if (currentKey !== 'openRationale') {
         updateSessionData({
           controls: {
             ...sessionData.controls,
-            [currentKey]: watchedValues,
+            [currentKey]: newValues,
           }
         });
     } else {
-        updateSessionData({ openRationale: (watchedValues as any).rationale || null });
+        updateSessionData({ openRationale: newValues.rationale || null });
     }
-  }, [watchedValues, currentSection.key, sessionData.controls, updateSessionData]);
+  };
 
 
   const handleNextSection = async () => {
@@ -152,6 +152,10 @@ export default function StepControls({ sessionData, updateSessionData, setIsLast
                           className="resize-none"
                           rows={6}
                           {...field}
+                          onChange={(e) => {
+                            field.onChange(e);
+                            handleValueChange({ rationale: e.target.value });
+                          }}
                         />
                       </FormControl>
                     </FormItem>
@@ -167,7 +171,13 @@ export default function StepControls({ sessionData, updateSessionData, setIsLast
                       <FormItem className="space-y-3 py-4 border-t first:border-t-0">
                         <FormLabel>{question}</FormLabel>
                         <FormControl>
-                          <RadioGroup onValueChange={field.onChange} value={field.value || ""} className="space-y-1">
+                          <RadioGroup 
+                            onValueChange={(value) => {
+                                field.onChange(value);
+                                handleValueChange({ ...form.getValues(), [key]: value });
+                            }}
+                            value={field.value || ""} className="space-y-1"
+                           >
                             {currentSection.options.map(option => (
                               <FormItem key={option} className="flex items-center space-x-3">
                                 <FormControl><RadioGroupItem value={option} /></FormControl>

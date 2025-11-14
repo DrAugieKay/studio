@@ -1,12 +1,12 @@
 
 'use client';
 
-import { useForm, useWatch } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import type { SessionData } from '@/lib/types';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Label } from '@/components/ui/label';
 
 type StepProps = {
@@ -48,21 +48,16 @@ export default function StepObjectiveChoice({ sessionData, updateSessionData }: 
     },
   });
 
-  const watchedValues = useWatch({ control: form.control });
+  const handleChoiceChange = (value: string) => {
+    updateSessionData({ objectiveChoice: value });
+    if (value) {
+        setChoiceMade(true);
+    }
+  };
 
-  useEffect(() => {
-    // This effect runs whenever any form value changes.
-    // We check if the main choice has been made and update session state.
-    // This replaces the need for a separate "Save" button within the step.
-    if (watchedValues.choice && !choiceMade) {
-      updateSessionData({ objectiveChoice: watchedValues.choice });
-      setChoiceMade(true);
-    }
-    // We also update the subjective DQ answers as they are filled out.
-    if (watchedValues.subjectiveDQ) {
-      updateSessionData({ subjectiveDQ: watchedValues.subjectiveDQ });
-    }
-  }, [watchedValues, updateSessionData, choiceMade]);
+  const handleDQChange = (values: any) => {
+    updateSessionData({ subjectiveDQ: values });
+  };
 
   return (
     <>
@@ -83,7 +78,13 @@ export default function StepObjectiveChoice({ sessionData, updateSessionData }: 
                   <FormItem className="space-y-3">
                     <FormLabel className="font-semibold text-base">a. Based on the advisory and your role, which investment option do you recommend?</FormLabel>
                     <FormControl>
-                      <RadioGroup onValueChange={field.onChange} value={field.value} className="space-y-1">
+                      <RadioGroup 
+                        onValueChange={(value) => {
+                            field.onChange(value);
+                            handleChoiceChange(value);
+                        }} 
+                        value={field.value} className="space-y-1"
+                      >
                         {choiceOptions.map((option, index) => (
                           <Label key={index} htmlFor={`choice-${index}`} className="flex items-start space-x-3 p-3 cursor-pointer has-[:checked]:text-accent transition-colors">
                             <FormControl>
@@ -112,7 +113,13 @@ export default function StepObjectiveChoice({ sessionData, updateSessionData }: 
                     <FormItem className="space-y-3 p-4 border rounded-lg bg-secondary/30">
                       <FormLabel className="text-base">{label}</FormLabel>
                       <FormControl>
-                        <RadioGroup onValueChange={field.onChange} value={field.value} className="w-full space-y-1">
+                        <RadioGroup 
+                          onValueChange={(value) => {
+                              field.onChange(value);
+                              handleDQChange({ ...form.getValues().subjectiveDQ, [key]: value });
+                          }}
+                          value={field.value} className="w-full space-y-1"
+                        >
                           {likertOptions.map((option, oIndex) => (
                             <Label key={oIndex} htmlFor={`${key}-${oIndex}`} className="flex items-center space-x-3 p-2 cursor-pointer has-[:checked]:text-accent transition-colors">
                               <FormControl>

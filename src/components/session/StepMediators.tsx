@@ -115,21 +115,19 @@ export default function StepMediators({ sessionData, updateSessionData, setIsLas
     setIsLastMediatorSection(isLastSection);
   }, [isLastSection, setIsLastMediatorSection]);
 
-  useEffect(() => {
-    const currentKey = currentSection.key;
+  const handleValueChange = (newValues: any) => {
     updateSessionData({
       mediators: {
         ...sessionData.mediators,
-        [currentKey]: watchedValues,
+        [currentSection.key]: newValues,
       },
     });
-  }, [watchedValues, currentSection.key, sessionData.mediators, updateSessionData]);
+  };
 
   const handleNextSection = async () => {
     const isValid = await form.trigger();
     if (!isValid) return;
 
-    // Data is already saved by the useEffect watcher.
     if (!isLastSection) {
       const nextSectionIndex = currentSectionIndex + 1;
       const nextSectionKey = sections[nextSectionIndex].key as keyof SessionData['mediators'];
@@ -165,7 +163,13 @@ export default function StepMediators({ sessionData, updateSessionData, setIsLas
                     <FormItem className="space-y-3 py-4 border-t first:border-t-0">
                       <FormLabel>{question}</FormLabel>
                       <FormControl>
-                        <RadioGroup onValueChange={field.onChange} value={field.value || ""} className="space-y-1">
+                        <RadioGroup 
+                          onValueChange={(value) => {
+                              field.onChange(value);
+                              handleValueChange({ ...form.getValues(), [key]: value });
+                          }}
+                          value={field.value || ""} className="space-y-1"
+                        >
                           {likertOptions.map(option => (
                             <FormItem key={option} className="flex items-center space-x-3">
                               <FormControl><RadioGroupItem value={option} /></FormControl>

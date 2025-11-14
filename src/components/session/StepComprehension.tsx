@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useForm, useWatch } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -36,8 +36,6 @@ export default function StepComprehension({ sessionData, updateSessionData }: St
       q2: sessionData.comprehension?.q2 || '',
     },
   });
-
-  const watchedValues = useWatch({ control: form.control });
   
   const [shuffledQ1Options, setShuffledQ1Options] = useState<string[] | null>(null);
   const [shuffledQ2Options, setShuffledQ2Options] = useState<string[] | null>(null);
@@ -63,10 +61,6 @@ export default function StepComprehension({ sessionData, updateSessionData }: St
   }, [scenarioName]);
 
 
-  useEffect(() => {
-    updateSessionData({ comprehension: { q1: watchedValues.q1 || null, q2: watchedValues.q2 || null } });
-  }, [watchedValues, updateSessionData]);
-
   if (!shuffledQ1Options || !shuffledQ2Options) {
     // Render a loading state until the options are shuffled on the client.
     // This is crucial for preventing hydration mismatch.
@@ -77,6 +71,11 @@ export default function StepComprehension({ sessionData, updateSessionData }: St
         </div>
     );
   }
+  
+  const handleValueChange = (values: ComprehensionFormValues) => {
+    updateSessionData({ comprehension: values });
+  };
+
 
   return (
     <>
@@ -99,7 +98,13 @@ export default function StepComprehension({ sessionData, updateSessionData }: St
                 <FormItem className="space-y-3 p-4 border rounded-lg bg-secondary/30">
                   <FormLabel className="font-semibold text-base">a. According to the scenario, what is the name of the Organization whose financial advisory concerns you just reviewed?</FormLabel>
                   <FormControl>
-                    <RadioGroup onValueChange={field.onChange} value={field.value} className="space-y-1">
+                    <RadioGroup 
+                      onValueChange={(value) => {
+                        field.onChange(value);
+                        handleValueChange({ ...form.getValues(), q1: value });
+                      }} 
+                      value={field.value} className="space-y-1"
+                    >
                       {shuffledQ1Options.map(option => (
                          <Label key={option} htmlFor={`q1-${option}`} className="flex items-start space-x-3 p-3 cursor-pointer has-[:checked]:text-accent transition-colors">
                             <FormControl><RadioGroupItem value={option} id={`q1-${option}`} className="mt-1" /></FormControl>
@@ -118,7 +123,13 @@ export default function StepComprehension({ sessionData, updateSessionData }: St
                 <FormItem className="space-y-3 p-4 border rounded-lg bg-secondary/30">
                   <FormLabel className="font-semibold text-base">b. What was the approximate time horizon mentioned for maintaining liquidity in the advisory?</FormLabel>
                   <FormControl>
-                    <RadioGroup onValueChange={field.onChange} value={field.value} className="space-y-1">
+                    <RadioGroup 
+                      onValueChange={(value) => {
+                          field.onChange(value);
+                          handleValueChange({ ...form.getValues(), q2: value });
+                      }}
+                      value={field.value} className="space-y-1"
+                    >
                        {shuffledQ2Options.map(option => (
                          <Label key={option} htmlFor={`q2-${option}`} className="flex items-start space-x-3 p-3 cursor-pointer has-[:checked]:text-accent transition-colors">
                             <FormControl><RadioGroupItem value={option} id={`q2-${option}`} className="mt-1" /></FormControl>

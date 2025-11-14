@@ -165,16 +165,14 @@ export default function StepInitialAssessment({ sessionData, updateSessionData, 
     setIsLastAssessmentSection(isLastSection);
   }, [isLastSection, setIsLastAssessmentSection]);
   
-  useEffect(() => {
-    const currentSectionKey = sections[currentSectionIndex].key;
+  const handleValueChange = (newValues: any) => {
     updateSessionData({
       initialAssessments: {
         ...sessionData.initialAssessments,
-        [currentSectionKey]: watchedValues,
+        [currentSection.key]: newValues,
       },
     });
-  }, [watchedValues, updateSessionData, sessionData.initialAssessments, currentSectionIndex]);
-
+  };
 
   const handleNextSection = async () => {
     const isValid = await form.trigger();
@@ -200,10 +198,21 @@ export default function StepInitialAssessment({ sessionData, updateSessionData, 
                     <FormLabel>{q.question}</FormLabel>
                     <FormControl>
                         {q.isInput ? (
-                             <Input {...field} placeholder="Your answer" value={field.value || ""} />
+                             <Input 
+                                {...field}
+                                placeholder="Your answer" 
+                                value={field.value || ""} 
+                                onChange={(e) => {
+                                  field.onChange(e);
+                                  handleValueChange({ ...form.getValues(), [key]: e.target.value });
+                                }}
+                             />
                         ) : (
                             <RadioGroup
-                                onValueChange={field.onChange}
+                                onValueChange={(value) => {
+                                    field.onChange(value);
+                                    handleValueChange({ ...form.getValues(), [key]: value });
+                                }}
                                 value={field.value || ""}
                                 className="space-y-2"
                             >
@@ -223,7 +232,15 @@ export default function StepInitialAssessment({ sessionData, updateSessionData, 
                             render={({ field }) => (
                                 <FormItem className="pt-2">
                                     <FormControl>
-                                        <Input {...field} placeholder="Please specify" value={field.value || ""} />
+                                        <Input 
+                                          {...field}
+                                          placeholder="Please specify" 
+                                          value={field.value || ""}
+                                          onChange={(e) => {
+                                            field.onChange(e);
+                                            handleValueChange({ ...form.getValues(), q2_other: e.target.value });
+                                          }}
+                                        />
                                     </FormControl>
                                 </FormItem>
                             )}
@@ -236,7 +253,15 @@ export default function StepInitialAssessment({ sessionData, updateSessionData, 
                             render={({ field }) => (
                                 <FormItem className="pt-2">
                                     <FormControl>
-                                        <Input {...field} placeholder="Please specify" value={field.value || ""} />
+                                        <Input 
+                                          {...field} 
+                                          placeholder="Please specify" 
+                                          value={field.value || ""}
+                                          onChange={(e) => {
+                                            field.onChange(e);
+                                            handleValueChange({ ...form.getValues(), q1_other: e.target.value });
+                                          }}
+                                        />
                                     </FormControl>
                                 </FormItem>
                             )}
