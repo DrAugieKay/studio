@@ -71,8 +71,8 @@ const organizationalProfileQuestions = {
         options: ['Less than 100,000', '100,000 – 1 million', '1 million – 10 million', 'More than 10 million', 'I do not know', 'Not applicable / Student'],
     },
     q3: {
-        question: 'iii. How many employees work at your organization?',
-        options: ['Fewer than 100 employees', '100 - 999 employees', '1,000 - 9,999 employees', '10,000 or more employees', 'I do not know', 'Not applicable / Student'],
+        question: 'iii. Which best describes your organization’s size and employee strength?',
+        options: ['Small business or startup (typically <100 employees)', 'Mid-sized firm or division (100–999 employees)', 'Large organization or multinational (1,000+ employees)', 'Not applicable / Student', 'I do not know'],
     },
     q4: {
         question: 'iv. Which best describes your organization\'s ownership structure?',
@@ -166,6 +166,7 @@ export default function StepInitialAssessment({ sessionData, updateSessionData, 
   }, [isLastSection, setIsLastAssessmentSection]);
   
   const handleValueChange = (formValues: any) => {
+    // Sanitize data: replace undefined with null
     const sanitizedValues: Record<string, string | null> = {};
     for (const key in formValues) {
         sanitizedValues[key] = formValues[key] === undefined ? null : formValues[key];

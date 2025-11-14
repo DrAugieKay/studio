@@ -141,7 +141,7 @@ export default function DataAnalysisPage() {
 
                 op_q_i: session.initialAssessments?.organizationalProfile?.q1 || 'NA',
                 budget_scope: session.initialAssessments?.organizationalProfile?.q2 || 'NA',
-                op_q_iii: session.initialAssessments?.organizationalProfile?.q3 || 'NA',
+                employee_count: session.initialAssessments?.organizationalProfile?.q3 || 'NA',
                 op_q_iv: session.initialAssessments?.organizationalProfile?.q4 || 'NA',
                 op_q_v: session.initialAssessments?.organizationalProfile?.q5 || 'NA',
                 op_q_vi: session.initialAssessments?.organizationalProfile?.q6 || 'NA',

@@ -194,7 +194,7 @@ export const QUESTION_SETS = {
         questions: {
             q1: "Primary Industry",
             q2: "Approximate annual budget or financial scope of decisions",
-            q3: "Number of Employees",
+            q3: "Organization size and employee strength",
             q4: "Ownership Structure",
             q5: "Appetite for Financial Risk",
             q6: "Formal Investment Policy",
