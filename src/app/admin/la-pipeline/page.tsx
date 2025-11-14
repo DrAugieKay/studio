@@ -15,6 +15,7 @@ import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, where, doc } from 'firebase/firestore';
 import type { SessionData } from '@/lib/types';
 import { updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { cn } from '@/lib/utils';
 
 const EXPERIMENT_ID = 'exp_001';
 
@@ -35,11 +36,11 @@ export default function LAPipelinePage() {
 
   const rationaleQuery = useMemoFirebase(() => {
     if (!firestore) return null;
-    // Fetch participants who have a non-empty rationale
+    // Fetch participants who have a non-empty rationale. 
+    // Using '>' with an empty string is the correct way to find documents where the field is a non-empty string.
     return query(
         collection(firestore, `experiment_meta/${EXPERIMENT_ID}/participants`),
-        where('openRationale', '!=', null),
-        where('openRationale', '!=', '')
+        where('openRationale', '>', '')
     );
   }, [firestore]);
 
@@ -240,5 +241,3 @@ export default function LAPipelinePage() {
     </div>
   );
 }
-
-    

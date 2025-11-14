@@ -24,10 +24,11 @@ export default function ManualCodingPage() {
 
   const codingTasksQuery = useMemoFirebase(() => {
     if (!firestore) return null;
+    // Fetch participants who have a non-empty rationale.
+    // Using '>' with an empty string is the correct way to find documents where the field is a non-empty string.
     return query(
         collection(firestore, `experiment_meta/${EXPERIMENT_ID}/participants`),
-        where('openRationale', '!=', null),
-        where('openRationale', '!=', '')
+        where('openRationale', '>', '')
     );
   }, [firestore]);
 
