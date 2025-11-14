@@ -14,7 +14,7 @@ import { collection, query, where } from 'firebase/firestore';
 
 const EXPERIMENT_ID = 'exp_001';
 
-const predefinedCodes = ['Capital Preservation', 'Risk Aversion', 'Balanced Approach', 'Growth Focus', 'Trust in Advisory', 'Strategic Alignment'];
+const predefinedCodes = ['Capital Preservation', 'Risk Aversion', 'Balanced Approach', 'Growth Focus', 'Trust in Advisory', 'Strategic Alignment', 'Future Uncertainty', 'Personal Experience'];
 
 export default function ManualCodingPage() {
   const [selectedTask, setSelectedTask] = useState<CodingTask | null>(null);
@@ -26,7 +26,8 @@ export default function ManualCodingPage() {
     if (!firestore) return null;
     return query(
         collection(firestore, `experiment_meta/${EXPERIMENT_ID}/participants`),
-        where('openRationale', '!=', null)
+        where('openRationale', '!=', null),
+        where('openRationale', '!=', '')
     );
   }, [firestore]);
 
@@ -34,15 +35,22 @@ export default function ManualCodingPage() {
 
   const codingTasks: CodingTask[] = useMemo(() => {
     if (!sessions) return [];
-    return sessions.map(session => ({
+    // In a real app, coder data would come from a separate 'manual_coding' collection.
+    // Here, we simulate it for demonstration.
+    return sessions.map((session, index) => ({
         id: session.id,
         rationale: session.openRationale || '',
-        // These would come from another collection in a real app
-        coderA_codes: session.id.includes('D5E6F7') ? ['Balanced Approach', 'Growth Focus'] : ['Risk Aversion'], 
-        coderB_codes: session.id.includes('D5E6F7') ? ['Balanced Approach'] : ['Risk Aversion'],
+        coderA_codes: index % 3 === 0 ? ['Risk Aversion', 'Future Uncertainty'] : index % 3 === 1 ? ['Trust in Advisory'] : ['Capital Preservation'],
+        coderB_codes: index % 2 === 0 ? ['Risk Aversion'] : ['Trust in Advisory', 'Balanced Approach'],
     }));
   }, [sessions]);
 
+  // Set the first task as selected by default when data loads
+  useState(() => {
+    if (!selectedTask && codingTasks.length > 0) {
+      setSelectedTask(codingTasks[0]);
+    }
+  });
 
   const handleSelectTask = (task: CodingTask) => {
     setSelectedTask(task);
@@ -59,7 +67,7 @@ export default function ManualCodingPage() {
 
   return (
     <div className="w-full">
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-6">
             <div>
                 <h1 className="text-3xl font-bold font-headline">Manual Coding & Validation</h1>
                 <p className="text-muted-foreground mt-1">Review, code, and validate open-ended participant rationale.</p>
@@ -69,11 +77,12 @@ export default function ManualCodingPage() {
          <Card className="mb-8">
           <CardHeader>
             <CardTitle>Inter-Rater Reliability (Cohen's Kappa)</CardTitle>
+            <CardDescription>Measures agreement between coders. A score of 0.70 or higher is generally considered good.</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="flex items-center gap-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
               <p className={`text-5xl font-bold ${kappaScore >= 0.7 ? 'text-green-600' : 'text-amber-600'}`}>{kappaScore.toFixed(2)}</p>
-              <div>
+              <div className="w-full">
                 {kappaScore >= 0.7 ? (
                    <Alert className="border-green-500/50 text-green-700 [&>svg]:text-green-700">
                      <CheckCircle2 className="h-4 w-4" />
@@ -98,21 +107,21 @@ export default function ManualCodingPage() {
             <Card>
               <CardHeader>
                 <CardTitle>Double-Coding Queue</CardTitle>
-                <CardDescription>Select a response to validate.</CardDescription>
+                <CardDescription>Select a response to validate ({codingTasks.length} available).</CardDescription>
               </CardHeader>
               <CardContent>
                 <ScrollArea className="h-96">
-                  <div className="space-y-2">
+                  <div className="space-y-1 pr-4">
                     {codingTasks.length > 0 ? codingTasks.map(task => (
                       <Button
                         key={task.id}
                         variant={selectedTask?.id === task.id ? 'secondary' : 'ghost'}
-                        className="w-full justify-start text-left h-auto"
+                        className="w-full h-auto justify-start text-left p-3"
                         onClick={() => handleSelectTask(task)}
                       >
                         <div>
-                          <p className="font-semibold">{task.id}</p>
-                          <p className="text-xs text-muted-foreground truncate">{task.rationale}</p>
+                          <p className="font-semibold text-sm">{task.id}</p>
+                          <p className="text-xs text-muted-foreground line-clamp-2">{task.rationale}</p>
                         </div>
                       </Button>
                     )) : (
@@ -130,11 +139,12 @@ export default function ManualCodingPage() {
           <div className="lg:col-span-2">
              {selectedTask ? (
                 <ManualCodingTask 
+                  key={selectedTask.id} // Add key to force re-mount on task change
                   task={selectedTask}
                   predefinedCodes={predefinedCodes}
                 />
              ) : (
-                <div className="flex items-center justify-center h-full text-muted-foreground rounded-lg border border-dashed">
+                <div className="flex items-center justify-center h-full text-muted-foreground rounded-lg border border-dashed p-8">
                     <p>Select a participant response to begin validation.</p>
                 </div>
              )}
@@ -143,5 +153,3 @@ export default function ManualCodingPage() {
     </div>
   );
 }
-
-    
