@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useForm, useWatch } from 'react-hook-form';
@@ -35,7 +34,7 @@ const sourceOptions = [
     'AI system',
     'Human advisor',
     'Both',
-    'I don\'t remember',
+    'I do not remember',
 ]
 
 export default function StepManipulationChecks({ sessionData, updateSessionData }: StepProps) {

@@ -51,10 +51,14 @@ export default function StepObjectiveChoice({ sessionData, updateSessionData }: 
   const watchedValues = useWatch({ control: form.control });
 
   useEffect(() => {
+    // This effect runs whenever any form value changes.
+    // We check if the main choice has been made and update session state.
+    // This replaces the need for a separate "Save" button within the step.
     if (watchedValues.choice && !choiceMade) {
       updateSessionData({ objectiveChoice: watchedValues.choice });
       setChoiceMade(true);
     }
+    // We also update the subjective DQ answers as they are filled out.
     if (watchedValues.subjectiveDQ) {
       updateSessionData({ subjectiveDQ: watchedValues.subjectiveDQ });
     }
