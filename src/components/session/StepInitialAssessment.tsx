@@ -67,8 +67,8 @@ const organizationalProfileQuestions = {
         options: ['Technology / Software', 'Manufacturing / Industrial', 'Financial Services', 'Healthcare / Pharmaceuticals', 'Retail / Consumer Goods', 'Services / Consulting', 'Energy / Utilities', 'Other', 'Not applicable / Student'],
     },
     q2: {
-        question: 'ii. What is the approximate annual revenue of your organization?',
-        options: ['Less than $1 million', '$1 million – $50 million', '$50 million – $500 million', 'More than $500 million', 'I do not know', 'Not applicable / Student'],
+        question: 'ii. What is the approximate annual budget or financial scope of the decisions you are involved in? (in the applicable currency)',
+        options: ['Less than 100,000', '100,000 – 1 million', '1 million – 10 million', 'More than 10 million', 'I do not know', 'Not applicable / Student'],
     },
     q3: {
         question: 'iii. How many employees work at your organization?',
@@ -166,7 +166,6 @@ export default function StepInitialAssessment({ sessionData, updateSessionData, 
   }, [isLastSection, setIsLastAssessmentSection]);
   
   const handleValueChange = (formValues: any) => {
-    // Sanitize data: replace undefined with null
     const sanitizedValues: Record<string, string | null> = {};
     for (const key in formValues) {
         sanitizedValues[key] = formValues[key] === undefined ? null : formValues[key];

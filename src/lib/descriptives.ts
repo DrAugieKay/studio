@@ -193,7 +193,7 @@ export const QUESTION_SETS = {
         type: 'frequency',
         questions: {
             q1: "Primary Industry",
-            q2: "Annual Revenue",
+            q2: "Approximate annual budget or financial scope of decisions",
             q3: "Number of Employees",
             q4: "Ownership Structure",
             q5: "Appetite for Financial Risk",
