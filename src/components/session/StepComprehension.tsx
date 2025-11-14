@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -37,7 +37,7 @@ export default function StepComprehension({ sessionData, updateSessionData }: St
     },
   });
 
-  const { watch } = form;
+  const watchedValues = useWatch({ control: form.control });
   
   const [shuffledQ1Options, setShuffledQ1Options] = useState<string[] | null>(null);
   const [shuffledQ2Options, setShuffledQ2Options] = useState<string[] | null>(null);
@@ -64,11 +64,8 @@ export default function StepComprehension({ sessionData, updateSessionData }: St
 
 
   useEffect(() => {
-    const subscription = watch((value) => {
-      updateSessionData({ comprehension: { q1: value.q1 || null, q2: value.q2 || null } });
-    });
-    return () => subscription.unsubscribe();
-  }, [watch, updateSessionData]);
+    updateSessionData({ comprehension: { q1: watchedValues.q1 || null, q2: watchedValues.q2 || null } });
+  }, [watchedValues, updateSessionData]);
 
   if (!shuffledQ1Options || !shuffledQ2Options) {
     // Render a loading state until the options are shuffled on the client.
