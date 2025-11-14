@@ -11,9 +11,10 @@ import { Button } from '@/components/ui/button';
 import { Play, Loader2 } from 'lucide-react';
 import { calculateLaObjective } from '@/ai/flows/calculate-la-objective';
 import { useToast } from '@/hooks/use-toast';
-import { useCollection, useFirestore, useMemoFirebase, updateDocumentNonBlocking } from '@/firebase';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, where, doc } from 'firebase/firestore';
 import type { SessionData } from '@/lib/types';
+import { updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
 const EXPERIMENT_ID = 'exp_001';
 
@@ -116,7 +117,9 @@ export default function LAPipelinePage() {
     });
   };
 
-  const jobsInQueue = scores.filter(s => s.status === 'Queued' || s.status === 'Processing').length;
+  const jobsInQueue = useMemo(() => {
+    return scores.filter(s => s.status === 'Queued').length;
+  }, [scores]);
 
   return (
     <div className="w-full">
@@ -131,7 +134,7 @@ export default function LAPipelinePage() {
           ) : (
             <Play className="mr-2 h-4 w-4" />
           )}
-          {isProcessing ? 'Processing...' : 'Run Pending Jobs'}
+          {isProcessing ? `Processing ${jobsInQueue} Jobs...` : `Run ${jobsInQueue} Pending Jobs`}
         </Button>
       </div>
 
@@ -213,12 +216,13 @@ export default function LAPipelinePage() {
                                     score.status === 'Failed' ? 'destructive' : 
                                     'secondary'
                                 }
-                                className={
+                                className={cn(
+                                    'text-xs',
                                     score.status === 'Completed' ? 'bg-green-600/20 text-green-700 border-green-600/30' : 
-                                    score.status === 'Processing' ? 'bg-yellow-600/20 text-yellow-700 border-yellow-600/30' :
+                                    score.status === 'Processing' ? 'bg-yellow-600/20 text-yellow-700 border-yellow-600/30 animate-pulse' :
                                     score.status === 'Failed' ? 'bg-red-600/20 text-red-700 border-red-600/30' :
                                     'bg-blue-600/20 text-blue-700 border-blue-600/30'
-                                }
+                                )}
                             >
                                 {score.status}
                             </Badge>
@@ -236,3 +240,5 @@ export default function LAPipelinePage() {
     </div>
   );
 }
+
+    
