@@ -65,7 +65,7 @@ const END_SURVEY_STEP = stepComponents.length - 1;
 export default function StartPage() {
   const [currentStep, setCurrentStep] = useState(0);
   const [sessionData, setSessionData] = useState<Partial<SessionData> | null>(null);
-  const [isCreatingSession, setIsCreatingSession] = useState(false);
+  const [hasCreatedDocument, setHasCreatedDocument] = useState(false);
   const [isLastAssessmentSection, setIsLastAssessmentSection] = useState(false);
   const [isLastMediatorSection, setIsLastMediatorSection] = useState(false);
   const [isLastControlSection, setIsLastControlSection] = useState(false);
@@ -75,32 +75,38 @@ export default function StartPage() {
   const { user, isUserLoading } = useUser();
   const router = useRouter();
 
+  // This effect ensures we have an anonymous user, but does NOT create the session document.
   useEffect(() => {
-    // This consolidated effect handles both sign-in and session creation to prevent race conditions.
-    if (isUserLoading || !auth || !firestore) {
-      return; // Wait until Firebase services and user state are known.
-    }
-
-    if (!user && !isCreatingSession) {
-      // If there's no user and we're not already in the process of creating a session,
-      // start the anonymous sign-in process.
+    if (!isUserLoading && !user) {
       initiateAnonymousSignIn(auth);
-    } else if (user && !sessionData && !isCreatingSession) {
-      // If we have a user, but no session data yet, and we're not creating a session,
-      // this is the one and only time we should create the session document.
-      
-      // 1. Set a lock to prevent this block from running again.
-      setIsCreatingSession(true); 
+    }
+  }, [user, isUserLoading, auth]);
 
+  
+  // This effect scrolls the window to the top whenever the current step changes.
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [currentStep]);
+
+
+  const updateSessionData = (data: Partial<SessionData>) => {
+    if (!user || !firestore) {
+      console.warn("Update attempted before user or firestore is available.");
+      return;
+    }
+  
+    // This is the new, robust session creation logic.
+    // It only triggers ONCE, upon the first actual data update.
+    if (!hasCreatedDocument) {
       const seed = Math.random().toString(36).substring(2, 15);
       const sources: ExperimentalCondition['advisorySource'][] = ['ai', 'human'];
       const frames: ExperimentalCondition['linguisticFrame'][] = ['abstract', 'concrete'];
       const scenarios: ExperimentalCondition['scenario'][] = ['xyz', 'techtrend'];
-
+  
       const randomSourceIndex = Math.floor(Math.random() * sources.length);
       const randomFrameIndex = Math.floor(Math.random() * frames.length);
       const randomScenarioIndex = Math.floor(Math.random() * scenarios.length);
-
+  
       const assignedCondition: ExperimentalCondition = {
         advisorySource: sources[randomSourceIndex],
         linguisticFrame: frames[randomFrameIndex],
@@ -112,7 +118,7 @@ export default function StartPage() {
         screenWidth: window.screen.width || 0,
         screenHeight: window.screen.height || 0,
       };
-
+  
       const initialData: Partial<SessionData> = {
         id: user.uid,
         randomSeed: seed,
@@ -143,10 +149,12 @@ export default function StartPage() {
         openRationale: null,
         endTime: null,
       };
-
-      console.log('Creating unique session for UID:', user.uid);
+      
+      console.log('--- Creating unique session for UID:', user.uid);
       const participantDocRef = doc(firestore, `experiment_meta/${EXPERIMENT_ID}/participants`, user.uid);
-      setDocumentNonBlocking(participantDocRef, initialData, { merge: true });
+      // Merge with the new incoming data and save.
+      const fullInitialData = { ...initialData, ...data };
+      setDocumentNonBlocking(participantDocRef, fullInitialData, { merge: true });
 
       const experimentMetaRef = doc(firestore, 'experiment_meta', EXPERIMENT_ID);
       setDocumentNonBlocking(experimentMetaRef, {
@@ -156,25 +164,16 @@ export default function StartPage() {
         lexiconVersion: 'v1.0'
       }, { merge: true });
 
-      setSessionData(initialData);
-      // No need to unset isCreatingSession, as this component's lifecycle is for one session.
+      setSessionData(fullInitialData);
+      setHasCreatedDocument(true); // Set the lock!
+      return; // Exit after creation.
     }
-  }, [user, isUserLoading, auth, firestore, sessionData, isCreatingSession]);
-
   
-  // This effect scrolls the window to the top whenever the current step changes.
-  useEffect(() => {
-    window.scrollTo(0, 0);
-  }, [currentStep]);
-
-
-  const updateSessionData = (data: Partial<SessionData>) => {
+    // For all subsequent updates, just update the state and save to Firestore.
     setSessionData((prev) => {
         const newData = { ...prev, ...data };
-        if (user && firestore) {
-            const participantDocRef = doc(firestore, `experiment_meta/${EXPERIMENT_ID}/participants`, user.uid);
-            setDocumentNonBlocking(participantDocRef, newData, { merge: true });
-        }
+        const participantDocRef = doc(firestore, `experiment_meta/${EXPERIMENT_ID}/participants`, user.uid);
+        setDocumentNonBlocking(participantDocRef, newData, { merge: true });
         return newData;
     });
   };
@@ -247,7 +246,7 @@ export default function StartPage() {
     setIsLastControlSection,
   };
 
-  if (isUserLoading || !sessionData || !auth || !firestore) {
+  if (isUserLoading || !auth || !firestore) {
     return (
         <div className="flex flex-col items-center justify-center min-h-screen p-4">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -268,11 +267,7 @@ export default function StartPage() {
         )}
         <Card className="mt-6 shadow-xl overflow-hidden">
           <CardContent className="p-4 sm:p-6 md:p-8">
-            {sessionData.condition ? (
-              <CurrentStepComponent {...componentProps} />
-            ) : (
-               <div className="p-12 text-center">Loading session...</div>
-            )}
+             <CurrentStepComponent {...componentProps} />
           </CardContent>
         </Card>
         
