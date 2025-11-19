@@ -164,6 +164,10 @@ export default function StepInitialAssessment({ sessionData, updateSessionData, 
     return result.success;
   }, [watchedValues, currentSection.schema]);
 
+  // Scroll to top when section changes
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [currentSectionIndex]);
 
   useEffect(() => {
     setIsLastAssessmentSection(isLastSection);

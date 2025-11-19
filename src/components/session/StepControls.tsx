@@ -90,6 +90,11 @@ export default function StepControls({ sessionData, updateSessionData, setIsLast
     return result.success;
   }, [watchedValues, currentSection]);
 
+  // Scroll to top when section changes
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [currentSectionIndex]);
+
   useEffect(() => {
     setIsLastControlSection(isLastSection);
   }, [isLastSection, setIsLastControlSection]);
