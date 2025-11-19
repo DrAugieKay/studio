@@ -1,9 +1,10 @@
+
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
 import type { SessionData, ExperimentalCondition } from '@/lib/types';
 import { useAuth, useFirestore, useUser } from '@/firebase';
-import { doc } from 'firebase/firestore';
+import { doc, getDoc, setDoc } from 'firebase/firestore'; // Import getDoc
 import { useRouter } from 'next/navigation';
 
 import { Button } from '@/components/ui/button';
@@ -62,6 +63,23 @@ const DEBRIEF_STEP = stepComponents.length - 2;
 const END_SURVEY_STEP = stepComponents.length - 1;
 
 
+/**
+ * Determines the current step a user should be on based on their session data.
+ */
+const determineCurrentStep = (data: Partial<SessionData>): number => {
+    if (!data.consent) return 0;
+    if (!data.initialAssessments?.financialLiteracy || !data.initialAssessments?.roleAndExperience || !data.initialAssessments?.organizationalProfile) return 1;
+    if (data.dossierViewTime === 0) return 2; // User hasn't seen dossier yet. Dossier itself is step 3.
+    if (data.advisoryViewTime === 0) return 3; // Advisory is step 4.
+    if (!data.comprehension?.q1) return 5;
+    if (!data.manipulationChecks?.feltHuman) return 6;
+    if (!data.objectiveChoice) return 7;
+    if (!data.mediators?.advisoryCredibility) return 8;
+    if (!data.controls?.riskTolerance) return 9;
+    return 10; // Default to Debrief if all else is complete
+};
+
+
 export default function StartPage() {
   const [currentStep, setCurrentStep] = useState(0);
   const [sessionData, setSessionData] = useState<Partial<SessionData> | null>(null);
@@ -69,18 +87,54 @@ export default function StartPage() {
   const [isLastAssessmentSection, setIsLastAssessmentSection] = useState(false);
   const [isLastMediatorSection, setIsLastMediatorSection] = useState(false);
   const [isLastControlSection, setIsLastControlSection] = useState(false);
+  const [isLoadingSession, setIsLoadingSession] = useState(true);
 
   const auth = useAuth();
   const firestore = useFirestore();
   const { user, isUserLoading } = useUser();
   const router = useRouter();
 
-  // This effect ensures we have an anonymous user, but does NOT create the session document.
+  // This effect now handles the entire session loading and creation logic.
   useEffect(() => {
-    if (!isUserLoading && !user) {
-      initiateAnonymousSignIn(auth);
-    }
-  }, [user, isUserLoading, auth]);
+    const manageSession = async () => {
+        if (isUserLoading || !firestore) return; // Wait for dependencies
+
+        let currentUser = user;
+
+        // 1. Ensure we have a user
+        if (!currentUser) {
+            initiateAnonymousSignIn(auth);
+            // After sign-in, the onAuthStateChanged listener will cause this effect to re-run.
+            // We exit here and wait for the re-run with a valid user object.
+            return;
+        }
+        
+        // 2. Try to fetch existing session data
+        const participantDocRef = doc(firestore, `experiment_meta/${EXPERIMENT_ID}/participants`, currentUser.uid);
+        const docSnap = await getDoc(participantDocRef);
+
+        if (docSnap.exists()) {
+            // --- SESSION RESUMPTION ---
+            console.log('--- Resuming existing session for UID:', currentUser.uid);
+            const existingData = docSnap.data() as SessionData;
+            setSessionData(existingData);
+            setHasCreatedDocument(true);
+            
+            // Restore the user to their last step
+            const resumedStep = determineCurrentStep(existingData);
+            setCurrentStep(resumedStep);
+
+        } else {
+            // --- NEW SESSION (but only set local state) ---
+            // The document will be created on the first *actual* user interaction via updateSessionData
+            console.log('--- Preparing new session for UID:', currentUser.uid);
+            setSessionData({ id: currentUser.uid });
+        }
+        setIsLoadingSession(false);
+    };
+
+    manageSession();
+  }, [user, isUserLoading, auth, firestore]);
 
   
   // This effect scrolls the window to the top whenever the current step changes.
@@ -246,7 +300,7 @@ export default function StartPage() {
     setIsLastControlSection,
   };
 
-  if (isUserLoading || !auth || !firestore) {
+  if (isUserLoading || isLoadingSession) {
     return (
         <div className="flex flex-col items-center justify-center min-h-screen p-4">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
