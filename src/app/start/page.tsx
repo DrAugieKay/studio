@@ -154,7 +154,7 @@ export default function StartPage() {
       const participantDocRef = doc(firestore, `experiment_meta/${EXPERIMENT_ID}/participants`, user.uid);
       // Merge with the new incoming data and save.
       const fullInitialData = { ...initialData, ...data };
-      setDocumentNonBlocking(participantDocRef, fullInitialData, { merge: true });
+      setDocumentNonBlocking(participantDocRef, fullInitialData, { merge: false }); // Use merge: false to ensure it's a creation
 
       const experimentMetaRef = doc(firestore, 'experiment_meta', EXPERIMENT_ID);
       setDocumentNonBlocking(experimentMetaRef, {
