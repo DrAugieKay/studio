@@ -12,11 +12,14 @@ import type { SessionData } from '@/lib/types';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { ClipboardList } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
+
 
 type StepProps = {
   sessionData: Partial<SessionData>;
   updateSessionData: (data: Partial<SessionData>) => void;
   setIsLastAssessmentSection: (isLast: boolean) => void;
+  goToPrevStep: () => void;
 };
 
 const financialLiteracyQuestions = {
@@ -141,10 +144,11 @@ const sections = [
   }
 ];
 
-export default function StepInitialAssessment({ sessionData, updateSessionData, setIsLastAssessmentSection }: StepProps) {
+export default function StepInitialAssessment({ sessionData, updateSessionData, setIsLastAssessmentSection, goToPrevStep }: StepProps) {
   const [currentSectionIndex, setCurrentSectionIndex] = useState(0);
   const currentSection = sections[currentSectionIndex];
   const isLastSection = currentSectionIndex === sections.length - 1;
+  const isFirstSection = currentSectionIndex === 0;
 
   const form = useForm({
     resolver: zodResolver(currentSection.schema),
@@ -166,7 +170,6 @@ export default function StepInitialAssessment({ sessionData, updateSessionData, 
   }, [isLastSection, setIsLastAssessmentSection]);
   
   const handleValueChange = (formValues: any) => {
-    // Sanitize data: replace undefined with null
     const sanitizedValues: Record<string, string | null> = {};
     for (const key in formValues) {
         sanitizedValues[key] = formValues[key] === undefined ? null : formValues[key];
@@ -190,6 +193,18 @@ export default function StepInitialAssessment({ sessionData, updateSessionData, 
         const nextSectionKey = nextSection.key as keyof SessionData['initialAssessments'];
         setCurrentSectionIndex(nextSectionIndex);
         form.reset(sessionData.initialAssessments?.[nextSectionKey] || {});
+    }
+  };
+  
+  const handlePreviousSection = () => {
+    if (currentSectionIndex > 0) {
+      const prevSectionIndex = currentSectionIndex - 1;
+      const prevSection = sections[prevSectionIndex];
+      const prevSectionKey = prevSection.key as keyof SessionData['initialAssessments'];
+      setCurrentSectionIndex(prevSectionIndex);
+      form.reset(sessionData.initialAssessments?.[prevSectionKey] || {});
+    } else {
+      goToPrevStep(); // Call parent 'previous' if on the first sub-section
     }
   };
   
@@ -296,13 +311,22 @@ export default function StepInitialAssessment({ sessionData, updateSessionData, 
             <h3 className="font-semibold">{currentSection.title}</h3>
             {Object.entries(currentSection.questions).map(([key, q]) => renderQuestion(key, q))}
 
-            {!isLastSection && (
-                <div className="flex justify-end">
+            <div className="flex justify-between mt-6">
+                <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handlePreviousSection}
+                    // This button should always be visible within this component
+                >
+                    <ArrowLeft className="mr-2 h-4 w-4" />
+                    Previous
+                </Button>
+                {!isLastSection && (
                     <Button type="button" onClick={handleNextSection} disabled={!allQuestionsAnswered}>
                         Continue
                     </Button>
-                </div>
-            )}
+                )}
+            </div>
           </form>
         </Form>
       </div>

@@ -11,12 +11,13 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import type { SessionData } from '@/lib/types';
 import { Button } from '../ui/button';
 import { Textarea } from '../ui/textarea';
-import { CheckCircle } from 'lucide-react';
+import { CheckCircle, ArrowLeft } from 'lucide-react';
 
 type StepProps = {
   sessionData: Partial<SessionData>;
   updateSessionData: (data: Partial<SessionData>) => void;
   setIsLastControlSection: (isLast: boolean) => void;
+  goToPrevStep: () => void;
 };
 
 const rtLikertOptions = [
@@ -68,7 +69,7 @@ const sections = [
   },
 ];
 
-export default function StepControls({ sessionData, updateSessionData, setIsLastControlSection }: StepProps) {
+export default function StepControls({ sessionData, updateSessionData, setIsLastControlSection, goToPrevStep }: StepProps) {
   const [currentSectionIndex, setCurrentSectionIndex] = useState(0);
   const currentSection = sections[currentSectionIndex];
   const isLastSection = currentSectionIndex === sections.length - 1;
@@ -96,7 +97,6 @@ export default function StepControls({ sessionData, updateSessionData, setIsLast
   const handleValueChange = (formValues: any) => {
     const currentKey = currentSection.key;
     if (currentKey !== 'openRationale') {
-        // Sanitize data: replace undefined with null
         const sanitizedValues: Record<string, string | null> = {};
         for (const key in formValues) {
             sanitizedValues[key] = formValues[key] === undefined ? null : formValues[key];
@@ -117,7 +117,6 @@ export default function StepControls({ sessionData, updateSessionData, setIsLast
     const isValid = await form.trigger();
     if (!isValid) return;
 
-    // Data is already saved by the useEffect watchers, so we just navigate.
     if (!isLastSection) {
       const nextSectionIndex = currentSectionIndex + 1;
       const nextSection = sections[nextSectionIndex];
@@ -129,6 +128,22 @@ export default function StepControls({ sessionData, updateSessionData, setIsLast
       );
     }
   };
+
+  const handlePreviousSection = () => {
+    if (currentSectionIndex > 0) {
+      const prevSectionIndex = currentSectionIndex - 1;
+      const prevSection = sections[prevSectionIndex];
+      setCurrentSectionIndex(prevSectionIndex);
+      form.reset(
+        prevSection.key === 'openRationale'
+        ? { rationale: sessionData.openRationale || '' }
+        : sessionData.controls?.[prevSection.key as keyof SessionData['controls']] || {}
+      );
+    } else {
+      goToPrevStep();
+    }
+  };
+
 
   return (
     <>
@@ -198,13 +213,22 @@ export default function StepControls({ sessionData, updateSessionData, setIsLast
               )}
             </div>
 
-            {!isLastSection && (
-              <div className="flex justify-end">
-                <Button type="button" onClick={handleNextSection} disabled={!allQuestionsAnswered}>
-                  Continue
+            <div className="flex justify-between mt-6">
+                <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handlePreviousSection}
+                >
+                    <ArrowLeft className="mr-2 h-4 w-4" />
+                    Previous
                 </Button>
-              </div>
-            )}
+                {!isLastSection && (
+                  <Button type="button" onClick={handleNextSection} disabled={!allQuestionsAnswered}>
+                    Continue
+                  </Button>
+                )}
+            </div>
+
           </form>
         </Form>
       </div>

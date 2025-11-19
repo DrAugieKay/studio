@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -193,7 +192,7 @@ export default function StartPage() {
   }
 
   const handlePrevious = () => {
-    if (currentStep > 0) {
+    if (currentStep > 1) { // Block going back to consent page
       setCurrentStep(currentStep - 1);
     }
   };
@@ -235,6 +234,7 @@ export default function StartPage() {
     updateSessionData,
     endSurvey,
     goToNextStep: handleNext,
+    goToPrevStep: handlePrevious,
     handleCompleteSurvey, // Pass the navigation function down
     setIsLastAssessmentSection,
     setIsLastMediatorSection,
@@ -275,7 +275,7 @@ export default function StartPage() {
             <Button
               variant="outline"
               onClick={handlePrevious}
-              disabled={currentStep === 0}
+              disabled={currentStep <= 1} // Disable on Consent and first step after
             >
               <ArrowLeft className="mr-2 h-4 w-4" />
               Previous

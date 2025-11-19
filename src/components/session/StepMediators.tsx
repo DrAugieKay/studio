@@ -10,12 +10,13 @@ import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import type { SessionData } from '@/lib/types';
 import { Button } from '../ui/button';
-import { Lightbulb } from 'lucide-react';
+import { Lightbulb, ArrowLeft } from 'lucide-react';
 
 type StepProps = {
   sessionData: Partial<SessionData>;
   updateSessionData: (data: Partial<SessionData>) => void;
   setIsLastMediatorSection: (isLast: boolean) => void;
+  goToPrevStep: () => void;
 };
 
 const likertOptions = [
@@ -93,7 +94,7 @@ const sections = [
 ];
 
 
-export default function StepMediators({ sessionData, updateSessionData, setIsLastMediatorSection }: StepProps) {
+export default function StepMediators({ sessionData, updateSessionData, setIsLastMediatorSection, goToPrevStep }: StepProps) {
   const [currentSectionIndex, setCurrentSectionIndex] = useState(0);
   const currentSection = sections[currentSectionIndex];
   const isLastSection = currentSectionIndex === sections.length - 1;
@@ -116,7 +117,6 @@ export default function StepMediators({ sessionData, updateSessionData, setIsLas
   }, [isLastSection, setIsLastMediatorSection]);
 
   const handleValueChange = (formValues: any) => {
-    // Sanitize data: replace undefined with null
     const sanitizedValues: Record<string, string | null> = {};
     for (const key in formValues) {
         sanitizedValues[key] = formValues[key] === undefined ? null : formValues[key];
@@ -139,6 +139,18 @@ export default function StepMediators({ sessionData, updateSessionData, setIsLas
       const nextSectionKey = sections[nextSectionIndex].key as keyof SessionData['mediators'];
       setCurrentSectionIndex(nextSectionIndex);
       form.reset(sessionData.mediators?.[nextSectionKey] || {});
+    }
+  };
+
+  const handlePreviousSection = () => {
+    if (currentSectionIndex > 0) {
+      const prevSectionIndex = currentSectionIndex - 1;
+      const prevSection = sections[prevSectionIndex];
+      const prevSectionKey = prevSection.key as keyof SessionData['mediators'];
+      setCurrentSectionIndex(prevSectionIndex);
+      form.reset(sessionData.mediators?.[prevSectionKey] || {});
+    } else {
+      goToPrevStep();
     }
   };
 
@@ -189,14 +201,23 @@ export default function StepMediators({ sessionData, updateSessionData, setIsLas
                 />
               ))}
             </div>
-
-            {!isLastSection && (
-              <div className="flex justify-end">
-                <Button type="button" onClick={handleNextSection} disabled={!allQuestionsAnswered}>
-                  Continue
+            
+            <div className="flex justify-between mt-6">
+                <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handlePreviousSection}
+                >
+                    <ArrowLeft className="mr-2 h-4 w-4" />
+                    Previous
                 </Button>
-              </div>
-            )}
+                {!isLastSection && (
+                  <Button type="button" onClick={handleNextSection} disabled={!allQuestionsAnswered}>
+                    Continue
+                  </Button>
+                )}
+            </div>
+
           </form>
         </Form>
       </div>
