@@ -65,6 +65,7 @@ const END_SURVEY_STEP = stepComponents.length - 1;
 export default function StartPage() {
   const [currentStep, setCurrentStep] = useState(0);
   const [sessionData, setSessionData] = useState<Partial<SessionData> | null>(null);
+  const [isCreatingSession, setIsCreatingSession] = useState(false);
   const [isLastAssessmentSection, setIsLastAssessmentSection] = useState(false);
   const [isLastMediatorSection, setIsLastMediatorSection] = useState(false);
   const [isLastControlSection, setIsLastControlSection] = useState(false);
@@ -75,16 +76,22 @@ export default function StartPage() {
   const router = useRouter();
 
   useEffect(() => {
-    // Start anonymous sign-in process when the component mounts
-    if (!user && !isUserLoading && auth) {
-      initiateAnonymousSignIn(auth);
+    // This consolidated effect handles both sign-in and session creation to prevent race conditions.
+    if (isUserLoading || !auth || !firestore) {
+      return; // Wait until Firebase services and user state are known.
     }
-  }, [user, isUserLoading, auth]);
 
-  useEffect(() => {
-    // This effect runs only on the client side after mount.
-    // It handles session creation which uses browser-specific APIs and prevents hydration errors.
-    if (user && !sessionData && firestore) {
+    if (!user && !isCreatingSession) {
+      // If there's no user and we're not already in the process of creating a session,
+      // start the anonymous sign-in process.
+      initiateAnonymousSignIn(auth);
+    } else if (user && !sessionData && !isCreatingSession) {
+      // If we have a user, but no session data yet, and we're not creating a session,
+      // this is the one and only time we should create the session document.
+      
+      // 1. Set a lock to prevent this block from running again.
+      setIsCreatingSession(true); 
+
       const seed = Math.random().toString(36).substring(2, 15);
       const sources: ExperimentalCondition['advisorySource'][] = ['ai', 'human'];
       const frames: ExperimentalCondition['linguisticFrame'][] = ['abstract', 'concrete'];
@@ -113,7 +120,6 @@ export default function StartPage() {
         status: 'In Progress',
         condition: assignedCondition,
         deviceInfo,
-        // Initialize all fields to prevent Firestore 'undefined' errors
         consent: false,
         consent_ageCheck: null,
         consent_isEmployed: null,
@@ -138,9 +144,7 @@ export default function StartPage() {
         endTime: null,
       };
 
-      console.log('Assigned Condition:', assignedCondition);
-      console.log('Creating participant document for UID:', user.uid);
-
+      console.log('Creating unique session for UID:', user.uid);
       const participantDocRef = doc(firestore, `experiment_meta/${EXPERIMENT_ID}/participants`, user.uid);
       setDocumentNonBlocking(participantDocRef, initialData, { merge: true });
 
@@ -153,8 +157,10 @@ export default function StartPage() {
       }, { merge: true });
 
       setSessionData(initialData);
+      // No need to unset isCreatingSession, as this component's lifecycle is for one session.
     }
-  }, [user, sessionData, firestore]);
+  }, [user, isUserLoading, auth, firestore, sessionData, isCreatingSession]);
+
   
   // This effect scrolls the window to the top whenever the current step changes.
   useEffect(() => {
