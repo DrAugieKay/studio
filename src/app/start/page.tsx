@@ -76,11 +76,11 @@ const resumeToStep = (data: Partial<SessionData>): number => {
     }
     // Step 2 is the scenario intro. After this is the dossier.
     // If dossier hasn't been viewed, they should start at the scenario intro.
-    if (data.dossierViewTime === undefined || data.dossierViewTime === 0) {
+    if (data.dossierViewTime === undefined) {
         return 2; 
     }
     // After dossier, they must review the advisory.
-    if (data.advisoryViewTime === undefined || data.advisoryViewTime === 0) {
+    if (data.advisoryViewTime === undefined) {
         return 4; // Go to Advisory step
     }
     if (!data.comprehension?.q1 || !data.comprehension?.q2) {
@@ -108,7 +108,6 @@ const resumeToStep = (data: Partial<SessionData>): number => {
 export default function StartPage() {
   const [currentStep, setCurrentStep] = useState(0);
   const [sessionData, setSessionData] = useState<Partial<SessionData> | null>(null);
-  const [hasCreatedDocument, setHasCreatedDocument] = useState(false);
   const [isLastAssessmentSection, setIsLastAssessmentSection] = useState(false);
   const [isLastMediatorSection, setIsLastMediatorSection] = useState(false);
   const [isLastControlSection, setIsLastControlSection] = useState(false);
@@ -141,74 +140,23 @@ export default function StartPage() {
             console.log('--- Resuming existing session for UID:', currentUser.uid);
             const existingData = docSnap.data() as SessionData;
             setSessionData(existingData);
-            setHasCreatedDocument(true);
             
             const resumedStep = resumeToStep(existingData);
             setCurrentStep(resumedStep);
 
         } else {
-            // --- NEW SESSION INITIALIZATION (LOCAL ONLY) ---
-            console.log('--- Preparing new session for UID:', currentUser.uid);
-            const seed = Math.random().toString(36).substring(2, 15);
-            const sources: ExperimentalCondition['advisorySource'][] = ['ai', 'human'];
-            const frames: ExperimentalCondition['linguisticFrame'][] = ['abstract', 'concrete'];
-            const scenarios: ExperimentalCondition['scenario'][] = ['xyz', 'techtrend'];
-        
-            const randomSourceIndex = Math.floor(Math.random() * sources.length);
-            const randomFrameIndex = Math.floor(Math.random() * frames.length);
-            const randomScenarioIndex = Math.floor(Math.random() * scenarios.length);
-        
-            const assignedCondition: ExperimentalCondition = {
-              advisorySource: sources[randomSourceIndex],
-              linguisticFrame: frames[randomFrameIndex],
-              scenario: scenarios[randomScenarioIndex],
-            };
-            
-            const deviceInfo = {
-              userAgent: navigator.userAgent || 'Unknown',
-              screenWidth: window.screen.width || 0,
-              screenHeight: window.screen.height || 0,
-            };
-        
-            const initialData: SessionData = {
-              id: currentUser.uid,
-              randomSeed: seed,
-              startTime: new Date().toISOString(),
-              status: 'In Progress',
-              condition: assignedCondition,
-              deviceInfo,
-              consent: false,
-              consent_ageCheck: null,
-              consent_isEmployed: null,
-              consent_hasParticipated: null,
-              consent_consentGiven: null,
-              initialAssessments: {
-                  financialLiteracy: null,
-                  roleAndExperience: null,
-                  organizationalProfile: null,
-              },
-              dossierViewTime: 0,
-              dossierScrollCount: 0,
-              advisoryViewTime: 0,
-              advisoryScrollCount: 0,
-              comprehension: {},
-              manipulationChecks: {},
-              objectiveChoice: null,
-              subjectiveDQ: {},
-              mediators: {},
-              controls: {},
-              openRationale: null,
-              endTime: null,
-            };
-            
-            setSessionData(initialData);
-            setCurrentStep(0); // Explicitly start new users at the Consent step.
+            // --- NEW SESSION (NO DOCUMENT YET) ---
+            console.log('--- Preparing for new session for UID:', currentUser.uid);
+            // Don't create the document here. Just prepare to start at step 0.
+            setSessionData(null); // Explicitly null to indicate no data yet
+            setCurrentStep(0);
         }
         setIsLoadingSession(false);
     };
 
     manageSession();
-  }, [user, isUserLoading, auth, firestore]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, isUserLoading, firestore]);
 
   
   // This effect scrolls the window to the top whenever the current step changes.
@@ -224,12 +172,64 @@ export default function StartPage() {
     }
   
     // For the very first interaction of a new participant, create the document.
-    if (!hasCreatedDocument) {
+    if (!sessionData) {
       console.log('--- First interaction: Creating session document in Firestore for UID:', user.uid);
       const participantDocRef = doc(firestore, `experiment_meta/${EXPERIMENT_ID}/participants`, user.uid);
       
-      const fullInitialData = { ...sessionData, ...data };
-      setDocumentNonBlocking(participantDocRef, fullInitialData, { merge: false }); // Use merge: false for creation
+      const seed = Math.random().toString(36).substring(2, 15);
+      const sources: ExperimentalCondition['advisorySource'][] = ['ai', 'human'];
+      const frames: ExperimentalCondition['linguisticFrame'][] = ['abstract', 'concrete'];
+      const scenarios: ExperimentalCondition['scenario'][] = ['xyz', 'techtrend'];
+  
+      const randomSourceIndex = Math.floor(Math.random() * sources.length);
+      const randomFrameIndex = Math.floor(Math.random() * frames.length);
+      const randomScenarioIndex = Math.floor(Math.random() * scenarios.length);
+  
+      const assignedCondition: ExperimentalCondition = {
+        advisorySource: sources[randomSourceIndex],
+        linguisticFrame: frames[randomFrameIndex],
+        scenario: scenarios[randomScenarioIndex],
+      };
+      
+      const deviceInfo = {
+        userAgent: navigator.userAgent || 'Unknown',
+        screenWidth: window.screen.width || 0,
+        screenHeight: window.screen.height || 0,
+      };
+  
+      const fullInitialData: SessionData = {
+        id: user.uid,
+        randomSeed: seed,
+        startTime: new Date().toISOString(),
+        status: 'In Progress',
+        condition: assignedCondition,
+        deviceInfo,
+        consent: false,
+        consent_ageCheck: null,
+        consent_isEmployed: null,
+        consent_hasParticipated: null,
+        consent_consentGiven: null,
+        initialAssessments: {
+            financialLiteracy: null,
+            roleAndExperience: null,
+            organizationalProfile: null,
+        },
+        dossierViewTime: 0,
+        dossierScrollCount: 0,
+        advisoryViewTime: 0,
+        advisoryScrollCount: 0,
+        comprehension: {},
+        manipulationChecks: {},
+        objectiveChoice: null,
+        subjectiveDQ: {},
+        mediators: {},
+        controls: {},
+        openRationale: null,
+        endTime: null,
+        ...data, // Merge the very first update (e.g., consent data)
+      };
+
+      setDocumentNonBlocking(participantDocRef, fullInitialData, { merge: false });
 
       const experimentMetaRef = doc(firestore, 'experiment_meta', EXPERIMENT_ID);
       setDocumentNonBlocking(experimentMetaRef, {
@@ -240,7 +240,6 @@ export default function StartPage() {
       }, { merge: true });
 
       setSessionData(fullInitialData);
-      setHasCreatedDocument(true); // Set the lock!
       return; 
     }
   
@@ -320,7 +319,7 @@ export default function StartPage() {
     setIsLastControlSection,
   };
 
-  if (isLoadingSession || !sessionData) {
+  if (isLoadingSession) {
     return (
         <div className="flex flex-col items-center justify-center min-h-screen p-4">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -369,3 +368,5 @@ export default function StartPage() {
     </div>
   );
 }
+
+    
