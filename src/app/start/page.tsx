@@ -62,48 +62,6 @@ const DEBRIEF_STEP = stepComponents.length - 2;
 const END_SURVEY_STEP = stepComponents.length - 1;
 
 
-/**
- * Determines the correct step to resume to based on existing session data.
- * This is a robust, sequential check to find the first incomplete step.
- */
-const resumeToStep = (data: Partial<SessionData>): number => {
-    if (!data.consent) {
-        return 0; // Must give consent first.
-    }
-    if (!data.initialAssessments?.financialLiteracy || !data.initialAssessments?.roleAndExperience || !data.initialAssessments?.organizationalProfile) {
-        return 1; // Must complete all initial assessments.
-    }
-    // Step 2 is the scenario intro. After this is the dossier.
-    // If dossier hasn't been viewed, they should start at the scenario intro.
-    if (data.dossierViewTime === undefined) {
-        return 2;
-    }
-     // After dossier, they must review the advisory.
-    if (data.advisoryViewTime === undefined) {
-        return 4; // Go to Advisory step
-    }
-    if (!data.comprehension?.q1 || !data.comprehension?.q2) {
-        return 5; // Must complete comprehension checks.
-    }
-    if (!data.manipulationChecks?.feltHuman || !data.manipulationChecks?.feltAlgorithm || !data.manipulationChecks?.sourceAttribution) {
-        return 6; // Must complete manipulation checks.
-    }
-    if (!data.objectiveChoice) {
-        return 7; // Must make a choice.
-    }
-    if (!data.mediators?.advisoryCredibility || !data.mediators?.psychologicalDistance || !data.mediators?.linguisticAbstractness || !data.mediators?.outcomeFraming) {
-        return 8; // Must complete all mediator sections.
-    }
-    if (!data.controls?.riskTolerance || !data.controls?.digitalLiteracy) {
-        return 9; // Must complete all control sections.
-    }
-    
-    // If everything else is complete, they are at the debrief.
-    return 10;
-};
-
-
-
 export default function StartPage() {
   const [currentStep, setCurrentStep] = useState(0);
   const [sessionData, setSessionData] = useState<Partial<SessionData> | null>(null);
@@ -117,45 +75,20 @@ export default function StartPage() {
   const { user, isUserLoading } = useUser();
   const router = useRouter();
 
-  // This effect now handles the entire session loading and creation logic.
   useEffect(() => {
-    const manageSession = async () => {
-        if (isUserLoading || !firestore) return; // Wait for dependencies
+    // This effect now only handles user sign-in.
+    if (isUserLoading || !auth) return;
 
-        let currentUser = user;
+    if (!user) {
+        initiateAnonymousSignIn(auth);
+        // We wait for the onAuthStateChanged listener to provide the user object.
+        return;
+    }
 
-        // 1. Ensure we have a user
-        if (!currentUser) {
-            initiateAnonymousSignIn(auth);
-            return; // Exit and wait for onAuthStateChanged to trigger a re-run
-        }
-        
-        // 2. Try to fetch existing session data
-        const participantDocRef = doc(firestore, `experiment_meta/${EXPERIMENT_ID}/participants`, currentUser.uid);
-        const docSnap = await getDoc(participantDocRef);
-
-        if (docSnap.exists()) {
-            // --- SESSION RESUMPTION ---
-            console.log('--- Resuming existing session for UID:', currentUser.uid);
-            const existingData = docSnap.data() as SessionData;
-            setSessionData(existingData);
-            
-            const resumedStep = resumeToStep(existingData);
-            setCurrentStep(resumedStep);
-
-        } else {
-            // --- NEW SESSION (NO DOCUMENT YET) ---
-            console.log('--- Preparing for new session for UID:', currentUser.uid);
-            // Don't create the document here. Just prepare to start at step 0.
-            setSessionData(null); // Explicitly null to indicate no data yet
-            setCurrentStep(0);
-        }
-        setIsLoadingSession(false);
-    };
-
-    manageSession();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, isUserLoading, firestore]);
+    // Once we have a user, we can stop the initial loading screen.
+    // The session data itself will be created on first interaction.
+    setIsLoadingSession(false);
+  }, [user, isUserLoading, auth]);
 
   
   // This effect scrolls the window to the top whenever the current step changes.
@@ -170,10 +103,9 @@ export default function StartPage() {
       return;
     }
   
-    // For the very first interaction of a new participant, create the document.
+    // If sessionData is null, this is the first interaction. Create the session.
     if (!sessionData) {
       console.log('--- First interaction: Creating session document in Firestore for UID:', user.uid);
-      const participantDocRef = doc(firestore, `experiment_meta/${EXPERIMENT_ID}/participants`, user.uid);
       
       const seed = Math.random().toString(36).substring(2, 15);
       const sources: ExperimentalCondition['advisorySource'][] = ['ai', 'human'];
@@ -228,6 +160,7 @@ export default function StartPage() {
         ...data, // Merge the very first update (e.g., consent data)
       };
 
+      const participantDocRef = doc(firestore, `experiment_meta/${EXPERIMENT_ID}/participants`, user.uid);
       setDoc(participantDocRef, fullInitialData, { merge: false });
 
       const experimentMetaRef = doc(firestore, 'experiment_meta', EXPERIMENT_ID);
@@ -242,11 +175,11 @@ export default function StartPage() {
       return; 
     }
   
-    // For all subsequent updates, just merge the data.
+    // For all subsequent updates, just merge the data into the existing state and Firestore.
     setSessionData((prev) => {
         const newData = { ...prev, ...data };
         const participantDocRef = doc(firestore, `experiment_meta/${EXPERIMENT_ID}/participants`, user.uid);
-        setDoc(participantDocRef, data, { merge: true }); // Use data, not newData, to only save the changed fields
+        setDoc(participantDocRef, data, { merge: true });
         return newData;
     });
   };
@@ -269,7 +202,7 @@ export default function StartPage() {
   }
 
   const handlePrevious = () => {
-    if (currentStep > 1) { // Block going back to consent page
+    if (currentStep > 0) {
       setCurrentStep(currentStep - 1);
     }
   };
@@ -348,7 +281,7 @@ export default function StartPage() {
             <Button
               variant="outline"
               onClick={handlePrevious}
-              disabled={currentStep <= 1} // Disable on Consent and first step after
+              disabled={currentStep <= 0}
             >
               <ArrowLeft className="mr-2 h-4 w-4" />
               Previous
