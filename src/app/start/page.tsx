@@ -6,7 +6,7 @@ import type { SessionData, ExperimentalCondition } from '@/lib/types';
 import { useAuth, useFirestore, useUser } from '@/firebase';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
-import { signOut } from 'firebase/auth';
+import { signOut, signInAnonymously } from 'firebase/auth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
@@ -52,23 +52,22 @@ const simpleHash = (str: string) => {
   return Math.abs(hash);
 };
 
-const resumeToStep = (data: SessionData) => {
+const resumeToStep = (data: SessionData): number => {
     if (!data.consent) return 0;
     
-    // Check for completion of each part of the initial assessment
     const roleAndExp = data.initialAssessments?.roleAndExperience;
-    if (!roleAndExp || Object.values(roleAndExp).some(v => !v)) return 1;
+    if (!roleAndExp || Object.values(roleAndExp).some(v => v === null || v === '')) return 1;
 
     // Check if condition is assigned (it should be after roleAndExp)
-    if (!data.condition) return 1;
+    if (!data.condition) return 1; 
+
+    if (data.dossierViewTime === undefined || data.dossierViewTime === null) return 3;
+    if (data.advisoryViewTime === undefined || data.advisoryViewTime === null) return 4;
     
-    // Check subsequent steps based on whether data for them exists
-    if (data.dossierViewTime === null) return 3;
-    if (data.advisoryViewTime === null) return 4;
-    if (Object.keys(data.comprehension || {}).length < 2) return 5;
-    if (Object.keys(data.manipulationChecks || {}).length < 3) return 6;
+    if (!data.comprehension || Object.keys(data.comprehension).length < 2) return 5;
+    if (!data.manipulationChecks || Object.keys(data.manipulationChecks).length < 3) return 6;
     if (!data.objectiveChoice) return 7;
-    if (Object.keys(data.subjectiveDQ || {}).length < 4) return 7;
+    if (!data.subjectiveDQ || Object.keys(data.subjectiveDQ).length < 4) return 7;
 
     const mediators = data.mediators;
     if (!mediators?.advisoryCredibility || Object.keys(mediators.advisoryCredibility).length < 9) return 8;
@@ -77,7 +76,6 @@ const resumeToStep = (data: SessionData) => {
     const controls = data.controls;
     if (!controls?.riskTolerance || Object.keys(controls.riskTolerance).length < 5) return 9;
     
-    // If all steps are complete, go to debrief
     return DEBRIEF_STEP;
 };
 
@@ -99,7 +97,7 @@ export default function StartPage() {
         // Always sign out first to clear any previous anonymous user
         await signOut(auth);
         // Then sign in to get a fresh user ID
-        await auth.signInAnonymously();
+        await signInAnonymously(auth);
     };
     setupAuth();
   }, [auth]);
@@ -118,8 +116,6 @@ export default function StartPage() {
         setSessionData(existingData);
         setCurrentStep(resumeToStep(existingData));
       } else {
-        // This is a new user. Prepare the initial local state.
-        // The document will be created in Firestore on the first interaction.
         const deviceInfo = {
           userAgent: navigator.userAgent || 'Unknown',
           screenWidth: window.screen.width || 0,
@@ -156,7 +152,6 @@ export default function StartPage() {
         setSessionData(newSession);
         setCurrentStep(0);
       }
-      // Mark loading as complete only after all session logic is done.
       setIsLoadingSession(false);
     };
 
@@ -195,10 +190,8 @@ export default function StartPage() {
     setSessionData(newData);
     
     const participantDocRef = doc(firestore, `experiment_meta/${EXPERIMENT_ID}/participants`, user.uid);
-    // Use setDoc with merge:true to safely create or update the document.
     await setDoc(participantDocRef, data, { merge: true });
 
-    // Ensure the top-level experiment meta doc exists
     if (data.consent) {
         const experimentMetaRef = doc(firestore, 'experiment_meta', EXPERIMENT_ID);
         await setDoc(experimentMetaRef, {
@@ -262,7 +255,7 @@ export default function StartPage() {
     return true;
   }, [currentStep, isDebrief, isLastAssessmentSection, isLastMediatorSection, isLastControlSection]);
 
-  if (isLoadingSession) {
+  if (isUserLoading || isLoadingSession || !sessionData) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen p-4">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
