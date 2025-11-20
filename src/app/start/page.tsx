@@ -24,7 +24,6 @@ import StepMediators from '@/components/session/StepMediators';
 import StepControls from '@/components/session/StepControls';
 import StepDebrief from '@/components/session/StepDebrief';
 import StepEndSurvey from '@/components/session/StepEndSurvey';
-import { updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
 const stepComponents = [
   StepConsent, StepInitialAssessment, StepAdvisoryScenario, StepDossier,
@@ -53,6 +52,36 @@ const simpleHash = (str: string) => {
   return Math.abs(hash);
 };
 
+const resumeToStep = (data: SessionData) => {
+    if (!data.consent) return 0;
+    
+    // Check for completion of each part of the initial assessment
+    const roleAndExp = data.initialAssessments?.roleAndExperience;
+    if (!roleAndExp || Object.values(roleAndExp).some(v => !v)) return 1;
+
+    // Check if condition is assigned (it should be after roleAndExp)
+    if (!data.condition) return 1;
+    
+    // Check subsequent steps based on whether data for them exists
+    if (data.dossierViewTime === null) return 3;
+    if (data.advisoryViewTime === null) return 4;
+    if (Object.keys(data.comprehension || {}).length < 2) return 5;
+    if (Object.keys(data.manipulationChecks || {}).length < 3) return 6;
+    if (!data.objectiveChoice) return 7;
+    if (Object.keys(data.subjectiveDQ || {}).length < 4) return 7;
+
+    const mediators = data.mediators;
+    if (!mediators?.advisoryCredibility || Object.keys(mediators.advisoryCredibility).length < 9) return 8;
+    if (!mediators?.psychologicalDistance || Object.keys(mediators.psychologicalDistance).length < 4) return 8;
+
+    const controls = data.controls;
+    if (!controls?.riskTolerance || Object.keys(controls.riskTolerance).length < 5) return 9;
+    
+    // If all steps are complete, go to debrief
+    return DEBRIEF_STEP;
+};
+
+
 export default function StartPage() {
   const [currentStep, setCurrentStep] = useState(0);
   const [sessionData, setSessionData] = useState<Partial<SessionData> | null>(null);
@@ -63,34 +92,23 @@ export default function StartPage() {
   const { user, isUserLoading } = useUser();
   const router = useRouter();
 
-  const resumeToStep = (data: SessionData) => {
-    if (!data.consent) return 0;
-    const roleAndExp = data.initialAssessments?.roleAndExperience;
-    if (!roleAndExp || Object.values(roleAndExp).some(v => !v)) return 1;
-    if (!data.condition) return 1;
-    if (data.dossierViewTime === null) return 3;
-    if (data.advisoryViewTime === null) return 4;
-    if (Object.keys(data.comprehension || {}).length < 2) return 5;
-    if (Object.keys(data.manipulationChecks || {}).length < 3) return 6;
-    if (!data.objectiveChoice) return 7;
-    if (Object.keys(data.subjectiveDQ || {}).length < 4) return 7;
-    const mediators = data.mediators;
-    if (!mediators?.advisoryCredibility || Object.keys(mediators.advisoryCredibility).length < 9) return 8;
-    if (!mediators?.psychologicalDistance || Object.keys(mediators.psychologicalDistance).length < 4) return 8;
-    const controls = data.controls;
-    if (!controls?.riskTolerance || Object.keys(controls.riskTolerance).length < 5) return 9;
-    return DEBRIEF_STEP;
-  };
+  // STAGE 1: Handle Authentication. Ensure we have a clean, new anonymous user for each attempt.
+  useEffect(() => {
+    const setupAuth = async () => {
+        if (!auth) return;
+        // Always sign out first to clear any previous anonymous user
+        await signOut(auth);
+        // Then sign in to get a fresh user ID
+        await auth.signInAnonymously();
+    };
+    setupAuth();
+  }, [auth]);
 
+  // STAGE 2: Handle Session Data. This runs only after we have a confirmed user.
   useEffect(() => {
     const manageSession = async () => {
-      if (isUserLoading || !auth || !firestore) return;
-
-      if (!user) {
-        await signOut(auth);
-        await auth.signInAnonymously();
-        return; 
-      }
+      // Wait until we have a definitive user object and firestore is ready
+      if (isUserLoading || !user || !firestore) return;
 
       const participantDocRef = doc(firestore, `experiment_meta/${EXPERIMENT_ID}/participants`, user.uid);
       const docSnap = await getDoc(participantDocRef);
@@ -100,36 +118,72 @@ export default function StartPage() {
         setSessionData(existingData);
         setCurrentStep(resumeToStep(existingData));
       } else {
-        setSessionData(null);
+        // This is a new user. Prepare the initial local state.
+        // The document will be created in Firestore on the first interaction.
+        const deviceInfo = {
+          userAgent: navigator.userAgent || 'Unknown',
+          screenWidth: window.screen.width || 0,
+          screenHeight: window.screen.height || 0,
+        };
+        const newSession: Partial<SessionData> = {
+            id: user.uid,
+            startTime: new Date().toISOString(),
+            status: 'In Progress',
+            deviceInfo,
+            consent: false,
+            consent_ageCheck: null,
+            consent_isEmployed: null,
+            consent_hasParticipated: null,
+            consent_consentGiven: null,
+            initialAssessments: {
+                financialLiteracy: {},
+                roleAndExperience: {},
+                organizationalProfile: {},
+            },
+            dossierViewTime: null,
+            dossierScrollCount: null,
+            advisoryViewTime: null,
+            advisoryScrollCount: null,
+            comprehension: {},
+            manipulationChecks: {},
+            objectiveChoice: null,
+            subjectiveDQ: {},
+            mediators: {},
+            controls: {},
+            openRationale: null,
+            endTime: null,
+        };
+        setSessionData(newSession);
         setCurrentStep(0);
       }
+      // Mark loading as complete only after all session logic is done.
       setIsLoadingSession(false);
     };
 
     manageSession();
-  }, [user, isUserLoading, auth, firestore]);
-  
-    const assignCondition = (roleLevel: string) => {
-        if (!user || !sessionData) return;
-    
-        const sources: ExperimentalCondition['advisorySource'][] = ['ai', 'human'];
-        const scenarios: ExperimentalCondition['scenario'][] = ['xyz', 'techtrend'];
-    
-        const userHash = simpleHash(user.uid);
-        const roleHash = simpleHash(roleLevel);
-        const combinedHash = userHash + roleHash;
-    
-        const assignedSource = sources[combinedHash % sources.length];
-        const assignedScenario = scenarios[Math.floor(combinedHash / sources.length) % scenarios.length];
-    
-        const assignedCondition: ExperimentalCondition = {
-            advisorySource: assignedSource,
-            scenario: assignedScenario,
-        };
-    
-        console.log(`Assigning condition for role ${roleLevel}:`, assignedCondition);
-        updateSessionData({ condition: assignedCondition });
+  }, [user, isUserLoading, firestore]);
+
+  const assignCondition = (roleLevel: string) => {
+    if (!user || !sessionData) return;
+
+    const sources: ExperimentalCondition['advisorySource'][] = ['ai', 'human'];
+    const scenarios: ExperimentalCondition['scenario'][] = ['xyz', 'techtrend'];
+
+    const userHash = simpleHash(user.uid);
+    const roleHash = simpleHash(roleLevel);
+    const combinedHash = userHash + roleHash;
+
+    const assignedSource = sources[combinedHash % sources.length];
+    const assignedScenario = scenarios[Math.floor(combinedHash / sources.length) % scenarios.length];
+
+    const assignedCondition: ExperimentalCondition = {
+        advisorySource: assignedSource,
+        scenario: assignedScenario,
     };
+
+    console.log(`Assigning condition for role ${roleLevel}:`, assignedCondition);
+    updateSessionData({ condition: assignedCondition });
+  };
 
   const updateSessionData = async (data: Partial<SessionData>) => {
     if (!user || !firestore) {
@@ -137,62 +191,23 @@ export default function StartPage() {
       return;
     }
 
-    if (!sessionData) {
-      console.log('--- First interaction: Creating session document for UID:', user.uid);
-      const deviceInfo = {
-        userAgent: navigator.userAgent || 'Unknown',
-        screenWidth: window.screen.width || 0,
-        screenHeight: window.screen.height || 0,
-      };
-
-      const fullInitialData: SessionData = {
-        id: user.uid,
-        startTime: new Date().toISOString(),
-        status: 'In Progress',
-        deviceInfo,
-        consent: false,
-        consent_ageCheck: null,
-        consent_isEmployed: null,
-        consent_hasParticipated: null,
-        consent_consentGiven: null,
-        initialAssessments: {
-            financialLiteracy: {},
-            roleAndExperience: {},
-            organizationalProfile: {},
-        },
-        dossierViewTime: null,
-        dossierScrollCount: null,
-        advisoryViewTime: null,
-        advisoryScrollCount: null,
-        comprehension: {},
-        manipulationChecks: {},
-        objectiveChoice: null,
-        subjectiveDQ: {},
-        mediators: {},
-        controls: {},
-        openRationale: null,
-        endTime: null,
-        ...data,
-      };
-
-      setSessionData(fullInitialData);
-      const participantDocRef = doc(firestore, `experiment_meta/${EXPERIMENT_ID}/participants`, user.uid);
-      await setDoc(participantDocRef, fullInitialData, { merge: true });
-
-      const experimentMetaRef = doc(firestore, 'experiment_meta', EXPERIMENT_ID);
-      await setDoc(experimentMetaRef, {
-        id: EXPERIMENT_ID,
-        seed: 'initial_seed_placeholder', 
-        stimuliVersion: 'v1.0',
-        lexiconVersion: 'v1.0'
-      }, { merge: true });
-      return;
-    }
-
     const newData = { ...sessionData, ...data };
     setSessionData(newData);
+    
     const participantDocRef = doc(firestore, `experiment_meta/${EXPERIMENT_ID}/participants`, user.uid);
-    updateDocumentNonBlocking(participantDocRef, data);
+    // Use setDoc with merge:true to safely create or update the document.
+    await setDoc(participantDocRef, data, { merge: true });
+
+    // Ensure the top-level experiment meta doc exists
+    if (data.consent) {
+        const experimentMetaRef = doc(firestore, 'experiment_meta', EXPERIMENT_ID);
+        await setDoc(experimentMetaRef, {
+            id: EXPERIMENT_ID,
+            seed: 'initial_seed_placeholder', 
+            stimuliVersion: 'v1.0',
+            lexiconVersion: 'v1.0'
+        }, { merge: true });
+    }
   };
 
   const handleNext = () => {
@@ -210,7 +225,7 @@ export default function StartPage() {
 
   const handleCompleteSurvey = () => router.push('/');
   const endSurvey = async () => {
-    if (sessionData) {
+    if (sessionData && sessionData.status !== 'Completed') {
       await updateSessionData({ endTime: new Date().toISOString(), status: 'Abandoned' });
     }
     setCurrentStep(END_SURVEY_STEP);
