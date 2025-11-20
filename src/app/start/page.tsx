@@ -81,7 +81,8 @@ export default function StartPage() {
         // This is the key to preventing session overwriting.
         await signOut(auth);
         
-        // Initiate a new anonymous sign-in.
+        // Initiate a new anonymous sign-in. The onAuthStateChanged listener in the provider
+        // will pick this up. Once the user object is available, the rest of the logic can run.
         initiateAnonymousSignIn(auth);
 
         // From this point, an onAuthStateChanged listener will pick up the new user.
@@ -105,16 +106,14 @@ export default function StartPage() {
       
       const seed = Math.random().toString(36).substring(2, 15);
       const sources: ExperimentalCondition['advisorySource'][] = ['ai', 'human'];
-      const frames: ExperimentalCondition['linguisticFrame'][] = ['abstract', 'concrete'];
       const scenarios: ExperimentalCondition['scenario'][] = ['xyz', 'techtrend'];
   
       const randomSourceIndex = Math.floor(Math.random() * sources.length);
-      const randomFrameIndex = Math.floor(Math.random() * frames.length);
       const randomScenarioIndex = Math.floor(Math.random() * scenarios.length);
   
       const assignedCondition: ExperimentalCondition = {
         advisorySource: sources[randomSourceIndex],
-        linguisticFrame: frames[randomFrameIndex],
+        linguisticFrame: 'abstract', // Hardcoded as per the new requirement
         scenario: scenarios[randomScenarioIndex],
       };
       
