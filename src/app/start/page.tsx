@@ -213,10 +213,10 @@ export default function StartPage() {
             roleAndExperience: null,
             organizationalProfile: null,
         },
-        dossierViewTime: 0,
-        dossierScrollCount: 0,
-        advisoryViewTime: 0,
-        advisoryScrollCount: 0,
+        dossierViewTime: undefined,
+        dossierScrollCount: undefined,
+        advisoryViewTime: undefined,
+        advisoryScrollCount: undefined,
         comprehension: {},
         manipulationChecks: {},
         objectiveChoice: null,
@@ -367,3 +367,5 @@ export default function StartPage() {
     </div>
   );
 }
+
+    

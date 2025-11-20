@@ -32,10 +32,10 @@ export type SessionData = {
     roleAndExperience: Record<string, string | null> | null;
     organizationalProfile: Record<string, string | null> | null;
   };
-  dossierViewTime: number;
-  dossierScrollCount: number;
-  advisoryViewTime: number;
-  advisoryScrollCount: number;
+  dossierViewTime: number | undefined;
+  dossierScrollCount: number | undefined;
+  advisoryViewTime: number | undefined;
+  advisoryScrollCount: number | undefined;
   comprehension: Record<string, string | null>;
   manipulationChecks: Record<string, string | null>;
   objectiveChoice: string | null;
@@ -70,5 +70,7 @@ export type CodingTask = {
   coderA_codes: string[];
   coderB_codes: string[];
 };
+
+    
 
     
