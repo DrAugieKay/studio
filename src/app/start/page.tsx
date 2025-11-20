@@ -4,7 +4,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import type { SessionData, ExperimentalCondition } from '@/lib/types';
 import { useAuth, useFirestore, useUser } from '@/firebase';
-import { doc, getDoc, setDoc } from 'firebase/firestore'; // Import getDoc
+import { doc, getDoc } from 'firebase/firestore'; // Import getDoc
 import { useRouter } from 'next/navigation';
 
 import { Button } from '@/components/ui/button';
@@ -65,19 +65,45 @@ const END_SURVEY_STEP = stepComponents.length - 1;
 
 /**
  * Determines the current step a user should be on based on their session data.
+ * This logic is sequential and robust, ensuring the user is always at the first
+ * incomplete step.
  */
 const determineCurrentStep = (data: Partial<SessionData>): number => {
-    if (!data.consent) return 0;
-    if (!data.initialAssessments?.financialLiteracy || !data.initialAssessments?.roleAndExperience || !data.initialAssessments?.organizationalProfile) return 1;
-    if (data.dossierViewTime === 0) return 2; // User hasn't seen dossier yet. Dossier itself is step 3.
-    if (data.advisoryViewTime === 0) return 3; // Advisory is step 4.
-    if (!data.comprehension?.q1) return 5;
-    if (!data.manipulationChecks?.feltHuman) return 6;
-    if (!data.objectiveChoice) return 7;
-    if (!data.mediators?.advisoryCredibility) return 8;
-    if (!data.controls?.riskTolerance) return 9;
-    return 10; // Default to Debrief if all else is complete
+    if (!data.consent) {
+        return 0; // Must give consent first.
+    }
+    if (!data.initialAssessments?.financialLiteracy || !data.initialAssessments?.roleAndExperience || !data.initialAssessments?.organizationalProfile) {
+        return 1; // Must complete all initial assessments.
+    }
+    // Step 2 is the scenario intro, which leads to step 3 (Dossier). We check if dossier time is logged.
+    // If dossierViewTime is NOT logged (or is 0), they haven't passed the Dossier step yet.
+    if (!data.dossierViewTime) {
+        return 2;
+    }
+    // If advisoryViewTime is NOT logged (or is 0), they haven't passed the Advisory step yet.
+    if (!data.advisoryViewTime) {
+        return 4; // They have seen dossier, now they see advisory.
+    }
+    if (!data.comprehension?.q1 || !data.comprehension?.q2) {
+        return 5; // Must complete comprehension checks.
+    }
+    if (!data.manipulationChecks?.feltHuman || !data.manipulationChecks?.feltAlgorithm || !data.manipulationChecks?.sourceAttribution) {
+        return 6; // Must complete manipulation checks.
+    }
+    if (!data.objectiveChoice) {
+        return 7; // Must make a choice.
+    }
+    // Subjective DQ is part of step 7, but optional to proceed. Check mediators next.
+    if (!data.mediators?.advisoryCredibility || !data.mediators?.psychologicalDistance || !data.mediators?.linguisticAbstractness || !data.mediators?.outcomeFraming) {
+        return 8; // Must complete all mediator sections.
+    }
+    if (!data.controls?.riskTolerance || !data.controls?.digitalLiteracy) {
+        return 9; // Must complete all control sections.
+    }
+    // If everything else is complete, they are at the debrief.
+    return 10;
 };
+
 
 
 export default function StartPage() {
@@ -129,6 +155,7 @@ export default function StartPage() {
             // The document will be created on the first *actual* user interaction via updateSessionData
             console.log('--- Preparing new session for UID:', currentUser.uid);
             setSessionData({ id: currentUser.uid });
+            setCurrentStep(0); // Explicitly start at the beginning.
         }
         setIsLoadingSession(false);
     };
@@ -173,7 +200,7 @@ export default function StartPage() {
         screenHeight: window.screen.height || 0,
       };
   
-      const initialData: Partial<SessionData> = {
+      const initialData: SessionData = {
         id: user.uid,
         randomSeed: seed,
         startTime: new Date().toISOString(),
