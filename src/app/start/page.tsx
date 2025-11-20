@@ -4,7 +4,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import type { SessionData, ExperimentalCondition } from '@/lib/types';
 import { useAuth, useFirestore, useUser } from '@/firebase';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, setDoc } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 
 import { Button } from '@/components/ui/button';
@@ -68,7 +68,6 @@ export default function StartPage() {
   const [isLastAssessmentSection, setIsLastAssessmentSection] = useState(false);
   const [isLastMediatorSection, setIsLastMediatorSection] = useState(false);
   const [isLastControlSection, setIsLastControlSection] = useState(false);
-  const [isLoadingSession, setIsLoadingSession] = useState(true);
 
   const auth = useAuth();
   const firestore = useFirestore();
@@ -76,26 +75,10 @@ export default function StartPage() {
   const router = useRouter();
 
   useEffect(() => {
-    // This effect now only handles user sign-in.
-    if (isUserLoading || !auth) return;
-
-    if (!user) {
+    if (!isUserLoading && !user && auth) {
         initiateAnonymousSignIn(auth);
-        // We wait for the onAuthStateChanged listener to provide the user object.
-        return;
     }
-
-    // Once we have a user, we can stop the initial loading screen.
-    // The session data itself will be created on first interaction.
-    setIsLoadingSession(false);
   }, [user, isUserLoading, auth]);
-
-  
-  // This effect scrolls the window to the top whenever the current step changes.
-  useEffect(() => {
-    window.scrollTo(0, 0);
-  }, [currentStep]);
-
 
   const updateSessionData = (data: Partial<SessionData>) => {
     if (!user || !firestore) {
@@ -145,10 +128,10 @@ export default function StartPage() {
             roleAndExperience: null,
             organizationalProfile: null,
         },
-        dossierViewTime: undefined,
-        dossierScrollCount: undefined,
-        advisoryViewTime: undefined,
-        advisoryScrollCount: undefined,
+        dossierViewTime: null,
+        dossierScrollCount: null,
+        advisoryViewTime: null,
+        advisoryScrollCount: null,
         comprehension: {},
         manipulationChecks: {},
         objectiveChoice: null,
@@ -251,7 +234,7 @@ export default function StartPage() {
     setIsLastControlSection,
   };
 
-  if (isLoadingSession) {
+  if (isUserLoading || !user) {
     return (
         <div className="flex flex-col items-center justify-center min-h-screen p-4">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
