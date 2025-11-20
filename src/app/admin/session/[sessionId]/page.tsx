@@ -48,7 +48,7 @@ export default function SessionDetailPage() {
     const qualityFlags = getQualityFlags(session);
     const composites = getComposites(session);
 
-    const formatCondition = (condition: any) => {
+    const formatCondition = (condition?: SessionData['condition']) => {
         if (!condition) return 'N/A';
         return `${condition.advisorySource.toUpperCase()} / ${condition.scenario.toUpperCase()}`;
     }
