@@ -4,7 +4,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import type { SessionData, ExperimentalCondition } from '@/lib/types';
 import { useAuth, useFirestore, useUser } from '@/firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 
 import { Button } from '@/components/ui/button';
@@ -25,7 +25,6 @@ import StepControls from '@/components/session/StepControls';
 import StepDebrief from '@/components/session/StepDebrief';
 import StepEndSurvey from '@/components/session/StepEndSurvey';
 import { initiateAnonymousSignIn } from '@/firebase/non-blocking-login';
-import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { Loader2 } from 'lucide-react';
 
 const stepComponents = [
@@ -229,10 +228,10 @@ export default function StartPage() {
         ...data, // Merge the very first update (e.g., consent data)
       };
 
-      setDocumentNonBlocking(participantDocRef, fullInitialData, { merge: false });
+      setDoc(participantDocRef, fullInitialData, { merge: false });
 
       const experimentMetaRef = doc(firestore, 'experiment_meta', EXPERIMENT_ID);
-      setDocumentNonBlocking(experimentMetaRef, {
+      setDoc(experimentMetaRef, {
         id: EXPERIMENT_ID,
         seed: 'initial_seed_placeholder',
         stimuliVersion: 'v1.0',
@@ -247,7 +246,7 @@ export default function StartPage() {
     setSessionData((prev) => {
         const newData = { ...prev, ...data };
         const participantDocRef = doc(firestore, `experiment_meta/${EXPERIMENT_ID}/participants`, user.uid);
-        setDocumentNonBlocking(participantDocRef, data, { merge: true }); // Use data, not newData, to only save the changed fields
+        setDoc(participantDocRef, data, { merge: true }); // Use data, not newData, to only save the changed fields
         return newData;
     });
   };
@@ -368,5 +367,3 @@ export default function StartPage() {
     </div>
   );
 }
-
-    
