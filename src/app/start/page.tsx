@@ -74,12 +74,13 @@ const resumeToStep = (data: Partial<SessionData>): number => {
     if (!data.initialAssessments?.financialLiteracy || !data.initialAssessments?.roleAndExperience || !data.initialAssessments?.organizationalProfile) {
         return 1; // Must complete all initial assessments.
     }
-    // Step 2 is the scenario intro.
-    if (!data.dossierViewTime) {
+    // Step 2 is the scenario intro. After this is the dossier.
+    // If dossier hasn't been viewed, they should start at the scenario intro.
+    if (data.dossierViewTime === undefined || data.dossierViewTime === 0) {
         return 2; 
     }
     // After dossier, they must review the advisory.
-    if (!data.advisoryViewTime) {
+    if (data.advisoryViewTime === undefined || data.advisoryViewTime === 0) {
         return 4; // Go to Advisory step
     }
     if (!data.comprehension?.q1 || !data.comprehension?.q2) {
