@@ -78,7 +78,7 @@ const resumeToStep = (data: Partial<SessionData>): number => {
     if (data.dossierViewTime === undefined) {
         return 2;
     }
-    // After dossier, they must review the advisory.
+     // After dossier, they must review the advisory.
     if (data.advisoryViewTime === undefined) {
         return 4; // Go to Advisory step
     }
