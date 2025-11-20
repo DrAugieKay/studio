@@ -4,7 +4,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import type { SessionData, ExperimentalCondition } from '@/lib/types';
 import { useAuth, useFirestore, useUser } from '@/firebase';
-import { doc, getDoc } from 'firebase/firestore'; // Import getDoc
+import { doc, getDoc } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 
 import { Button } from '@/components/ui/button';
@@ -64,25 +64,23 @@ const END_SURVEY_STEP = stepComponents.length - 1;
 
 
 /**
- * Determines the current step a user should be on based on their session data.
- * This logic is sequential and robust, ensuring the user is always at the first
- * incomplete step.
+ * Determines the correct step to resume to based on existing session data.
+ * This is a robust, sequential check to find the first incomplete step.
  */
-const determineCurrentStep = (data: Partial<SessionData>): number => {
-    // This function assumes `data` is a fully-formed object with all keys present.
+const resumeToStep = (data: Partial<SessionData>): number => {
     if (!data.consent) {
         return 0; // Must give consent first.
     }
     if (!data.initialAssessments?.financialLiteracy || !data.initialAssessments?.roleAndExperience || !data.initialAssessments?.organizationalProfile) {
         return 1; // Must complete all initial assessments.
     }
-    // Step 2 is the scenario intro. If dossierViewTime is NOT logged (is 0), they haven't passed the Dossier step yet.
+    // Step 2 is the scenario intro.
     if (!data.dossierViewTime) {
         return 2; 
     }
-    // Step 4 is Advisory. If advisoryViewTime is NOT logged, they haven't passed it.
+    // After dossier, they must review the advisory.
     if (!data.advisoryViewTime) {
-        return 4; 
+        return 4; // Go to Advisory step
     }
     if (!data.comprehension?.q1 || !data.comprehension?.q2) {
         return 5; // Must complete comprehension checks.
@@ -93,13 +91,13 @@ const determineCurrentStep = (data: Partial<SessionData>): number => {
     if (!data.objectiveChoice) {
         return 7; // Must make a choice.
     }
-    // Subjective DQ is part of step 7, but optional to proceed. Check mediators next.
     if (!data.mediators?.advisoryCredibility || !data.mediators?.psychologicalDistance || !data.mediators?.linguisticAbstractness || !data.mediators?.outcomeFraming) {
         return 8; // Must complete all mediator sections.
     }
     if (!data.controls?.riskTolerance || !data.controls?.digitalLiteracy) {
         return 9; // Must complete all control sections.
     }
+    
     // If everything else is complete, they are at the debrief.
     return 10;
 };
@@ -130,7 +128,7 @@ export default function StartPage() {
         // 1. Ensure we have a user
         if (!currentUser) {
             initiateAnonymousSignIn(auth);
-            return;
+            return; // Exit and wait for onAuthStateChanged to trigger a re-run
         }
         
         // 2. Try to fetch existing session data
@@ -144,14 +142,12 @@ export default function StartPage() {
             setSessionData(existingData);
             setHasCreatedDocument(true);
             
-            const resumedStep = determineCurrentStep(existingData);
+            const resumedStep = resumeToStep(existingData);
             setCurrentStep(resumedStep);
 
         } else {
             // --- NEW SESSION INITIALIZATION (LOCAL ONLY) ---
             console.log('--- Preparing new session for UID:', currentUser.uid);
-            // Don't save to DB yet. Create the full object locally.
-            // Saving happens on first user interaction in updateSessionData.
             const seed = Math.random().toString(36).substring(2, 15);
             const sources: ExperimentalCondition['advisorySource'][] = ['ai', 'human'];
             const frames: ExperimentalCondition['linguisticFrame'][] = ['abstract', 'concrete'];
@@ -205,7 +201,7 @@ export default function StartPage() {
             };
             
             setSessionData(initialData);
-            setCurrentStep(0); // Explicitly start at the beginning.
+            setCurrentStep(0); // Explicitly start new users at the Consent step.
         }
         setIsLoadingSession(false);
     };
@@ -226,11 +222,9 @@ export default function StartPage() {
       return;
     }
   
+    // For the very first interaction of a new participant, create the document.
     if (!hasCreatedDocument) {
-      // This block now runs only ONCE for a new participant, on their first action.
-      // The sessionData is already fully formed in local state.
-      // We just need to save the initial state + the new update to Firestore.
-      console.log('--- Creating unique session document in Firestore for UID:', user.uid);
+      console.log('--- First interaction: Creating session document in Firestore for UID:', user.uid);
       const participantDocRef = doc(firestore, `experiment_meta/${EXPERIMENT_ID}/participants`, user.uid);
       
       const fullInitialData = { ...sessionData, ...data };
@@ -249,11 +243,11 @@ export default function StartPage() {
       return; 
     }
   
-    // For all subsequent updates, just update the state and save to Firestore.
+    // For all subsequent updates, just merge the data.
     setSessionData((prev) => {
         const newData = { ...prev, ...data };
         const participantDocRef = doc(firestore, `experiment_meta/${EXPERIMENT_ID}/participants`, user.uid);
-        setDocumentNonBlocking(participantDocRef, newData, { merge: true });
+        setDocumentNonBlocking(participantDocRef, data, { merge: true }); // Use data, not newData, to only save the changed fields
         return newData;
     });
   };
@@ -272,7 +266,6 @@ export default function StartPage() {
   };
   
   const handleCompleteSurvey = () => {
-    // This button just navigates home. Completion is logged when Debrief is reached.
     router.push('/');
   }
 
@@ -320,13 +313,13 @@ export default function StartPage() {
     endSurvey,
     goToNextStep: handleNext,
     goToPrevStep: handlePrevious,
-    handleCompleteSurvey, // Pass the navigation function down
+    handleCompleteSurvey,
     setIsLastAssessmentSection,
     setIsLastMediatorSection,
     setIsLastControlSection,
   };
 
-  if (isUserLoading || isLoadingSession || !sessionData) {
+  if (isLoadingSession || !sessionData) {
     return (
         <div className="flex flex-col items-center justify-center min-h-screen p-4">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
