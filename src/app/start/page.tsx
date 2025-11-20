@@ -76,7 +76,7 @@ const resumeToStep = (data: Partial<SessionData>): number => {
     // Step 2 is the scenario intro. After this is the dossier.
     // If dossier hasn't been viewed, they should start at the scenario intro.
     if (data.dossierViewTime === undefined) {
-        return 2; 
+        return 2;
     }
     // After dossier, they must review the advisory.
     if (data.advisoryViewTime === undefined) {
