@@ -69,20 +69,20 @@ const END_SURVEY_STEP = stepComponents.length - 1;
  * incomplete step.
  */
 const determineCurrentStep = (data: Partial<SessionData>): number => {
+    // This function assumes `data` is a fully-formed object with all keys present.
     if (!data.consent) {
         return 0; // Must give consent first.
     }
     if (!data.initialAssessments?.financialLiteracy || !data.initialAssessments?.roleAndExperience || !data.initialAssessments?.organizationalProfile) {
         return 1; // Must complete all initial assessments.
     }
-    // Step 2 is the scenario intro, which leads to step 3 (Dossier). We check if dossier time is logged.
-    // If dossierViewTime is NOT logged (or is 0), they haven't passed the Dossier step yet.
+    // Step 2 is the scenario intro. If dossierViewTime is NOT logged (is 0), they haven't passed the Dossier step yet.
     if (!data.dossierViewTime) {
-        return 2;
+        return 2; 
     }
-    // If advisoryViewTime is NOT logged (or is 0), they haven't passed the Advisory step yet.
+    // Step 4 is Advisory. If advisoryViewTime is NOT logged, they haven't passed it.
     if (!data.advisoryViewTime) {
-        return 4; // They have seen dossier, now they see advisory.
+        return 4; 
     }
     if (!data.comprehension?.q1 || !data.comprehension?.q2) {
         return 5; // Must complete comprehension checks.
@@ -130,8 +130,6 @@ export default function StartPage() {
         // 1. Ensure we have a user
         if (!currentUser) {
             initiateAnonymousSignIn(auth);
-            // After sign-in, the onAuthStateChanged listener will cause this effect to re-run.
-            // We exit here and wait for the re-run with a valid user object.
             return;
         }
         
@@ -146,15 +144,67 @@ export default function StartPage() {
             setSessionData(existingData);
             setHasCreatedDocument(true);
             
-            // Restore the user to their last step
             const resumedStep = determineCurrentStep(existingData);
             setCurrentStep(resumedStep);
 
         } else {
-            // --- NEW SESSION (but only set local state) ---
-            // The document will be created on the first *actual* user interaction via updateSessionData
+            // --- NEW SESSION INITIALIZATION (LOCAL ONLY) ---
             console.log('--- Preparing new session for UID:', currentUser.uid);
-            setSessionData({ id: currentUser.uid });
+            // Don't save to DB yet. Create the full object locally.
+            // Saving happens on first user interaction in updateSessionData.
+            const seed = Math.random().toString(36).substring(2, 15);
+            const sources: ExperimentalCondition['advisorySource'][] = ['ai', 'human'];
+            const frames: ExperimentalCondition['linguisticFrame'][] = ['abstract', 'concrete'];
+            const scenarios: ExperimentalCondition['scenario'][] = ['xyz', 'techtrend'];
+        
+            const randomSourceIndex = Math.floor(Math.random() * sources.length);
+            const randomFrameIndex = Math.floor(Math.random() * frames.length);
+            const randomScenarioIndex = Math.floor(Math.random() * scenarios.length);
+        
+            const assignedCondition: ExperimentalCondition = {
+              advisorySource: sources[randomSourceIndex],
+              linguisticFrame: frames[randomFrameIndex],
+              scenario: scenarios[randomScenarioIndex],
+            };
+            
+            const deviceInfo = {
+              userAgent: navigator.userAgent || 'Unknown',
+              screenWidth: window.screen.width || 0,
+              screenHeight: window.screen.height || 0,
+            };
+        
+            const initialData: SessionData = {
+              id: currentUser.uid,
+              randomSeed: seed,
+              startTime: new Date().toISOString(),
+              status: 'In Progress',
+              condition: assignedCondition,
+              deviceInfo,
+              consent: false,
+              consent_ageCheck: null,
+              consent_isEmployed: null,
+              consent_hasParticipated: null,
+              consent_consentGiven: null,
+              initialAssessments: {
+                  financialLiteracy: null,
+                  roleAndExperience: null,
+                  organizationalProfile: null,
+              },
+              dossierViewTime: 0,
+              dossierScrollCount: 0,
+              advisoryViewTime: 0,
+              advisoryScrollCount: 0,
+              comprehension: {},
+              manipulationChecks: {},
+              objectiveChoice: null,
+              subjectiveDQ: {},
+              mediators: {},
+              controls: {},
+              openRationale: null,
+              endTime: null,
+            };
+            
+            setSessionData(initialData);
             setCurrentStep(0); // Explicitly start at the beginning.
         }
         setIsLoadingSession(false);
@@ -176,66 +226,15 @@ export default function StartPage() {
       return;
     }
   
-    // This is the new, robust session creation logic.
-    // It only triggers ONCE, upon the first actual data update.
     if (!hasCreatedDocument) {
-      const seed = Math.random().toString(36).substring(2, 15);
-      const sources: ExperimentalCondition['advisorySource'][] = ['ai', 'human'];
-      const frames: ExperimentalCondition['linguisticFrame'][] = ['abstract', 'concrete'];
-      const scenarios: ExperimentalCondition['scenario'][] = ['xyz', 'techtrend'];
-  
-      const randomSourceIndex = Math.floor(Math.random() * sources.length);
-      const randomFrameIndex = Math.floor(Math.random() * frames.length);
-      const randomScenarioIndex = Math.floor(Math.random() * scenarios.length);
-  
-      const assignedCondition: ExperimentalCondition = {
-        advisorySource: sources[randomSourceIndex],
-        linguisticFrame: frames[randomFrameIndex],
-        scenario: scenarios[randomScenarioIndex],
-      };
-      
-      const deviceInfo = {
-        userAgent: navigator.userAgent || 'Unknown',
-        screenWidth: window.screen.width || 0,
-        screenHeight: window.screen.height || 0,
-      };
-  
-      const initialData: SessionData = {
-        id: user.uid,
-        randomSeed: seed,
-        startTime: new Date().toISOString(),
-        status: 'In Progress',
-        condition: assignedCondition,
-        deviceInfo,
-        consent: false,
-        consent_ageCheck: null,
-        consent_isEmployed: null,
-        consent_hasParticipated: null,
-        consent_consentGiven: null,
-        initialAssessments: {
-            financialLiteracy: null,
-            roleAndExperience: null,
-            organizationalProfile: null,
-        },
-        dossierViewTime: 0,
-        dossierScrollCount: 0,
-        advisoryViewTime: 0,
-        advisoryScrollCount: 0,
-        comprehension: {},
-        manipulationChecks: {},
-        objectiveChoice: null,
-        subjectiveDQ: {},
-        mediators: {},
-        controls: {},
-        openRationale: null,
-        endTime: null,
-      };
-      
-      console.log('--- Creating unique session for UID:', user.uid);
+      // This block now runs only ONCE for a new participant, on their first action.
+      // The sessionData is already fully formed in local state.
+      // We just need to save the initial state + the new update to Firestore.
+      console.log('--- Creating unique session document in Firestore for UID:', user.uid);
       const participantDocRef = doc(firestore, `experiment_meta/${EXPERIMENT_ID}/participants`, user.uid);
-      // Merge with the new incoming data and save.
-      const fullInitialData = { ...initialData, ...data };
-      setDocumentNonBlocking(participantDocRef, fullInitialData, { merge: false }); // Use merge: false to ensure it's a creation
+      
+      const fullInitialData = { ...sessionData, ...data };
+      setDocumentNonBlocking(participantDocRef, fullInitialData, { merge: false }); // Use merge: false for creation
 
       const experimentMetaRef = doc(firestore, 'experiment_meta', EXPERIMENT_ID);
       setDocumentNonBlocking(experimentMetaRef, {
@@ -247,7 +246,7 @@ export default function StartPage() {
 
       setSessionData(fullInitialData);
       setHasCreatedDocument(true); // Set the lock!
-      return; // Exit after creation.
+      return; 
     }
   
     // For all subsequent updates, just update the state and save to Firestore.
@@ -327,7 +326,7 @@ export default function StartPage() {
     setIsLastControlSection,
   };
 
-  if (isUserLoading || isLoadingSession) {
+  if (isUserLoading || isLoadingSession || !sessionData) {
     return (
         <div className="flex flex-col items-center justify-center min-h-screen p-4">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
