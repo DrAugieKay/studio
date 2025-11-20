@@ -1,6 +1,7 @@
 
 
 
+
 export type ExperimentalCondition = {
   advisorySource: 'ai' | 'human';
   scenario: 'xyz' | 'techtrend';
@@ -26,7 +27,7 @@ export type SessionData = {
   consent_hasParticipated: 'Yes' | 'No' | null;
   consent_consentGiven: 'Yes' | 'No' | null;
 
-  condition?: ExperimentalCondition;
+  condition?: ExperimentalCondition; // This is now optional, assigned after initial assessment
   initialAssessments: {
     financialLiteracy: Record<string, string | null> | null;
     roleAndExperience: Record<string, string | null> | null;
@@ -74,3 +75,4 @@ export type CodingTask = {
     
 
     
+

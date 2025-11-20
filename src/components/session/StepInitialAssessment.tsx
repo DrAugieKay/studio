@@ -20,6 +20,7 @@ type StepProps = {
   updateSessionData: (data: Partial<SessionData>) => void;
   setIsLastAssessmentSection: (isLast: boolean) => void;
   goToPrevStep: () => void;
+  assignCondition: (roleLevel: string) => void; // New prop
 };
 
 const financialLiteracyQuestions = {
@@ -144,7 +145,7 @@ const sections = [
   }
 ];
 
-export default function StepInitialAssessment({ sessionData, updateSessionData, setIsLastAssessmentSection, goToPrevStep }: StepProps) {
+export default function StepInitialAssessment({ sessionData, updateSessionData, setIsLastAssessmentSection, goToPrevStep, assignCondition }: StepProps) {
   const [currentSectionIndex, setCurrentSectionIndex] = useState(0);
   const currentSection = sections[currentSectionIndex];
   const isLastSection = currentSectionIndex === sections.length - 1;
@@ -185,6 +186,14 @@ export default function StepInitialAssessment({ sessionData, updateSessionData, 
         [currentSection.key]: sanitizedValues,
       },
     });
+
+    // CRITICAL: If we just finished the roleAndExperience section, assign the condition.
+    if (currentSection.key === 'roleAndExperience' && formValues.q1) {
+        // We only assign if the condition isn't already set.
+        if (!sessionData.condition) {
+            assignCondition(formValues.q1);
+        }
+    }
   };
 
   const handleNextSection = async () => {
