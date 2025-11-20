@@ -69,7 +69,7 @@ export default function SessionTable() {
 
     const formatCondition = (condition: SessionData['condition']) => {
         if (!condition) return 'N/A';
-        return `${condition.advisorySource.toUpperCase()} / ${condition.linguisticFrame.toUpperCase()} / ${condition.scenario.toUpperCase()}`;
+        return `${condition.advisorySource.toUpperCase()} / ${condition.scenario.toUpperCase()}`;
     }
 
     if (isLoading) {

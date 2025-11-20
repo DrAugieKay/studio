@@ -4,7 +4,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import type { SessionData, ExperimentalCondition } from '@/lib/types';
 import { useAuth, useFirestore, useUser } from '@/firebase';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { doc, setDoc } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 
 import { Button } from '@/components/ui/button';
@@ -27,6 +27,7 @@ import StepEndSurvey from '@/components/session/StepEndSurvey';
 import { signOut } from 'firebase/auth';
 import { initiateAnonymousSignIn } from '@/firebase/non-blocking-login';
 import { Loader2 } from 'lucide-react';
+import { updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
 const stepComponents = [
   StepConsent,
@@ -77,22 +78,26 @@ export default function StartPage() {
     const manageSession = async () => {
         if (!auth) return;
 
-        // Force sign-out to ensure a new anonymous user for each new survey attempt.
-        // This is the key to preventing session overwriting.
         await signOut(auth);
         
-        // Initiate a new anonymous sign-in. The onAuthStateChanged listener in the provider
-        // will pick this up. Once the user object is available, the rest of the logic can run.
         initiateAnonymousSignIn(auth);
 
-        // From this point, an onAuthStateChanged listener will pick up the new user.
-        // We set loading to false to allow the UI to render the consent step.
         setIsLoadingSession(false);
     };
 
     manageSession();
   }, [auth]);
 
+  // Hashing function to convert string to a number
+  const simpleHash = (str: string) => {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+        const char = str.charCodeAt(i);
+        hash = (hash << 5) - hash + char;
+        hash |= 0; // Convert to 32bit integer
+    }
+    return Math.abs(hash);
+  };
 
   const updateSessionData = async (data: Partial<SessionData>) => {
     if (!user || !firestore) {
@@ -108,13 +113,14 @@ export default function StartPage() {
       const sources: ExperimentalCondition['advisorySource'][] = ['ai', 'human'];
       const scenarios: ExperimentalCondition['scenario'][] = ['xyz', 'techtrend'];
   
-      const randomSourceIndex = Math.floor(Math.random() * sources.length);
-      const randomScenarioIndex = Math.floor(Math.random() * scenarios.length);
-  
+      // Deterministic assignment based on user ID hash
+      const userIdHash = simpleHash(user.uid);
+      const assignedSource = sources[userIdHash % sources.length];
+      const assignedScenario = scenarios[Math.floor(userIdHash / sources.length) % scenarios.length];
+
       const assignedCondition: ExperimentalCondition = {
-        advisorySource: sources[randomSourceIndex],
-        linguisticFrame: 'abstract', // Hardcoded as per the new requirement
-        scenario: scenarios[randomScenarioIndex],
+        advisorySource: assignedSource,
+        scenario: assignedScenario,
       };
       
       const deviceInfo = {
@@ -175,7 +181,7 @@ export default function StartPage() {
     const newData = { ...sessionData, ...data };
     setSessionData(newData);
     const participantDocRef = doc(firestore, `experiment_meta/${EXPERIMENT_ID}/participants`, user.uid);
-    await setDoc(participantDocRef, data, { merge: true });
+    updateDocumentNonBlocking(participantDocRef, data);
   };
 
   const handleNext = () => {
@@ -225,6 +231,14 @@ export default function StartPage() {
   const [isLastAssessmentSection, setIsLastAssessmentSection] = useState(false);
   const [isLastMediatorSection, setIsLastMediatorSection] = useState(false);
   const [isLastControlSection, setIsLastControlSection] = useState(false);
+
+  useEffect(() => {
+    // This effect ensures that for multi-part steps, the parent "Next" button
+    // only appears when the final sub-section is active.
+    if (stepNames[currentStep] !== 'Initial Assessments') setIsLastAssessmentSection(false);
+    if (stepNames[currentStep] !== 'Mediators') setIsLastMediatorSection(false);
+    if (stepNames[currentStep] !== 'Controls') setIsLastControlSection(false);
+  }, [currentStep]);
 
   const showNextButton = useMemo(() => {
     if (isDebrief) return false;

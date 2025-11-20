@@ -1,8 +1,8 @@
 
 
+
 export type ExperimentalCondition = {
   advisorySource: 'ai' | 'human';
-  linguisticFrame: 'abstract' | 'concrete';
   scenario: 'xyz' | 'techtrend';
 };
 
