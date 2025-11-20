@@ -67,12 +67,12 @@ export default function StartPage() {
     if (!data.consent) return 0;
     const roleAndExp = data.initialAssessments?.roleAndExperience;
     if (!roleAndExp || Object.values(roleAndExp).some(v => !v)) return 1;
-    if (!data.condition) return 1; // Stay on assessment step until condition is assigned
-    if (data.dossierViewTime === null) return 2;
-    if (data.advisoryViewTime === null) return 3;
-    if (Object.keys(data.comprehension || {}).length < 2) return 4;
-    if (Object.keys(data.manipulationChecks || {}).length < 3) return 5;
-    if (!data.objectiveChoice) return 6;
+    if (!data.condition) return 1;
+    if (data.dossierViewTime === null) return 3;
+    if (data.advisoryViewTime === null) return 4;
+    if (Object.keys(data.comprehension || {}).length < 2) return 5;
+    if (Object.keys(data.manipulationChecks || {}).length < 3) return 6;
+    if (!data.objectiveChoice) return 7;
     if (Object.keys(data.subjectiveDQ || {}).length < 4) return 7;
     const mediators = data.mediators;
     if (!mediators?.advisoryCredibility || Object.keys(mediators.advisoryCredibility).length < 9) return 8;
@@ -87,9 +87,9 @@ export default function StartPage() {
       if (isUserLoading || !auth || !firestore) return;
 
       if (!user) {
-        await signOut(auth); // Clear any previous session
+        await signOut(auth);
         await auth.signInAnonymously();
-        return; // Let the hook re-run with the new user
+        return; 
       }
 
       const participantDocRef = doc(firestore, `experiment_meta/${EXPERIMENT_ID}/participants`, user.uid);
@@ -100,7 +100,6 @@ export default function StartPage() {
         setSessionData(existingData);
         setCurrentStep(resumeToStep(existingData));
       } else {
-        // New user, data will be created on first interaction (consent)
         setSessionData(null);
         setCurrentStep(0);
       }
@@ -110,14 +109,12 @@ export default function StartPage() {
     manageSession();
   }, [user, isUserLoading, auth, firestore]);
   
-    // New function to assign condition after ROLE_LEVEL is known
     const assignCondition = (roleLevel: string) => {
         if (!user || !sessionData) return;
     
         const sources: ExperimentalCondition['advisorySource'][] = ['ai', 'human'];
         const scenarios: ExperimentalCondition['scenario'][] = ['xyz', 'techtrend'];
     
-        // Use a combination of user ID and roleLevel for deterministic assignment
         const userHash = simpleHash(user.uid);
         const roleHash = simpleHash(roleLevel);
         const combinedHash = userHash + roleHash;
@@ -185,7 +182,7 @@ export default function StartPage() {
       const experimentMetaRef = doc(firestore, 'experiment_meta', EXPERIMENT_ID);
       await setDoc(experimentMetaRef, {
         id: EXPERIMENT_ID,
-        seed: 'initial_seed_placeholder', // This can be enhanced later if needed
+        seed: 'initial_seed_placeholder', 
         stimuliVersion: 'v1.0',
         lexiconVersion: 'v1.0'
       }, { merge: true });
@@ -269,7 +266,7 @@ export default function StartPage() {
     setIsLastAssessmentSection,
     setIsLastMediatorSection,
     setIsLastControlSection,
-    assignCondition, // Pass the new function down
+    assignCondition,
   };
 
   return (
