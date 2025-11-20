@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -10,17 +10,17 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { TriangleAlert, FileText } from 'lucide-react';
 
 type StepProps = {
-  sessionData: Partial<SessionData>;
+  sessionData: Partial<SessionData> | null;
   updateSessionData: (data: Partial<SessionData>) => void;
   endSurvey: () => void;
   goToNextStep: () => void;
 };
 
 type Answers = {
-    ageCheck: 'Yes' | 'No' | '',
-    isEmployed: 'Yes' | 'No' | '',
-    hasParticipated: 'Yes' | 'No' | '',
-    consentGiven: 'Yes' | 'No' | '',
+    ageCheck: 'Yes' | 'No' | '';
+    isEmployed: 'Yes' | 'No' | '';
+    hasParticipated: 'Yes' | 'No' | '';
+    consentGiven: 'Yes' | 'No' | '';
 }
 
 const questions = [
@@ -49,27 +49,36 @@ export default function StepConsent({ updateSessionData, endSurvey, goToNextStep
     hasParticipated: '',
     consentGiven: '',
   });
+  
+  const [isExiting, setIsExiting] = useState(false);
 
   const handleValueChange = (questionId: keyof Answers, value: 'Yes' | 'No') => {
+    if (isExiting) return;
+
     const newAnswers = { ...answers, [questionId]: value };
     setAnswers(newAnswers);
     
+    // Determine if consent has been fully given
+    const consentValue = newAnswers.consentGiven === 'Yes';
+    
     // Update main session data with granular responses
     updateSessionData({ 
-        consent: newAnswers.consentGiven === 'Yes',
+        consent: consentValue,
         consent_ageCheck: newAnswers.ageCheck || null,
         consent_isEmployed: newAnswers.isEmployed || null,
         consent_hasParticipated: newAnswers.hasParticipated || null,
         consent_consentGiven: newAnswers.consentGiven || null,
     });
 
+    // Handle disqualification
     if ((questionId === 'ageCheck' || questionId === 'isEmployed' || questionId === 'consentGiven') && value === 'No') {
-      setTimeout(endSurvey, 500); // Give a brief moment for the UI to update
+      setIsExiting(true);
+      setTimeout(endSurvey, 1500); // Give a moment for the user to see the alert
     }
     
+    // Automatically proceed if consent is given
     if (questionId === 'consentGiven' && value === 'Yes') {
        setTimeout(() => {
-        // This relies on the main 'start' page's button logic.
         goToNextStep();
        }, 300);
     }
@@ -113,6 +122,7 @@ export default function StepConsent({ updateSessionData, endSurvey, goToNextStep
                   value={answers[q.id as keyof typeof answers]}
                   onValueChange={(value) => handleValueChange(q.id as keyof typeof answers, value as 'Yes' | 'No')}
                   className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-4"
+                  disabled={isExiting}
                 >
                   <Label htmlFor={`${q.id}-yes`} className="flex items-center space-x-3 p-4 border rounded-md cursor-pointer bg-background has-[:checked]:bg-secondary has-[:checked]:border-accent transition-colors">
                     <RadioGroupItem value="Yes" id={`${q.id}-yes`} />
@@ -128,7 +138,7 @@ export default function StepConsent({ updateSessionData, endSurvey, goToNextStep
           ))}
         </div>
 
-        {(answers.ageCheck === 'No' || answers.isEmployed === 'No' || answers.consentGiven === 'No') && answers.consentGiven !== '' && (
+        {isExiting && (
             <Alert variant="destructive">
                 <TriangleAlert className="h-4 w-4" />
                 <AlertTitle>Survey Ended</AlertTitle>

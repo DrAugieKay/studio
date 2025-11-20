@@ -4,7 +4,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import type { SessionData, ExperimentalCondition } from '@/lib/types';
 import { useAuth, useFirestore, useUser } from '@/firebase';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 
 import { Button } from '@/components/ui/button';
@@ -24,6 +24,7 @@ import StepMediators from '@/components/session/StepMediators';
 import StepControls from '@/components/session/StepControls';
 import StepDebrief from '@/components/session/StepDebrief';
 import StepEndSurvey from '@/components/session/StepEndSurvey';
+import { signOut } from 'firebase/auth';
 import { initiateAnonymousSignIn } from '@/firebase/non-blocking-login';
 import { Loader2 } from 'lucide-react';
 
@@ -65,22 +66,34 @@ const END_SURVEY_STEP = stepComponents.length - 1;
 export default function StartPage() {
   const [currentStep, setCurrentStep] = useState(0);
   const [sessionData, setSessionData] = useState<Partial<SessionData> | null>(null);
-  const [isLastAssessmentSection, setIsLastAssessmentSection] = useState(false);
-  const [isLastMediatorSection, setIsLastMediatorSection] = useState(false);
-  const [isLastControlSection, setIsLastControlSection] = useState(false);
+  const [isLoadingSession, setIsLoadingSession] = useState(true);
 
   const auth = useAuth();
   const firestore = useFirestore();
-  const { user, isUserLoading } = useUser();
+  const { user } = useUser();
   const router = useRouter();
 
   useEffect(() => {
-    if (!isUserLoading && !user && auth) {
-        initiateAnonymousSignIn(auth);
-    }
-  }, [user, isUserLoading, auth]);
+    const manageSession = async () => {
+        if (!auth) return;
 
-  const updateSessionData = (data: Partial<SessionData>) => {
+        // Force sign-out to ensure a new anonymous user for each new survey attempt.
+        // This is the key to preventing session overwriting.
+        await signOut(auth);
+        
+        // Initiate a new anonymous sign-in.
+        initiateAnonymousSignIn(auth);
+
+        // From this point, an onAuthStateChanged listener will pick up the new user.
+        // We set loading to false to allow the UI to render the consent step.
+        setIsLoadingSession(false);
+    };
+
+    manageSession();
+  }, [auth]);
+
+
+  const updateSessionData = async (data: Partial<SessionData>) => {
     if (!user || !firestore) {
       console.warn("Update attempted before user or firestore is available.");
       return;
@@ -124,9 +137,9 @@ export default function StartPage() {
         consent_hasParticipated: null,
         consent_consentGiven: null,
         initialAssessments: {
-            financialLiteracy: null,
-            roleAndExperience: null,
-            organizationalProfile: null,
+            financialLiteracy: {},
+            roleAndExperience: {},
+            organizationalProfile: {},
         },
         dossierViewTime: null,
         dossierScrollCount: null,
@@ -140,43 +153,39 @@ export default function StartPage() {
         controls: {},
         openRationale: null,
         endTime: null,
-        ...data, // Merge the very first update (e.g., consent data)
+        ...data,
       };
 
+      setSessionData(fullInitialData);
+
       const participantDocRef = doc(firestore, `experiment_meta/${EXPERIMENT_ID}/participants`, user.uid);
-      setDoc(participantDocRef, fullInitialData, { merge: false });
+      await setDoc(participantDocRef, fullInitialData, { merge: false });
 
       const experimentMetaRef = doc(firestore, 'experiment_meta', EXPERIMENT_ID);
-      setDoc(experimentMetaRef, {
+      await setDoc(experimentMetaRef, {
         id: EXPERIMENT_ID,
         seed: 'initial_seed_placeholder',
         stimuliVersion: 'v1.0',
         lexiconVersion: 'v1.0'
       }, { merge: true });
 
-      setSessionData(fullInitialData);
       return; 
     }
   
     // For all subsequent updates, just merge the data into the existing state and Firestore.
-    setSessionData((prev) => {
-        const newData = { ...prev, ...data };
-        const participantDocRef = doc(firestore, `experiment_meta/${EXPERIMENT_ID}/participants`, user.uid);
-        setDoc(participantDocRef, data, { merge: true });
-        return newData;
-    });
+    const newData = { ...sessionData, ...data };
+    setSessionData(newData);
+    const participantDocRef = doc(firestore, `experiment_meta/${EXPERIMENT_ID}/participants`, user.uid);
+    await setDoc(participantDocRef, data, { merge: true });
   };
 
   const handleNext = () => {
     const nextStep = currentStep + 1;
     if (nextStep < stepComponents.length) {
-      // Logic to mark survey as complete when reaching the Debrief step
       if (nextStep === DEBRIEF_STEP) {
         updateSessionData({ endTime: new Date().toISOString(), status: 'Completed' });
       }
       setCurrentStep(nextStep);
-    } else {
-      console.log('Final session data:', sessionData);
     }
   };
   
@@ -190,8 +199,10 @@ export default function StartPage() {
     }
   };
   
-  const endSurvey = () => {
-    updateSessionData({ endTime: new Date().toISOString(), status: 'Abandoned' });
+  const endSurvey = async () => {
+    if (sessionData) {
+        await updateSessionData({ endTime: new Date().toISOString(), status: 'Abandoned' });
+    }
     setCurrentStep(END_SURVEY_STEP);
   };
 
@@ -199,27 +210,32 @@ export default function StartPage() {
     if (stepNames[currentStep] === 'Consent') {
       return !sessionData?.consent;
     }
+     if (stepNames[currentStep] === 'Objective Choice') {
+        if (!sessionData?.objectiveChoice) return true; // Can't proceed without a choice
+        
+        // If choice is made, check if all subjective questions are answered.
+        const dq = sessionData?.subjectiveDQ;
+        if (!dq || Object.values(dq).some(v => !v)) return true;
+    }
     return false;
-  }, [currentStep, sessionData?.consent]);
+  }, [currentStep, sessionData]);
   
   const CurrentStepComponent = stepComponents[currentStep];
-  const isDebrief = stepNames[currentStep] === 'Debrief' || stepNames[currentStep] === 'End of Survey';
-  
+  const isDebrief = currentStep === DEBRIEF_STEP || currentStep === END_SURVEY_STEP;
+
+  const [isLastAssessmentSection, setIsLastAssessmentSection] = useState(false);
+  const [isLastMediatorSection, setIsLastMediatorSection] = useState(false);
+  const [isLastControlSection, setIsLastControlSection] = useState(false);
+
   const showNextButton = useMemo(() => {
-    if (stepNames[currentStep] === 'Consent') {
-      return false;
-    }
-    if (stepNames[currentStep] === 'Initial Assessments' && !isLastAssessmentSection) {
-      return false;
-    }
-    if (stepNames[currentStep] === 'Mediators' && !isLastMediatorSection) {
-      return false;
-    }
-    if (stepNames[currentStep] === 'Controls' && !isLastControlSection) {
-        return false;
-    }
+    if (isDebrief) return false;
+    if (stepNames[currentStep] === 'Consent') return false; // Handled by component
+    if (stepNames[currentStep] === 'Initial Assessments' && !isLastAssessmentSection) return false;
+    if (stepNames[currentStep] === 'Mediators' && !isLastMediatorSection) return false;
+    if (stepNames[currentStep] === 'Controls' && !isLastControlSection) return false;
+    
     return true;
-  }, [currentStep, isLastAssessmentSection, isLastMediatorSection, isLastControlSection]);
+  }, [currentStep, isDebrief, isLastAssessmentSection, isLastMediatorSection, isLastControlSection]);
 
 
   const componentProps: any = {
@@ -229,12 +245,13 @@ export default function StartPage() {
     goToNextStep: handleNext,
     goToPrevStep: handlePrevious,
     handleCompleteSurvey,
+    // Multi-part step handlers
     setIsLastAssessmentSection,
     setIsLastMediatorSection,
     setIsLastControlSection,
   };
 
-  if (isUserLoading || !user) {
+  if (isLoadingSession) {
     return (
         <div className="flex flex-col items-center justify-center min-h-screen p-4">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -249,7 +266,7 @@ export default function StartPage() {
         {!isDebrief && (
             <ProgressTracker
                 current={currentStep}
-                total={stepNames.length - 2} // Exclude Debrief and End
+                total={stepComponents.length - 2} // Exclude Debrief and End
                 stepNames={stepNames}
             />
         )}
