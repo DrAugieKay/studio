@@ -24,6 +24,7 @@ import StepMediators from '@/components/session/StepMediators';
 import StepControls from '@/components/session/StepControls';
 import StepDebrief from '@/components/session/StepDebrief';
 import StepEndSurvey from '@/components/session/StepEndSurvey';
+import { errorEmitter, FirestorePermissionError } from '@/firebase';
 
 const stepComponents = [
   StepConsent, StepInitialAssessment, StepAdvisoryScenario, StepDossier,
@@ -116,39 +117,7 @@ export default function StartPage() {
         setSessionData(existingData);
         setCurrentStep(resumeToStep(existingData));
       } else {
-        const deviceInfo = {
-          userAgent: navigator.userAgent || 'Unknown',
-          screenWidth: window.screen.width || 0,
-          screenHeight: window.screen.height || 0,
-        };
-        const newSession: Partial<SessionData> = {
-            id: user.uid,
-            startTime: new Date().toISOString(),
-            status: 'In Progress',
-            deviceInfo,
-            consent: false,
-            consent_ageCheck: null,
-            consent_isEmployed: null,
-            consent_hasParticipated: null,
-            consent_consentGiven: null,
-            initialAssessments: {
-                financialLiteracy: {},
-                roleAndExperience: {},
-                organizationalProfile: {},
-            },
-            dossierViewTime: null,
-            dossierScrollCount: null,
-            advisoryViewTime: null,
-            advisoryScrollCount: null,
-            comprehension: {},
-            manipulationChecks: {},
-            objectiveChoice: null,
-            subjectiveDQ: {},
-            mediators: {},
-            controls: {},
-            openRationale: null,
-            endTime: null,
-        };
+        const newSession: Partial<SessionData> = { id: user.uid };
         setSessionData(newSession);
         setCurrentStep(0);
       }
@@ -186,20 +155,71 @@ export default function StartPage() {
       return;
     }
 
-    const newData = { ...sessionData, ...data };
+    const isNewSession = !sessionData?.startTime;
+    let dataToSave = data;
+    
+    if (isNewSession) {
+        const deviceInfo = {
+          userAgent: navigator.userAgent || 'Unknown',
+          screenWidth: window.screen.width || 0,
+          screenHeight: window.screen.height || 0,
+        };
+        const fullInitialData: Partial<SessionData> = {
+            id: user.uid,
+            startTime: new Date().toISOString(),
+            status: 'In Progress',
+            deviceInfo,
+            consent: false,
+            consent_ageCheck: null,
+            consent_isEmployed: null,
+            consent_hasParticipated: null,
+            consent_consentGiven: null,
+            initialAssessments: {
+                financialLiteracy: {},
+                roleAndExperience: {},
+                organizationalProfile: {},
+            },
+            dossierViewTime: null,
+            dossierScrollCount: null,
+            advisoryViewTime: null,
+            advisoryScrollCount: null,
+            comprehension: {},
+            manipulationChecks: {},
+            objectiveChoice: null,
+            subjectiveDQ: {},
+            mediators: {},
+            controls: {},
+            openRationale: null,
+            endTime: null,
+        };
+        dataToSave = { ...fullInitialData, ...data };
+    }
+
+
+    const newData = { ...sessionData, ...dataToSave };
     setSessionData(newData);
     
     const participantDocRef = doc(firestore, `experiment_meta/${EXPERIMENT_ID}/participants`, user.uid);
-    await setDoc(participantDocRef, data, { merge: true });
+    
+    setDoc(participantDocRef, dataToSave, { merge: true })
+      .catch(error => {
+        const permissionError = new FirestorePermissionError({
+          path: participantDocRef.path,
+          operation: 'write', // 'create' or 'update' depending on context
+          requestResourceData: dataToSave,
+        });
+        errorEmitter.emit('permission-error', permissionError);
+      });
 
     if (data.consent) {
         const experimentMetaRef = doc(firestore, 'experiment_meta', EXPERIMENT_ID);
-        await setDoc(experimentMetaRef, {
+        // This is a fire-and-forget write for the meta document
+        setDoc(experimentMetaRef, {
             id: EXPERIMENT_ID,
             seed: 'initial_seed_placeholder', 
             stimuliVersion: 'v1.0',
-            lexiconVersion: 'v1.0'
-        }, { merge: true });
+            lexiconVersion: 'v1.com'
+        }, { merge: true }).catch(err => console.error("Failed to write experiment meta:", err));
     }
   };
 
