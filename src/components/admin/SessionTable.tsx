@@ -67,8 +67,10 @@ export default function SessionTable() {
         }
     };
 
-    const formatCondition = (condition: SessionData['condition']) => {
-        if (!condition) return 'N/A';
+    const formatCondition = (condition?: SessionData['condition']) => {
+        if (!condition || !condition.advisorySource || !condition.scenario) {
+            return 'N/A';
+        }
         return `${condition.advisorySource.toUpperCase()} / ${condition.scenario.toUpperCase()}`;
     }
 
