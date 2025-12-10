@@ -23,7 +23,7 @@ interface DeleteDataDialogProps {
   onClose: () => void;
 }
 
-const EXPERIMENT_ID = 'exp_004';
+const EXPERIMENT_ID = 'exp_003';
 
 // List of all subcollections under a participant
 const SUBCOLLECTIONS = [
