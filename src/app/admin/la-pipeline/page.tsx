@@ -17,7 +17,7 @@ import type { SessionData } from '@/lib/types';
 import { updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { cn } from '@/lib/utils';
 
-const EXPERIMENT_ID = 'exp_001';
+const EXPERIMENT_ID = 'exp_004';
 
 type RationaleScore = {
     id: string; // Participant ID

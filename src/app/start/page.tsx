@@ -38,7 +38,7 @@ const stepNames = [
   'Mediators', 'Controls', 'Debrief', 'End of Survey',
 ];
 
-const EXPERIMENT_ID = 'exp_001';
+const EXPERIMENT_ID = 'exp_004';
 const DEBRIEF_STEP = stepComponents.length - 2;
 const END_SURVEY_STEP = stepComponents.length - 1;
 

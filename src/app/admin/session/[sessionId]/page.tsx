@@ -12,7 +12,7 @@ import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import type { SessionData } from '@/lib/types';
 
-const EXPERIMENT_ID = 'exp_001';
+const EXPERIMENT_ID = 'exp_004';
 
 const flagDetails: Record<string, { label: string; Icon: React.ElementType, className: string }> = {
     'flag_comprehension': { label: 'Comprehension Failure', Icon: AlertCircle, className: 'bg-yellow-500/20 text-yellow-700 border-yellow-500/30' },

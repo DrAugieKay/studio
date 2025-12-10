@@ -12,7 +12,7 @@ import type { SessionData, CodingTask } from '@/lib/types';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
 
-const EXPERIMENT_ID = 'exp_001';
+const EXPERIMENT_ID = 'exp_004';
 
 const predefinedCodes = ['Capital Preservation', 'Risk Aversion', 'Balanced Approach', 'Growth Focus', 'Trust in Advisory', 'Strategic Alignment', 'Future Uncertainty', 'Personal Experience'];
 
