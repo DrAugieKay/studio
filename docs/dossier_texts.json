@@ -1,0 +1,42 @@
+
+{
+  "documentation": "This file contains the dossier and briefing text for the two experimental scenarios.",
+  "scenarios": {
+    "techtrend": {
+      "name": "TechTrend Innovations",
+      "briefing": "You are the financial decision-maker for TechTrend Innovations, a technology startup developing AI-powered logistics solutions. The firm recently secured a Series A funding round, generating $500,000 in surplus funds. With annual revenue of $2 million, TechTrend faces high market volatility due to rapid technological shifts. Your task is to allocate these funds across three investment options to manage risk. The board has mandated a conservative investment strategy prioritizing financial stability to support R&D and a major product launch in 5 years. Review the Firm Dossier:",
+      "dossierItems": [
+        {
+          "label": "Sector & Size",
+          "value": "Early‑stage technology firm; revenue ≈ $2M."
+        },
+        {
+          "label": "Strategic Priority",
+          "value": "Extend runway to support R&D and product launch."
+        },
+        {
+          "label": "Financial Context",
+          "value": "Surplus = $500,000; liquidity horizon = 18—24 months."
+        }
+      ]
+    },
+    "xyz": {
+      "name": "XYZ Manufacturing",
+      "briefing": "You are part of the financial decision-makers for XYZ Manufacturing, a mid-sized firm specializing in industrial equipment. Recently, XYZ expanded into new markets, boosting annual revenue to $50 million but increasing exposure to economic fluctuations. With $1,000,000 in surplus funds, your task is to allocate these funds across three investment options. The board has mandated a conservative investment strategy prioritizing financial stability to support operations and future growth. Review the Firm Dossier:",
+      "dossierItems": [
+        {
+          "label": "Sector & Size",
+          "value": "Mid‑sized industrial manufacturer; revenue ≈ $50M."
+        },
+        {
+          "label": "Strategic Priority",
+          "value": "Preserve capital and maintain liquidity for planned IoT investment."
+        },
+        {
+          "label": "Financial Context",
+          "value": "Surplus = $1,000,000; liquidity target = 24 months"
+        }
+      ]
+    }
+  }
+}

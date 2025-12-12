@@ -1,0 +1,32 @@
+
+{
+  "documentation": "This file documents the lexicon for the Linguistic Category Model (LCM) used to compute LA_OBJECTIVE. This is based on the prompt instructions given to the AI model in `src/ai/flows/calculate-la-objective.ts`.",
+  "version": "1.0",
+  "formula": "LA_OBJECTIVE = (SV_rate + ADJ_rate) - (DAV_rate + IAV_rate)",
+  "categories": [
+    {
+      "key": "SV",
+      "name": "State Verbs",
+      "description": "Verbs describing a lasting state rather than a specific action.",
+      "examples": ["believe", "love", "know", "have", "think", "need", "wish", "is", "seems", "feels"]
+    },
+    {
+      "key": "ADJ",
+      "name": "Adjectives",
+      "description": "Words that describe the qualities or states of being of nouns.",
+      "examples": ["good", "bad", "happy", "sad", "big", "small", "important", "effective", "risky"]
+    },
+    {
+      "key": "DAV",
+      "name": "Disambiguating Adverbs",
+      "description": "Adverbs that clarify or specify the manner, place, or time of an action. They often answer 'how?', 'where?', or 'when?'.",
+      "examples": ["quickly", "loudly", "carefully", "here", "there", "yesterday", "daily"]
+    },
+    {
+      "key": "IAV",
+      "name": "Intensifying Adverbs",
+      "description": "Adverbs that modify the intensity of adjectives, other adverbs, or verbs.",
+      "examples": ["very", "extremely", "really", "incredibly", "highly", "quite", "too"]
+    }
+  ]
+}
