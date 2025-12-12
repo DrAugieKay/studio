@@ -1,0 +1,99 @@
+
+{
+  "schemaVersion": "1.0.0",
+  "documentation": "This file describes the visual rendering and layout metadata for the FAConLDQ experimental platform. It is intended for reproducibility and documentation on platforms like the Open Science Framework (OSF).",
+  "designSystem": {
+    "frameworks": [
+      {
+        "name": "Tailwind CSS",
+        "purpose": "Primary styling utility framework."
+      },
+      {
+        "name": "ShadCN/UI",
+        "purpose": "Component library built on top of Tailwind CSS for UI elements like cards, buttons, and forms."
+      }
+    ]
+  },
+  "typography": {
+    "primaryFont": {
+      "family": "Inter",
+      "fallback": "sans-serif",
+      "weights": [400, 500, 600, 700],
+      "source": "Google Fonts"
+    },
+    "baseFontSize": "16px (equivalent to '1rem' in Tailwind's default configuration)",
+    "scale": {
+      "body": {
+        "size": "0.875rem (14px) on mobile, 1rem (16px) on desktop",
+        "lineHeight": "1.25rem (20px) / 1.5rem (24px)"
+      },
+      "headline": {
+        "h1": "2.25rem (36px)",
+        "h2": "1.875rem (30px)",
+        "h3": "1.5rem (24px)"
+      }
+    }
+  },
+  "layout": {
+    "strategy": "Centered, responsive single-column layout.",
+    "container": {
+      "maxWidth": "max-w-4xl (56rem / 896px)",
+      "padding": "p-4 sm:p-6 md:p-8 (1rem to 2rem based on screen size)"
+    },
+    "gridSystem": "Tailwind CSS's flexbox and grid utilities are used for component-level layout (e.g., forms, cards).",
+    "mainAxis": "Vertical, with components stacked within a central card."
+  },
+  "spacingAndSizing": {
+    "baseUnit": "0.25rem (4px)",
+    "scale": "Tailwind's default spacing scale is used (e.g., p-4 = 1rem, space-y-6 = 1.5rem).",
+    "componentSizing": {
+      "buttons": {
+        "height": "h-11 (2.75rem / 44px) for primary actions."
+      },
+      "inputs": {
+        "height": "h-10 (2.5rem / 40px)"
+      }
+    }
+  },
+  "appearance": {
+    "colorPalette": {
+      "primary": {
+        "name": "Dark Blue",
+        "hsl": "215 39% 30%",
+        "description": "Used for main interactive elements like buttons and icons."
+      },
+      "background": {
+        "name": "Light Grayish-Blue",
+        "hsl": "220 20% 96.1%",
+        "description": "The main page background color."
+      },
+      "cardBackground": {
+        "name": "White",
+        "hsl": "0 0% 100%",
+        "description": "Background for all content cards."
+      },
+      "accent": {
+        "name": "Mid Blue",
+        "hsl": "215 39% 40%",
+        "description": "Used for hover states and secondary emphasis."
+      },
+      "destructive": {
+        "name": "Red",
+        "hsl": "0 84.2% 60.2%",
+        "description": "Used for destructive actions like delete buttons."
+      },
+      "text": {
+        "primary": "hsl(222.2 47.4% 11.2%)",
+        "muted": "hsl(215.4 16.3% 46.9%)"
+      }
+    },
+    "borderRadius": {
+      "base": "0.5rem (8px)",
+      "description": "Applied to cards, buttons, and input fields for a modern, soft aesthetic."
+    },
+    "shadows": {
+      "cards": "shadow-xl (a large, soft drop shadow)",
+      "description": "Used to elevate primary containers like the main survey card from the background."
+    }
+  }
+}
