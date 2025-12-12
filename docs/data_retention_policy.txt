@@ -1,0 +1,43 @@
+
+Standard Operating Procedure: Data Retention & Deletion Policy
+Version: 1.0
+Date: 2024-07-30
+______________________________________________________________________
+
+1.0 PURPOSE
+
+This document defines the policy for the retention, archival, and secure deletion of participant data collected by the FAConLDQ (Financial Advisory Construal Level & Decision Quality) experimental platform. The goal is to balance the need for data availability for research validation with the ethical obligation to minimize long-term data storage.
+
+2.0 SCOPE
+
+This policy applies to all participant-level data stored in the project's Firebase Firestore database, including session details, responses, and derived scores.
+
+3.0 POLICY
+
+3.1 Data Retention Periods
+
+3.1.1 Active Collection Phase: During the active data collection period of the experiment, all participant data will be retained in the live Firestore database to support real-time monitoring and administration.
+
+3.1.2 Post-Collection Analysis Phase (0-2 Years Post-Collection): After data collection is complete, the full, de-identified dataset will be retained in the live database for a period of up to two (2) years. This period allows for primary data analysis, peer review, and addressing any queries related to the initial publication.
+
+3.1.3 Long-Term Archival (2-7 Years Post-Collection): After the initial analysis phase, the raw dataset will be exported to a secure, access-controlled archival location (e.g., an encrypted institutional repository or OSF private storage). Following a successful and verified export, all participant session data will be permanently deleted from the live Firestore database using the "Delete All Session Data" function in the admin dashboard.
+
+3.1.4 Final Deletion (7+ Years): The archived dataset will be retained for a total of seven (7) years to comply with typical research data availability standards. After this period, the archived data will be securely and permanently deleted.
+
+3.2 Data Deletion Procedure
+
+3.2.1 Mechanism: The primary mechanism for data deletion is the "Delete All Session Data" function available to authorized administrators in the admin dashboard.
+
+3.2.2 Process: This function executes a batched write operation that recursively finds and deletes all documents and sub-collections associated with every participant in the `experiment_meta/{expId}/participants` collection. This ensures that no orphaned data remains.
+
+3.2.3 Verification: Before executing a bulk deletion, the administrator must first perform a final data export and verify its integrity. The deletion action is irreversible and must be logged in the project's administrative records with the date and reason for the action.
+
+3.3 Anonymization and De-identification
+
+3.3.1 Collection: The platform is designed to be anonymous-by-default, using Firebase anonymous UIDs as participant identifiers. No direct PII is collected.
+
+3.3.2 Export: During the creation of the final public-use dataset, any potentially identifying information from free-text fields will be redacted or aggregated to further ensure anonymity.
+
+4.0 POLICY REVIEW
+
+This policy will be reviewed annually and at the conclusion of major project milestones (e.g., end of data collection, final publication) to ensure it remains aligned with institutional and ethical guidelines.

@@ -1,0 +1,81 @@
+
+{
+  "documentation": "This document outlines the backend architecture, data models (entities), and Firestore database structure for the Advisory Insights Platform. It is designed to ensure data integrity, security, and scalability.",
+  "entities": {
+    "ExperimentMeta": {
+      "description": "Stores immutable metadata about an experiment run, such as the random seed, stimuli versions, and code versions. This is critical for reproducibility.",
+      "fields": {
+        "id": "string (unique ID for the experiment)",
+        "seed": "string (random seed used)",
+        "stimuliVersion": "string (version of advisory_memos.json)",
+        "lexiconVersion": "string (version of lcm_lexicon.json)"
+      }
+    },
+    "Participant": {
+      "description": "Represents a single participant in the experiment. All other participant-specific data is nested under this entity.",
+      "fields": {
+        "id": "string (Firebase Auth UID)",
+        "experimentMetaId": "string (FK to ExperimentMeta)",
+        "conditionAssignment": "string (e.g., 'ai_xyz')",
+        "consentTimestamp": "datetime",
+        "userAgent": "string (browser/device info)"
+      }
+    },
+    "Response": {
+      "description": "Stores a single answer to a specific question from a participant.",
+      "fields": {
+        "id": "string (unique ID for the response)",
+        "participantId": "string (FK to Participant)",
+        "questionId": "string (identifier for the question, e.g., 'cr_q_i')",
+        "value": "string (the answer, potentially encrypted if PII)",
+        "timestamp": "datetime"
+      }
+    },
+    "DerivedComposite": {
+      "description": "Stores a calculated score (e.g., a mean score for a Likert scale) derived from multiple 'Response' documents.",
+      "fields": {
+        "id": "string (unique ID for the composite)",
+        "participantId": "string (FK to Participant)",
+        "name": "string (name of the composite, e.g., 'DQ_SUB_MEAN')",
+        "value": "number",
+        "itemsUsed": "array of strings (references to Response IDs used)",
+        "completenessPercentage": "number (e.g., 0.75 for 75%)"
+      }
+    },
+    "DataQualityFlag": {
+      "description": "Flags potential data quality issues for a participant's session.",
+      "fields": {
+        "id": "string (unique ID for the flag entry)",
+        "participantId": "string (FK to Participant)",
+        "flagComprehension": "boolean",
+        "flagViewtime": "boolean",
+        "flagStraightline": "boolean"
+      }
+    }
+  },
+  "firestoreStructure": {
+    "philosophy": "The structure uses a hierarchical model with participant-owned data paths to enable strict security rules. This avoids the need for cross-document 'get()' calls in security rules, which is a best practice.",
+    "paths": [
+      {
+        "path": "/experiment_meta/{expId}",
+        "description": "Top-level collection for experiment metadata."
+      },
+      {
+        "path": "/experiment_meta/{expId}/participants/{participantId}",
+        "description": "The main collection for participant documents."
+      },
+      {
+        "path": "/experiment_meta/{expId}/participants/{participantId}/responses/{responseId}",
+        "description": "Sub-collection for all individual answers from a participant."
+      },
+      {
+        "path": "/experiment_meta/{expId}/participants/{participantId}/derived_composites/{compositeId}",
+        "description": "Sub-collection for calculated scores for a participant."
+      },
+      {
+        "path": "/experiment_meta/{expId}/participants/{participantId}/data_quality_flags/{flagId}",
+        "description": "Sub-collection for data quality flags for a participant."
+      }
+    ]
+  }
+}
